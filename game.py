@@ -230,28 +230,36 @@ def new_game(door_info, cfg):
 
 def action_explore(player, world, cfg, rng):
     if not player.use_turns(2):
-        ansi.result(f"{ansi.R}> Not enough turns to explore (costs 2).{ansi.RST}")
+        ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
+        ansi.write_at(ansi.RES_TOP, 1,
+                      f"  {ansi.R}Not enough turns to explore (costs 2).{ansi.RST}")
+        ansi.draw_status(player, player.bbs_name)
         return
 
-    ansi.result(f"{ansi.DG}> Scanning the network...{ansi.RST}")
+    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
+    ansi.write_at(ansi.RES_TOP, 1,
+                  f"  {ansi.DG}Scanning the network...{ansi.RST}")
+    ansi.spinner(ansi.RES_TOP, 30, "scanning", duration=1.0)
 
-    found = world.explore(
-        world.get_node_by_name(player.current_node).index
-        if world.get_node_by_name(player.current_node) else 0,
-        rng
-    )
+    current = world.get_node_by_name(player.current_node)
+    found = world.explore(current.index if current else 0, rng)
 
     if found:
-        ansi.result(f"{ansi.C}> Node discovered: {ansi.W}{found.name}{ansi.RST}")
-        ansi.result(f"  {ansi.DG}{found.description} · {found.hops} hops from home{ansi.RST}")
+        ansi.write_at(ansi.RES_TOP + 1, 1,
+                      f"  {ansi.C}Node discovered:{ansi.RST} {ansi.W}{found.name}{ansi.RST}")
+        desc = f"{found.description} · {found.hops} hops from home"
+        ansi.write_at(ansi.RES_TOP + 2, 1,
+                      f"  {ansi.DG}{desc[:68]}{ansi.RST}")
         if found.is_legendary:
-            ansi.result(
-                f"{ansi.Y}*** LEGENDARY NODE FOUND! The scene will remember this. ***{ansi.RST}")
+            ansi.write_at(ansi.RES_TOP + 3, 1,
+                          f"  {ansi.Y}LEGENDARY NODE FOUND! +50 reputation.{ansi.RST}")
             player.adjust_resource("reputation", 50)
     else:
-        ansi.result(f"{ansi.DG}> Nothing found. The network stays quiet.{ansi.RST}")
+        ansi.write_at(ansi.RES_TOP + 1, 1,
+                      f"  {ansi.DG}Nothing found. The network stays quiet.{ansi.RST}")
 
     ansi.draw_status(player, player.bbs_name)
+
 
 def action_travel(player, world, cfg, rng):
     page = 0

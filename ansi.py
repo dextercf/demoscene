@@ -21,12 +21,12 @@ SCREEN_W = 80
 SCREEN_H = 24
 
 ART_TOP  = 1    # Art zone
-ART_BOT  = 10
-DIV_1    = 11   # Divider after art
-MENU_TOP = 12   # Menu zone
-MENU_BOT = 17
-DIV_3    = 18   # Divider above result zone
-RES_TOP  = 19   # Result zone
+ART_BOT  = 8
+DIV_1    = 9    # Divider after art
+MENU_TOP = 10   # Menu zone
+MENU_BOT = 12
+DIV_3    = 13   # Divider above result zone
+RES_TOP  = 14   # Result zone
 RES_BOT  = 22
 STATUS_DIV = 23 # Divider above bottom status bar
 STATUS   = 24   # Status bar
@@ -178,7 +178,7 @@ def write_at_no_clear(row, col, text, colour="", reset=True):
 # Result zone — fixed 4-line scrolling buffer
 # ---------------------------------------------------------------------------
 
-_result_buf = ["", "", "", "", ""]
+_result_buf = [""] * (RES_BOT - RES_TOP + 1)
 
 
 def _redraw_result_zone():
@@ -608,7 +608,7 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1,
     else:
         clear_line(STATUS)
     global _result_buf
-    _result_buf = ["", "", "", ""]
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
     hide_cursor()
 
 
@@ -641,32 +641,26 @@ def screen_title():
 
 
 def screen_hq(player):
-    """
-    Crew HQ — main action screen.
-    Drawn once. Updates via draw_status() and result().
-    """
+    """Crew HQ main screen with compact 3x3 menu and fixed result area."""
     screen_base("hq", player, player.bbs_name)
 
-    actions = [
-        ("[E]", "Explore network",  "[D]", "Defend home board"),
-        ("[T]", "Travel to node",   "[B]", "Trade post"),
-        ("[P]", "Produce demo",     "[M]", "Message board"),
-        ("[R]", "Raid rival crew",  "[S]", "Scores / Hall of Fame"),
-        ("[Q]", "Quit / save",      "",    ""),
+    rows = [
+        [("[E]", "Explore"), ("[T]", "Travel"), ("[P]", "Produce")],
+        [("[R]", "Raid"),    ("[D]", "Defend"), ("[B]", "Trade")],
+        [("[M]", "Messages"), ("[S]", "Scores"), ("[Q]", "Quit / save")],
     ]
-    for i, (k1, l1, k2, l2) in enumerate(actions):
-        row = MENU_TOP + i
-        if row > MENU_BOT:
-            break
+    col_starts = [3, 29, 55]
+    for row_idx, items in enumerate(rows):
+        row = MENU_TOP + row_idx
         move(row, 1)
         _out(ERASE_LINE)
-        col1 = f"  {C}{k1}{RST} {W}{l1}{RST}"
-        col2 = f"  {C}{k2}{RST} {W}{l2}{RST}" if k2 else ""
-        _out(col1.ljust(40) + col2)
+        for col, (hotkey, label) in zip(col_starts, items):
+            move(row, col)
+            _out(f"{C}{hotkey}{RST} {W}{label}{RST}")
 
 
 def screen_map(player, world, page=0, page_size=5):
-    """Network map screen with paged node list and fixed bottom chrome."""
+    """Network map screen with extra room for the node list."""
     screen_base("map", player, player.bbs_name)
 
     discovered = world.discovered_nodes()
@@ -676,9 +670,7 @@ def screen_map(player, world, page=0, page_size=5):
     start = page * page_size
     shown = discovered[start:start + page_size]
 
-    # Reclaim the full area below the art for gameplay information.
     clear_zone(MENU_TOP, RES_BOT)
-
     write_at(MENU_TOP, 1,
              f"  {DG}NETWORK MAP{RST}  {W}Page {page + 1}/{page_count}{RST}"
              f"  {DG}·{RST}  {DG}Current:{RST} {W}{player.current_node}{RST}"
@@ -697,7 +689,7 @@ def screen_map(player, world, page=0, page_size=5):
                  f"{DG}{node.hops} hops{'':<4}{RST}{crew}")
         row += 1
 
-    while row <= MENU_TOP + 6:
+    while row <= MENU_TOP + 7:
         clear_line(row)
         row += 1
 
@@ -706,11 +698,15 @@ def screen_map(player, world, page=0, page_size=5):
         nav_parts.append(f"{C}[P]{RST}revious")
     if page_count > 1 and page < page_count - 1:
         nav_parts.append(f"{C}[N]{RST}ext")
-    write_at(MENU_TOP + 7, 1, "  " + "   ".join(nav_parts) if nav_parts else "")
+    if nav_parts:
+        write_at(MENU_TOP + 8, 1, "  " + "   ".join(nav_parts))
+    else:
+        clear_line(MENU_TOP + 8)
 
     max_choice = len(shown)
     prompt = f"Travel to node {C}[1-{max_choice}]{RST} or {C}Q{RST}: " if max_choice else f"Travel to node {C}Q{RST}: "
     write_at(CMD_ROW, 1, "  " + prompt)
+
 
 def screen_trade(player, node):
     """Trade post screen."""
