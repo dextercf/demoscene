@@ -186,7 +186,7 @@ def _redraw_result_zone():
         move(RES_TOP + i, 1)
         _out(ERASE_LINE)
         if line:
-            _out(line[:SCREEN_W])
+            _out(line)
 
 
 def result(text, colour=""):
@@ -671,58 +671,78 @@ def screen_hq(player):
         _out(col1.ljust(40) + col2)
 
 
-def screen_map(player, world):
-    """Network map screen — node list in menu+upper result zone, prompt at bottom."""
-    screen_base("map", player, player.bbs_name,
-                cmd_hint="[T] Travel  [E] Explore  [Q] Back")
+MAP_LIST_ROWS = [17, 18, 20, 21, 22, 23]
+MAP_ROWS_PER_PAGE = len(MAP_LIST_ROWS)
 
+
+def map_rows_per_page():
+    """How many map rows fit cleanly on the fixed 80x24 layout."""
+    return MAP_ROWS_PER_PAGE
+
+
+def map_page_count(node_count):
+    """Total number of map pages for the discovered-node count."""
+    if node_count <= 0:
+        return 1
+    return (node_count + MAP_ROWS_PER_PAGE - 1) // MAP_ROWS_PER_PAGE
+
+
+def screen_map(player, world, page=0):
+    """Network map screen with paging sized to the fixed 80x24 layout."""
     discovered = world.discovered_nodes()
+    total_pages = map_page_count(len(discovered))
+    page = max(0, min(page, total_pages - 1))
+    start = page * MAP_ROWS_PER_PAGE
+    page_nodes = discovered[start:start + MAP_ROWS_PER_PAGE]
 
-    # Header rows in menu zone
+    cmd_hint = "[1-6] Travel  [N/P] Page  [Q] Back"
+    if total_pages == 1:
+        cmd_hint = "[1-6] Travel  [Q] Back"
+    screen_base("map", player, player.bbs_name, cmd_hint=cmd_hint)
+
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
-    _out(f"  {DG}{'#':<5}{'NODE':<26}{'TYPE':<16}{'DIST':<10}CREW{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(DG + "·" * SCREEN_W + RST)
+    location = f"{W}{player.current_node}{RST}"
+    page_info = f"{DG}Page {page + 1}/{total_pages}{RST}"
+    undiscovered = world.undiscovered_count()
+    extra = f"  {DG}·  {undiscovered} undiscovered{RST}" if undiscovered else ""
+    _out(f"  {DG}NETWORK MAP{RST}  {page_info}  {DG}·  Current:{RST} {location}{extra}")
 
-    # Node list: rows MENU_TOP+2 .. RES_BOT-2  (leave 2 rows for input prompt)
-    LIST_TOP = MENU_TOP + 2
-    LIST_BOT = RES_BOT - 2
-    max_rows = LIST_BOT - LIST_TOP + 1
-
-    for i, node in enumerate(discovered[:max_rows]):
-        row = LIST_TOP + i
-        move(row, 1)
-        _out(ERASE_LINE)
-        cur = f"{Y}►{RST}" if node.name == player.current_node else " "
-        col = Y if node.name == player.current_node else W
-        crew = f"{R}{node.crew}{RST}" if node.crew else ""
-        _out(f"  [{i+1:02d}]{cur} {col}{node.name:<26}{RST}"
-             f"{DG}{node.label:<16}{RST}"
-             f"{DG}{node.hops} hops  {RST}{crew}")
-
-    # Clear any leftover rows between list end and hint row
-    for row in range(LIST_TOP + min(len(discovered), max_rows), RES_BOT - 1):
+    for row in MAP_LIST_ROWS:
         move(row, 1)
         _out(ERASE_LINE)
 
-    # Overflow / undiscovered hint on the line just above input prompt
-    hint_row = RES_BOT - 1
-    move(hint_row, 1)
-    _out(ERASE_LINE)
-    parts = []
-    if len(discovered) > max_rows:
-        parts.append(f"+ {len(discovered) - max_rows} more (#{max_rows+1:02d}+)")
-    if world.undiscovered_count() > 0:
-        parts.append(f"{world.undiscovered_count()} undiscovered")
-    if parts:
-        _out(DG + "  " + "  ·  ".join(parts) + RST)
+    for slot, node in enumerate(page_nodes, start=1):
+        row = MAP_LIST_ROWS[slot - 1]
+        move(row, 1)
+        cur = f"{Y}> {RST}" if node.name == player.current_node else "  "
+        name_col = Y if node.name == player.current_node else W
+        crew = f"  {R}{node.crew[:18]}{RST}" if node.crew else ""
+        label = node.label[:14]
+        line = (
+            f" {C}[{slot}]{RST}{cur}{name_col}{node.name[:24]:<24}{RST}"
+            f" {DG}{label:<14}{RST}"
+            f" {DG}{node.hops:>2} hops{RST}{crew}"
+        )
+        _out(line)
 
-    # Input prompt pinned to last row
+    move(DIV_3, 1)
+    _out(ERASE_LINE)
+    nav_parts = []
+    if page > 0:
+        nav_parts.append(f"{C}[P]{RST}{DG} Prev{RST}")
+    if page < total_pages - 1:
+        nav_parts.append(f"{C}[N]{RST}{DG} Next{RST}")
+    nav_parts.append(f"{C}[Q]{RST}{DG} Back{RST}")
+    nav_text = f"  {DG}Select node 1-{len(page_nodes)}"
+    if nav_parts:
+        nav_text += "  " + "  ".join(nav_parts)
+    nav_text += RST
+    _out(nav_text)
+
     move(RES_BOT, 1)
     _out(ERASE_LINE)
-    _out(f"  {DG}Enter node number to travel, or {C}00{DG} to cancel:{RST}")
+    _out(f"  {DG}Travel to node [{C}1-{len(page_nodes)}{DG}], {C}N{DG}/{C}P{DG}, or {C}Q{DG}:{RST}")
 
 
 def screen_trade(player, node):

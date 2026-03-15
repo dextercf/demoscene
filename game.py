@@ -259,51 +259,72 @@ def action_explore(player, world, cfg, rng):
 
 def action_travel(player, world, cfg, rng):
     discovered = world.discovered_nodes()
-
-    # Draw map screen — already shows numbered node list
-    ansi.screen_map(player, world)
-
-    # Input prompt is already drawn by screen_map at RES_BOT
-    # Just position cursor there and read the number
-    ansi.move(ansi.RES_BOT, 53)
-    num_str = ansi.get_input("", max_len=2)
-
-    try:
-        num = int(num_str)
-    except ValueError:
-        return
-    if num == 0:
+    if not discovered:
+        ansi.result(f"{ansi.R}> No nodes discovered yet.{ansi.RST}")
         return
 
-    idx = num - 1
-    if idx < 0 or idx >= len(discovered):
-        ansi.write_at(ansi.RES_BOT, 1,
-                      f"  {ansi.R}Invalid selection.{ansi.RST}")
-        return
+    page = 0
+    page_size = ansi.map_rows_per_page()
 
-    node = discovered[idx]
+    while True:
+        discovered = world.discovered_nodes()
+        total_pages = ansi.map_page_count(len(discovered))
+        page = max(0, min(page, total_pages - 1))
+        start = page * page_size
+        end = start + page_size
+        page_nodes = discovered[start:end]
 
-    if not player.use_turns(1):
-        ansi.write_at(ansi.RES_BOT, 1,
-                      f"  {ansi.R}Not enough turns to travel.{ansi.RST}")
-        return
+        ansi.screen_map(player, world, page=page)
+        ansi.move(ansi.RES_BOT, 40)
+        choice = ansi.get_input("", max_len=2).strip().upper()
 
-    player.current_node = node.name
+        if choice in ("", "Q", "00"):
+            return
+        if choice == "N":
+            if page < total_pages - 1:
+                page += 1
+            continue
+        if choice == "P":
+            if page > 0:
+                page -= 1
+            continue
+        if not choice.isdigit():
+            ansi.write_at(ansi.RES_BOT, 1,
+                          f"  {ansi.R}Invalid selection.{ansi.RST}")
+            ansi.pause(0.6)
+            continue
 
-    # Dial animation in result zone
-    ansi.write_at(ansi.RES_BOT - 1, 1,
-                  f"  {ansi.DG}Dialling {node.name}...{ansi.RST}")
-    ansi.dial(ansi.RES_BOT, 3, node.name)
-    ansi.write_at(ansi.RES_BOT, 1,
-                  f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}"
-                  f"  {ansi.DG}{node.description}{ansi.RST}")
-    if node.crew:
+        slot = int(choice)
+        if slot < 1 or slot > len(page_nodes):
+            ansi.write_at(ansi.RES_BOT, 1,
+                          f"  {ansi.R}Invalid selection.{ansi.RST}")
+            ansi.pause(0.6)
+            continue
+
+        node = page_nodes[slot - 1]
+
+        if not player.use_turns(1):
+            ansi.write_at(ansi.RES_BOT, 1,
+                          f"  {ansi.R}Not enough turns to travel.{ansi.RST}")
+            ansi.pause(0.8)
+            return
+
+        player.current_node = node.name
+
         ansi.write_at(ansi.RES_BOT - 1, 1,
-                      f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
+                      f"  {ansi.DG}Dialling {node.name}...{ansi.RST}")
+        ansi.dial(ansi.RES_BOT, 3, node.name)
+        ansi.write_at(ansi.RES_BOT, 1,
+                      f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}"
+                      f"  {ansi.DG}{node.description}{ansi.RST}")
+        if node.crew:
+            ansi.write_at(ansi.RES_BOT - 1, 1,
+                          f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
 
-    ansi.draw_status(player)
-    import time
-    time.sleep(1.0)
+        ansi.draw_status(player)
+        import time
+        time.sleep(1.0)
+        return
 
 
 def action_trade(player, world, cfg, rng):
