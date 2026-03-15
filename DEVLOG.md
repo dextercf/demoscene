@@ -4,6 +4,95 @@
 Format: newest entry at the top.
 Update this file at the end of every session before closing the chat.
 
+--- 
+
+2026-03-16 — Session 3
+Goal
+Stabilize screen layout system, implement map pagination, fix chrome/status bar behavior, and refactor HQ / Explore UI flow.
+Files changed
+ansi.py — layout system adjustments, safe ANSI truncation, chrome row protection
+game.py — map pagination, HQ menu redesign, explore screen separation, input fixes
+socketio.py — input echo handling adjustments to prevent scroll
+Major UI/Layout changes
+Permanent screen layout rules introduced
+The display now follows strict reserved rows:
+Row 23 — divider (never overwritten)
+Row 24 — status bar ("CREW / HANDLE / TURNS / DAY / NODE")
+All gameplay rendering must occur above row 23.
+The status bar is now always the last visible row and must never move or be overwritten.
+---
+Map pagination implemented
+The travel screen now supports paginated node lists.
+Features:
+5 nodes per page
+[N]ext / [P]revious navigation shown only when applicable
+travel selection uses [1–5]
+prompt rendered above reserved chrome rows
+Layout adjustments:
+Map art area reduced slightly
+Node list moved down to improve readability
+Column rendering fixed
+Bug fix:
+The corrupted strings like:
+<90
+were caused by ANSI color codes being truncated mid-sequence.
+ansi.py now truncates strings based on visible width instead of raw length, preventing broken escape codes.
+---
+HQ screen redesign
+HQ screen now prioritizes artwork while keeping gameplay controls visible.
+Changes:
+HQ art area expanded
+Main menu redesigned into 3 rows × 3 items
+[E] Explore      [T] Travel      [P] Produce
+[R] Raid         [D] Defend      [B] Trade
+[M] Messages     [S] Scores      [Q] Quit / Save
+Menu placement:
+[ Art Area ]
+[ Divider ]
+[ Menu (3×3) ]
+(blank row)
+[ Divider ]
+[ Status Bar ]
+The divider under the menu is restored to separate gameplay from chrome.
+---
+Explore system refactor
+Exploration now uses its own dedicated screen rather than writing over the HQ screen.
+New Explore screen:
+[Explore Menu]
+[X] Scan network
+[Q] Back
+Scan results render in a fixed result zone beneath the divider.
+This prevents overlapping output and screen corruption seen previously.
+---
+Input handling improvements
+Invalid input previously caused the terminal to scroll because:
+Enter echoed a CR/LF
+output printed on a new line
+Fixes:
+command prompts now use single-key input
+invalid selection messages overwrite the same command line
+input cursor remains above the reserved chrome rows
+---
+Bugs fixed
+Double status bar rendering during exploration
+Divider being overwritten by gameplay output
+Travel screen list spacing inconsistencies
+ANSI escape codes being cut mid-sequence
+Exploration results overlapping previous lines
+Layout drift caused by writeln()-style output
+---
+Remaining issues / future work
+Still to address:
+raid flow stability (possible disconnect during combat result)
+combat.render_result() still unused
+message board screen incomplete
+courier mission system
+crew management screen
+NPC activity simulation
+---
+Recommended next task
+Implement crew management and demo production mechanics, since they form the core gameplay loop.
+
 ---
 
 ## 2026-03-15  —  Session 2
