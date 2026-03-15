@@ -160,11 +160,9 @@ def new_game(door_info, cfg):
     ansi.clear_screen()
     ansi.draw_art("title")
     ansi.draw_divider(ansi.DIV_1)
-    ansi.clear_line(ansi.STATUS)
+    ansi.clear_zone(ansi.MENU_TOP, ansi.RES_BOT)
     ansi.draw_divider(ansi.DIV_2)
-    ansi.clear_zone(ansi.MENU_TOP, ansi.MENU_BOT)
-    ansi.draw_divider(ansi.DIV_3)
-    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
+    ansi.clear_line(ansi.STATUS)
 
     # Header in menu zone
     ansi.write_at(ansi.MENU_TOP,     1,
@@ -258,79 +256,48 @@ def action_explore(player, world, cfg, rng):
 
 
 def action_travel(player, world, cfg, rng):
-    discovered = world.discovered_nodes()
-    if not discovered:
-        ansi.result(f"{ansi.R}> No nodes discovered yet.{ansi.RST}")
-        return
-
-    def show_invalid(input_col):
-        ansi.move(ansi.RES_BOT, input_col)
-        ansi._out(f"{ansi.R}Invalid selection.{ansi.RST}" + " " * 20)
-        ansi.pause(0.7)
-
     page = 0
-    page_size = ansi.map_rows_per_page()
 
     while True:
-        discovered = world.discovered_nodes()
-        total_pages = ansi.map_page_count(len(discovered))
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
-        page_nodes = discovered[start:end]
-
-        ansi.screen_map(player, world, page=page)
-        prompt_text = f"  Travel to node [1-{len(page_nodes)}]"
-        if total_pages > 1:
-            prompt_text += ", N, P, or Q:"
-        else:
-            prompt_text += " or Q:"
-        input_col = len(prompt_text) + 1
-        ansi.move(ansi.RES_BOT, input_col)
+        screen = ansi.screen_map(player, world, page=page)
+        prompt = screen["prompt"]
         choice = ansi.get_input("", max_len=2).strip().upper()
 
-        if choice in ("", "Q", "00"):
+        if not choice or choice == "Q":
             return
-        if choice == "N":
-            if total_pages > 1 and page < total_pages - 1:
-                page += 1
-            else:
-                show_invalid(input_col)
+        if choice == "N" and screen["total_pages"] > 1 and page < screen["total_pages"] - 1:
+            page += 1
             continue
-        if choice == "P":
-            if total_pages > 1 and page > 0:
-                page -= 1
-            else:
-                show_invalid(input_col)
+        if choice == "P" and screen["total_pages"] > 1 and page > 0:
+            page -= 1
             continue
         if not choice.isdigit():
-            show_invalid(input_col)
+            ansi.write_at(ansi.CMD_ROW, 1, prompt + f"{ansi.R}Invalid selection.{ansi.RST}", reset=False)
             continue
 
-        slot = int(choice)
-        if slot < 1 or slot > len(page_nodes):
-            show_invalid(input_col)
+        idx = int(choice) - 1
+        if idx < 0 or idx >= len(screen["page_nodes"]):
+            ansi.write_at(ansi.CMD_ROW, 1, prompt + f"{ansi.R}Invalid selection.{ansi.RST}", reset=False)
             continue
 
-        node = page_nodes[slot - 1]
+        node = screen["page_nodes"][idx]
 
         if not player.use_turns(1):
-            ansi.write_at(ansi.RES_BOT, 1,
-                          f"  {ansi.R}Not enough turns to travel.{ansi.RST}")
-            ansi.pause(0.8)
+            ansi.write_at(ansi.CMD_ROW, 1,
+                          f"  {ansi.R}Not enough turns to travel.{ansi.RST}", reset=False)
             return
 
         player.current_node = node.name
 
-        ansi.write_at(ansi.RES_BOT - 1, 1,
-                      f"  {ansi.DG}Dialling {node.name}...{ansi.RST}")
-        ansi.dial(ansi.RES_BOT, 3, node.name)
-        ansi.write_at(ansi.RES_BOT, 1,
+        ansi.write_at(ansi.RES_TOP + 1, 1,
+                      f"  {ansi.DG}Dialling {node.name}...{ansi.RST}", reset=False)
+        ansi.dial(ansi.RES_TOP + 2, 3, node.name)
+        ansi.write_at(ansi.RES_TOP + 3, 1,
                       f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}"
-                      f"  {ansi.DG}{node.description}{ansi.RST}")
+                      f"  {ansi.DG}{node.description}{ansi.RST}", reset=False)
         if node.crew:
-            ansi.write_at(ansi.RES_BOT - 1, 1,
-                          f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
+            ansi.write_at(ansi.RES_TOP, 1,
+                          f"  {ansi.R}{node.crew} is present here.{ansi.RST}", reset=False)
 
         ansi.draw_status(player)
         import time

@@ -23,14 +23,14 @@ SCREEN_H = 24
 ART_TOP  = 1    # Art zone
 ART_BOT  = 12
 DIV_1    = 13   # Divider after art
-STATUS   = 14   # Status bar
-DIV_2    = 15   # Divider after status
-MENU_TOP = 16   # Menu / content zone
+MENU_TOP = 14   # Main content zone
 MENU_BOT = 18
-DIV_3    = 19   # Divider above result zone
-RES_TOP  = 20   # Result zone (5 lines)
-RES_BOT  = 24   # Last line of screen
-CMD_ROW  = 24   # Command / prompt row (alias for RES_BOT)
+RES_TOP  = 19   # Lower content / result zone
+RES_BOT  = 22   # Last writable content row
+CMD_ROW  = 22   # Command / prompt row
+DIV_2    = 23   # Divider above bottom status bar
+DIV_3    = 23   # Legacy alias for the bottom divider
+STATUS   = 24   # Bottom status bar
 
 # ---------------------------------------------------------------------------
 # ANSI escape codes
@@ -186,7 +186,7 @@ def _redraw_result_zone():
         move(RES_TOP + i, 1)
         _out(ERASE_LINE)
         if line:
-            _out(line)
+            _out(line[:SCREEN_W])
 
 
 def result(text, colour=""):
@@ -417,7 +417,7 @@ def draw_divider(row, char="─", colour=DG):
 
 
 def draw_status(player, bbs_name="", node=1):
-    """Draw the status bar at row STATUS. Called on resource changes."""
+    """Draw the bottom status bar. The BBS name is intentionally omitted."""
     move(STATUS, 1)
     _out(ERASE_LINE)
     left = (f" {DG}CREW {RST}{W}{player.crew_name}{RST}"
@@ -428,8 +428,8 @@ def draw_status(player, bbs_name="", node=1):
             f"  {DG}·{RST}  "
             f"{DG}DAY {RST}{W}{player.day}{RST}")
     right = f"{DG}NODE {node}{RST} "
-    left_plain  = (f" CREW {player.crew_name}  ·  HANDLE {player.handle}"
-                   f"  ·  TURNS {player.turns_remaining}/10  ·  DAY {player.day}")
+    left_plain = (f" CREW {player.crew_name}  ·  HANDLE {player.handle}"
+                  f"  ·  TURNS {player.turns_remaining}/10  ·  DAY {player.day}")
     right_plain = f"NODE {node} "
     pad = SCREEN_W - len(left_plain) - len(right_plain)
     _out(left + " " * max(0, pad) + right)
@@ -569,7 +569,7 @@ def wait_for_key(message=None):
     """Display optional message and wait for any keypress."""
     if message:
         result(f"{DG}{message}{RST}")
-    move(RES_TOP, 6)
+    move(CMD_ROW, 6)
     show_cursor()
     io = _sio.get_io()
     if io:
@@ -587,33 +587,24 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1,
                 cmd_hint=""):
     """
     Draw the base chrome for any screen.
-    status_player -- Player instance for the status bar, or None
-    bbs_name      -- BBS name shown on the right of the status bar
-    cmd_hint      -- short command reference shown on the DIV_3 divider line
+    The bottom divider and status bar are reserved and never overwritten.
     """
     clear_screen()
     draw_art(art_name)
     draw_divider(DIV_1)
+    clear_zone(MENU_TOP, RES_BOT)
+    if cmd_hint:
+        move(CMD_ROW, 1)
+        _out(ERASE_LINE)
+        _out(f"  {DG}{cmd_hint}{RST}")
+    draw_divider(DIV_2)
     if status_player:
         draw_status(status_player, bbs_name, node)
     else:
         clear_line(STATUS)
-    draw_divider(DIV_2)
-    clear_zone(MENU_TOP, MENU_BOT)
-    # Draw divider with optional command hint embedded
-    if cmd_hint:
-        move(DIV_3, 1)
-        _out(ERASE_LINE)
-        hint_str = f" {DG}{cmd_hint}{RST} "
-        plain_len = len(cmd_hint) + 2
-        pad = max(0, SCREEN_W - plain_len)
-        _out(DG + "─" * (pad // 2) + RST + hint_str +
-             DG + "─" * (pad - pad // 2) + RST)
-    else:
-        draw_divider(DIV_3)
-    clear_zone(RES_TOP, RES_BOT)
     global _result_buf
-    _result_buf = ["", "", "", "", ""]
+    size = RES_BOT - RES_TOP + 1
+    _result_buf = ["" for _ in range(size)]
     hide_cursor()
 
 
@@ -622,8 +613,7 @@ def screen_title():
     clear_screen()
     draw_art("title")
     draw_divider(DIV_1)
-    clear_line(STATUS)
-    draw_divider(DIV_2)
+    clear_zone(MENU_TOP, RES_BOT)
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE + f"  {C}[N]{RST} {W}New game{RST}")
@@ -632,15 +622,13 @@ def screen_title():
     move(MENU_TOP + 2, 1)
     _out(ERASE_LINE + f"  {C}[S]{RST} {W}Hall of fame{RST}")
 
-    draw_divider(DIV_3)
-    clear_zone(RES_TOP, RES_BOT - 1)
-
-    # [Q] Quit on last line
-    move(RES_BOT, 1)
+    move(CMD_ROW, 1)
     _out(ERASE_LINE)
     _out(f"  {C}[Q]{RST} {W}Quit to BBS{RST}"
          + " " * 28
          + f"{DG}A CELLFISH PRODUCTION  v0.1{RST}")
+    draw_divider(DIV_2)
+    clear_line(STATUS)
     hide_cursor()
 
 
@@ -669,77 +657,65 @@ def screen_hq(player):
         _out(col1.ljust(40) + col2)
 
 
-MAP_LIST_ROWS = [17, 18, 20, 21, 22]
-MAP_ROWS_PER_PAGE = len(MAP_LIST_ROWS)
-
-
-def map_rows_per_page():
-    """How many map rows fit cleanly on the fixed 80x24 layout."""
-    return MAP_ROWS_PER_PAGE
-
-
-def map_page_count(node_count):
-    """Total number of map pages for the discovered-node count."""
-    if node_count <= 0:
-        return 1
-    return (node_count + MAP_ROWS_PER_PAGE - 1) // MAP_ROWS_PER_PAGE
-
-
 def screen_map(player, world, page=0):
-    """Network map screen with paging sized to the fixed 80x24 layout."""
-    discovered = world.discovered_nodes()
-    total_pages = map_page_count(len(discovered))
-    page = max(0, min(page, total_pages - 1))
-    start = page * MAP_ROWS_PER_PAGE
-    page_nodes = discovered[start:start + MAP_ROWS_PER_PAGE]
-
+    """Network map screen with a 5-node paginated list."""
     screen_base("map", player, player.bbs_name)
+
+    discovered = world.discovered_nodes()
+    page_size = 5
+    total_pages = max(1, (len(discovered) + page_size - 1) // page_size)
+    page = max(0, min(page, total_pages - 1))
+    start = page * page_size
+    page_nodes = discovered[start:start + page_size]
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
-    location = f"{W}{player.current_node}{RST}"
-    page_info = f"{DG}Page {page + 1}/{total_pages}{RST}"
-    undiscovered = world.undiscovered_count()
-    extra = f"  {DG}·  {undiscovered} undiscovered{RST}" if undiscovered else ""
-    _out(f"  {DG}NETWORK MAP{RST}  {page_info}  {DG}·  Current:{RST} {location}{extra}")
+    _out(f"  {DG}NETWORK MAP{RST}  {W}Page {page + 1}/{total_pages}{RST}"
+         f"  {DG}·{RST}  {DG}Current:{RST} {W}{player.current_node}{RST}"
+         f"  {DG}·{RST}  {world.undiscovered_count()} undiscovered")
 
-    for row in list(MAP_LIST_ROWS) + [23]:
+    move(MENU_TOP + 1, 1)
+    _out(ERASE_LINE)
+    _out(f"  {DG}{'#':<5}{'NODE':<26}{'TYPE':<16}{'DIST':<10}CREW{RST}")
+
+    list_rows = [MENU_TOP + 2, MENU_TOP + 3, MENU_TOP + 4, MENU_TOP + 5, MENU_TOP + 6]
+    for row, node_idx in zip(list_rows, range(page_size)):
         move(row, 1)
         _out(ERASE_LINE)
-
-    for slot, node in enumerate(page_nodes, start=1):
-        row = MAP_LIST_ROWS[slot - 1]
-        move(row, 1)
+        if node_idx >= len(page_nodes):
+            continue
+        node = page_nodes[node_idx]
         cur = f"{Y}>{RST}" if node.name == player.current_node else " "
-        name_col = Y if node.name == player.current_node else W
-        crew = f"  {R}{node.crew[:18]}{RST}" if node.crew else ""
-        label = node.label[:14]
-        line = (
-            f" {C}[{slot}]{RST}{cur} {name_col}{node.name[:24]:<24}{RST}"
-            f" {DG}{label:<14}{RST}"
-            f" {DG}{node.hops:>2} hops{RST}{crew}"
-        )
-        _out(line)
+        col = Y if node.name == player.current_node else W
+        crew = f"{R}{node.crew}{RST}" if node.crew else ""
+        _out(f"  {C}[{node_idx + 1}]{RST}{cur} {col}{node.name:<25}{RST}"
+             f" {DG}{node.label:<16}{RST}"
+             f"{DG}{str(node.hops) + ' hops':<10}{RST}{crew}")
 
-    move(DIV_3, 1)
+    nav_row = MENU_TOP + 7
+    move(nav_row, 1)
     _out(ERASE_LINE)
     if total_pages > 1:
         nav_parts = []
         if page < total_pages - 1:
-            nav_parts.append(f"{C}[N]{RST}{DG}ext{RST}")
+            nav_parts.append(f"{C}[N]{RST}{W}ext{RST}")
         if page > 0:
-            nav_parts.append(f"{C}[P]{RST}{DG}revious{RST}")
+            nav_parts.append(f"{C}[P]{RST}{W}revious{RST}")
         if nav_parts:
-            _out("  " + "  ".join(nav_parts))
+            _out("  " + f"  {DG}·{RST}  ".join(nav_parts))
 
-    move(RES_BOT, 1)
+    prompt = f"Travel to node {C}[1-{len(page_nodes)}]{RST}{DG} or {C}Q{RST}{DG}: {RST}"
+    move(CMD_ROW, 1)
     _out(ERASE_LINE)
-    prompt = f"  {DG}Travel to node [{C}1-{len(page_nodes)}{DG}]"
-    if total_pages > 1:
-        prompt += f", {C}N{DG}, {C}P{DG}, or {C}Q{DG}:"
-    else:
-        prompt += f" or {C}Q{DG}:"
-    _out(prompt + RST)
+    _out(prompt)
+    return {
+        "page": page,
+        "page_size": page_size,
+        "page_nodes": page_nodes,
+        "total_pages": total_pages,
+        "prompt_col": 23 + len(str(len(page_nodes))),
+        "prompt": prompt,
+    }
 
 
 def screen_trade(player, node):
