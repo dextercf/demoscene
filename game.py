@@ -229,37 +229,46 @@ def new_game(door_info, cfg):
 # ---------------------------------------------------------------------------
 
 def action_explore(player, world, cfg, rng):
-    if not player.use_turns(2):
-        ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
-        ansi.write_at(ansi.RES_TOP, 1,
-                      f"  {ansi.R}Not enough turns to explore (costs 2).{ansi.RST}")
+    while True:
+        ansi.screen_explore(player)
+        key = ansi.get_key(valid_keys="XQxq")
+
+        if key == "Q":
+            return
+
+        if not player.use_turns(2):
+            ansi.write_at(16, 1,
+                          f"  {ansi.R}Not enough turns to explore (costs 2).{ansi.RST}")
+            ansi.write_at(22, 1,
+                          f"  {ansi.DG}Press any key to return.{ansi.RST}")
+            ansi.draw_status(player, player.bbs_name)
+            ansi.get_key()
+            return
+
+        ansi.write_at(16, 1, f"  {ansi.DG}Scanning the network...{ansi.RST}")
+        ansi.spinner(16, 30, "scanning", duration=1.0)
+
+        current = world.get_node_by_name(player.current_node)
+        found = world.explore(current.index if current else 0, rng)
+
+        if found:
+            ansi.write_at(17, 1,
+                          f"  {ansi.C}Node discovered:{ansi.RST} {ansi.W}{found.name}{ansi.RST}")
+            desc = f"{found.description} · {found.hops} hops from home"
+            ansi.write_at(18, 1, f"  {ansi.DG}{desc}{ansi.RST}")
+            if found.is_legendary:
+                ansi.write_at(19, 1,
+                              f"  {ansi.Y}LEGENDARY NODE FOUND! +50 reputation.{ansi.RST}")
+                player.adjust_resource("reputation", 50)
+        else:
+            ansi.write_at(17, 1,
+                          f"  {ansi.DG}Nothing found. The network stays quiet.{ansi.RST}")
+            ansi.clear_line(18)
+            ansi.clear_line(19)
+
+        ansi.write_at(22, 1,
+                      f"  {ansi.DG}[X] Scan again   [Q] Back{ansi.RST}")
         ansi.draw_status(player, player.bbs_name)
-        return
-
-    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
-    ansi.write_at(ansi.RES_TOP, 1,
-                  f"  {ansi.DG}Scanning the network...{ansi.RST}")
-    ansi.spinner(ansi.RES_TOP, 30, "scanning", duration=1.0)
-
-    current = world.get_node_by_name(player.current_node)
-    found = world.explore(current.index if current else 0, rng)
-
-    if found:
-        ansi.write_at(ansi.RES_TOP + 1, 1,
-                      f"  {ansi.C}Node discovered:{ansi.RST} {ansi.W}{found.name}{ansi.RST}")
-        desc = f"{found.description} · {found.hops} hops from home"
-        ansi.write_at(ansi.RES_TOP + 2, 1,
-                      f"  {ansi.DG}{desc[:68]}{ansi.RST}")
-        if found.is_legendary:
-            ansi.write_at(ansi.RES_TOP + 3, 1,
-                          f"  {ansi.Y}LEGENDARY NODE FOUND! +50 reputation.{ansi.RST}")
-            player.adjust_resource("reputation", 50)
-    else:
-        ansi.write_at(ansi.RES_TOP + 1, 1,
-                      f"  {ansi.DG}Nothing found. The network stays quiet.{ansi.RST}")
-
-    ansi.draw_status(player, player.bbs_name)
-
 
 def action_travel(player, world, cfg, rng):
     page = 0
@@ -833,6 +842,7 @@ def hq_loop(player, world, cfg, rng):
 
         if key == "E":
             action_explore(player, world, cfg, rng)
+            ansi.screen_hq(player)
         elif key == "T":
             action_travel(player, world, cfg, rng)
             ansi.screen_hq(player)

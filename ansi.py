@@ -12,6 +12,7 @@ import sys
 import os
 import time
 import socketio as _sio
+import re
 
 # ---------------------------------------------------------------------------
 # Screen dimensions and zone constants
@@ -155,23 +156,39 @@ def clear_zone(top, bot):
         clear_line(row)
 
 
+ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+
+def _truncate_ansi(text, width):
+    """Truncate to visible width while preserving ANSI sequences."""
+    visible = 0
+    out = []
+    i = 0
+    while i < len(text) and visible < width:
+        if text[i] == "\x1b":
+            m = ANSI_RE.match(text, i)
+            if m:
+                out.append(m.group(0))
+                i = m.end()
+                continue
+        out.append(text[i])
+        visible += 1
+        i += 1
+    return "".join(out)
+
+
 def write_at(row, col, text, colour="", reset=True):
     """Write text at a specific screen position."""
     move(row, col)
     _out(ERASE_LINE)
-    if colour:
-        _out(colour + text[:SCREEN_W] + (RST if reset else ""))
-    else:
-        _out(text[:SCREEN_W])
+    out = colour + text + (RST if reset and colour else "")
+    _out(_truncate_ansi(out, SCREEN_W - col + 1))
 
 
 def write_at_no_clear(row, col, text, colour="", reset=True):
     """Write text at position without clearing the line first."""
     move(row, col)
-    if colour:
-        _out(colour + text + (RST if reset else ""))
-    else:
-        _out(text)
+    out = colour + text + (RST if reset and colour else "")
+    _out(_truncate_ansi(out, SCREEN_W - col + 1))
 
 
 # ---------------------------------------------------------------------------
@@ -641,27 +658,57 @@ def screen_title():
 
 
 def screen_hq(player):
-    """Crew HQ main screen with compact 3x3 menu and fixed result area."""
-    screen_base("hq", player, player.bbs_name)
+    """HQ screen with larger art area and a menu anchored near the bottom."""
+    clear_screen()
+    draw_art("hq")
+    draw_divider(9)
+    clear_zone(10, 22)
 
     rows = [
         [("[E]", "Explore"), ("[T]", "Travel"), ("[P]", "Produce")],
         [("[R]", "Raid"),    ("[D]", "Defend"), ("[B]", "Trade")],
         [("[M]", "Messages"), ("[S]", "Scores"), ("[Q]", "Quit / save")],
     ]
-    col_starts = [3, 29, 55]
+    col_starts = [3, 30, 57]
+    start_row = 19
     for row_idx, items in enumerate(rows):
-        row = MENU_TOP + row_idx
-        move(row, 1)
-        _out(ERASE_LINE)
+        row = start_row + row_idx
+        clear_line(row)
         for col, (hotkey, label) in zip(col_starts, items):
             move(row, col)
             _out(f"{C}{hotkey}{RST} {W}{label}{RST}")
 
+    draw_divider(18)
+    clear_line(22)
+    draw_divider(23)
+    draw_status(player, player.bbs_name)
+    global _result_buf
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
+    hide_cursor()
+
+
+def screen_explore(player):
+    """Dedicated explore screen so scan output never collides with the HQ menu."""
+    clear_screen()
+    draw_art("map")
+    draw_divider(11)
+    clear_zone(12, 22)
+    write_at(12, 1, f"  {C}NETWORK SCAN{RST}  {DG}//  probe the lines for hidden boards{RST}")
+    write_at(13, 1, f"  {DG}[X] Scan network   [Q] Back{RST}")
+    draw_divider(14)
+    draw_divider(23)
+    draw_status(player, player.bbs_name)
+    global _result_buf
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
+    hide_cursor()
+
 
 def screen_map(player, world, page=0, page_size=5):
-    """Network map screen with extra room for the node list."""
-    screen_base("map", player, player.bbs_name)
+    """Network map screen with taller art area and the list moved lower."""
+    clear_screen()
+    draw_art("map")
+    draw_divider(11)
+    clear_zone(12, 22)
 
     discovered = world.discovered_nodes()
     total = len(discovered)
@@ -670,26 +717,28 @@ def screen_map(player, world, page=0, page_size=5):
     start = page * page_size
     shown = discovered[start:start + page_size]
 
-    clear_zone(MENU_TOP, RES_BOT)
-    write_at(MENU_TOP, 1,
+    current = player.current_node
+    current_text = current if len(current) <= 22 else current[:19] + "..."
+    write_at(12, 1,
              f"  {DG}NETWORK MAP{RST}  {W}Page {page + 1}/{page_count}{RST}"
-             f"  {DG}·{RST}  {DG}Current:{RST} {W}{player.current_node}{RST}"
-             f"  {DG}·{RST}  {world.undiscovered_count()} undiscovered")
-    write_at(MENU_TOP + 1, 1,
-             f"  {DG}{'#':<4}{'NODE':<28}{'TYPE':<16}{'DIST':<10}CREW{RST}")
+             f"  {DG}·{RST}  {DG}Current:{RST} {W}{current_text}{RST}")
+    write_at(13, 1,
+             f"  {DG}{'#':<4}{'NODE':<26}{'TYPE':<15}{'DIST':<9}{'CREW':<18}{RST}")
 
-    row = MENU_TOP + 2
+    row = 14
     for local_idx, node in enumerate(shown, start=1):
         cur = f"{Y}>{RST}" if node.name == player.current_node else " "
         name_col = Y if node.name == player.current_node else W
         crew = f"{R}{node.crew}{RST}" if node.crew else ""
+        hops = f"{node.hops} hops"
         write_at(row, 1,
-                 f"  {C}[{local_idx}]{RST}{cur} {name_col}{node.name:<26}{RST}"
-                 f"{DG}{node.label:<16}{RST}"
-                 f"{DG}{node.hops} hops{'':<4}{RST}{crew}")
+                 f"  {C}[{local_idx}]{RST}{cur} {name_col}{node.name:<24}{RST}"
+                 f" {DG}{node.label:<14}{RST}"
+                 f" {DG}{hops:<8}{RST}"
+                 f" {crew}")
         row += 1
 
-    while row <= MENU_TOP + 7:
+    while row <= 18:
         clear_line(row)
         row += 1
 
@@ -699,14 +748,16 @@ def screen_map(player, world, page=0, page_size=5):
     if page_count > 1 and page < page_count - 1:
         nav_parts.append(f"{C}[N]{RST}ext")
     if nav_parts:
-        write_at(MENU_TOP + 8, 1, "  " + "   ".join(nav_parts))
+        write_at(20, 1, "  " + "   ".join(nav_parts))
     else:
-        clear_line(MENU_TOP + 8)
+        clear_line(20)
 
+    write_at(21, 1, f"  {DG}{world.undiscovered_count()} undiscovered nodes remain in the deep net.{RST}")
     max_choice = len(shown)
     prompt = f"Travel to node {C}[1-{max_choice}]{RST} or {C}Q{RST}: " if max_choice else f"Travel to node {C}Q{RST}: "
-    write_at(CMD_ROW, 1, "  " + prompt)
-
+    write_at(22, 1, "  " + prompt)
+    draw_divider(23)
+    draw_status(player, player.bbs_name)
 
 def screen_trade(player, node):
     """Trade post screen."""
