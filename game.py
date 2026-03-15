@@ -263,6 +263,11 @@ def action_travel(player, world, cfg, rng):
         ansi.result(f"{ansi.R}> No nodes discovered yet.{ansi.RST}")
         return
 
+    def show_invalid(input_col):
+        ansi.move(ansi.RES_BOT, input_col)
+        ansi._out(f"{ansi.R}Invalid selection.{ansi.RST}" + " " * 20)
+        ansi.pause(0.7)
+
     page = 0
     page_size = ansi.map_rows_per_page()
 
@@ -275,30 +280,36 @@ def action_travel(player, world, cfg, rng):
         page_nodes = discovered[start:end]
 
         ansi.screen_map(player, world, page=page)
-        ansi.move(ansi.RES_BOT, 40)
+        prompt_text = f"  Travel to node [1-{len(page_nodes)}]"
+        if total_pages > 1:
+            prompt_text += ", N, P, or Q:"
+        else:
+            prompt_text += " or Q:"
+        input_col = len(prompt_text) + 1
+        ansi.move(ansi.RES_BOT, input_col)
         choice = ansi.get_input("", max_len=2).strip().upper()
 
         if choice in ("", "Q", "00"):
             return
         if choice == "N":
-            if page < total_pages - 1:
+            if total_pages > 1 and page < total_pages - 1:
                 page += 1
+            else:
+                show_invalid(input_col)
             continue
         if choice == "P":
-            if page > 0:
+            if total_pages > 1 and page > 0:
                 page -= 1
+            else:
+                show_invalid(input_col)
             continue
         if not choice.isdigit():
-            ansi.write_at(ansi.RES_BOT, 1,
-                          f"  {ansi.R}Invalid selection.{ansi.RST}")
-            ansi.pause(0.6)
+            show_invalid(input_col)
             continue
 
         slot = int(choice)
         if slot < 1 or slot > len(page_nodes):
-            ansi.write_at(ansi.RES_BOT, 1,
-                          f"  {ansi.R}Invalid selection.{ansi.RST}")
-            ansi.pause(0.6)
+            show_invalid(input_col)
             continue
 
         node = page_nodes[slot - 1]

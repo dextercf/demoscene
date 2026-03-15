@@ -427,12 +427,10 @@ def draw_status(player, bbs_name="", node=1):
             f"{DG}TURNS {RST}{Y}{player.turns_remaining}{DG}/10{RST}"
             f"  {DG}·{RST}  "
             f"{DG}DAY {RST}{W}{player.day}{RST}")
-    # BBS info on right
-    bbs  = bbs_name or getattr(player, "bbs_name", "")
-    right = f"{DG}{bbs}  ·  NODE {node}{RST} "
+    right = f"{DG}NODE {node}{RST} "
     left_plain  = (f" CREW {player.crew_name}  ·  HANDLE {player.handle}"
                    f"  ·  TURNS {player.turns_remaining}/10  ·  DAY {player.day}")
-    right_plain = f"{bbs}  ·  NODE {node} "
+    right_plain = f"NODE {node} "
     pad = SCREEN_W - len(left_plain) - len(right_plain)
     _out(left + " " * max(0, pad) + right)
 
@@ -671,7 +669,7 @@ def screen_hq(player):
         _out(col1.ljust(40) + col2)
 
 
-MAP_LIST_ROWS = [17, 18, 20, 21, 22, 23]
+MAP_LIST_ROWS = [17, 18, 20, 21, 22]
 MAP_ROWS_PER_PAGE = len(MAP_LIST_ROWS)
 
 
@@ -695,10 +693,7 @@ def screen_map(player, world, page=0):
     start = page * MAP_ROWS_PER_PAGE
     page_nodes = discovered[start:start + MAP_ROWS_PER_PAGE]
 
-    cmd_hint = "[1-6] Travel  [N/P] Page  [Q] Back"
-    if total_pages == 1:
-        cmd_hint = "[1-6] Travel  [Q] Back"
-    screen_base("map", player, player.bbs_name, cmd_hint=cmd_hint)
+    screen_base("map", player, player.bbs_name)
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
@@ -708,19 +703,19 @@ def screen_map(player, world, page=0):
     extra = f"  {DG}·  {undiscovered} undiscovered{RST}" if undiscovered else ""
     _out(f"  {DG}NETWORK MAP{RST}  {page_info}  {DG}·  Current:{RST} {location}{extra}")
 
-    for row in MAP_LIST_ROWS:
+    for row in list(MAP_LIST_ROWS) + [23]:
         move(row, 1)
         _out(ERASE_LINE)
 
     for slot, node in enumerate(page_nodes, start=1):
         row = MAP_LIST_ROWS[slot - 1]
         move(row, 1)
-        cur = f"{Y}> {RST}" if node.name == player.current_node else "  "
+        cur = f"{Y}>{RST}" if node.name == player.current_node else " "
         name_col = Y if node.name == player.current_node else W
         crew = f"  {R}{node.crew[:18]}{RST}" if node.crew else ""
         label = node.label[:14]
         line = (
-            f" {C}[{slot}]{RST}{cur}{name_col}{node.name[:24]:<24}{RST}"
+            f" {C}[{slot}]{RST}{cur} {name_col}{node.name[:24]:<24}{RST}"
             f" {DG}{label:<14}{RST}"
             f" {DG}{node.hops:>2} hops{RST}{crew}"
         )
@@ -728,21 +723,23 @@ def screen_map(player, world, page=0):
 
     move(DIV_3, 1)
     _out(ERASE_LINE)
-    nav_parts = []
-    if page > 0:
-        nav_parts.append(f"{C}[P]{RST}{DG} Prev{RST}")
-    if page < total_pages - 1:
-        nav_parts.append(f"{C}[N]{RST}{DG} Next{RST}")
-    nav_parts.append(f"{C}[Q]{RST}{DG} Back{RST}")
-    nav_text = f"  {DG}Select node 1-{len(page_nodes)}"
-    if nav_parts:
-        nav_text += "  " + "  ".join(nav_parts)
-    nav_text += RST
-    _out(nav_text)
+    if total_pages > 1:
+        nav_parts = []
+        if page < total_pages - 1:
+            nav_parts.append(f"{C}[N]{RST}{DG}ext{RST}")
+        if page > 0:
+            nav_parts.append(f"{C}[P]{RST}{DG}revious{RST}")
+        if nav_parts:
+            _out("  " + "  ".join(nav_parts))
 
     move(RES_BOT, 1)
     _out(ERASE_LINE)
-    _out(f"  {DG}Travel to node [{C}1-{len(page_nodes)}{DG}], {C}N{DG}/{C}P{DG}, or {C}Q{DG}:{RST}")
+    prompt = f"  {DG}Travel to node [{C}1-{len(page_nodes)}{DG}]"
+    if total_pages > 1:
+        prompt += f", {C}N{DG}, {C}P{DG}, or {C}Q{DG}:"
+    else:
+        prompt += f" or {C}Q{DG}:"
+    _out(prompt + RST)
 
 
 def screen_trade(player, node):
