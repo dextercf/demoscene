@@ -7,7 +7,7 @@
   Single-player RPG — explore the network, build your crew,
   produce demos, raid rivals, attend demoparties.
 
-  https://cellfish.scene  (placeholder — update when published)
+  https://cellfi.sh  (placeholder — update when published)
 
 ------------------------------------------------------------------------------
   REQUIREMENTS
