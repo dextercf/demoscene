@@ -160,9 +160,11 @@ def new_game(door_info, cfg):
     ansi.clear_screen()
     ansi.draw_art("title")
     ansi.draw_divider(ansi.DIV_1)
-    ansi.clear_zone(ansi.MENU_TOP, ansi.RES_BOT)
-    ansi.draw_divider(ansi.DIV_2)
     ansi.clear_line(ansi.STATUS)
+    ansi.draw_divider(ansi.DIV_2)
+    ansi.clear_zone(ansi.MENU_TOP, ansi.MENU_BOT)
+    ansi.draw_divider(ansi.DIV_3)
+    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
 
     # Header in menu zone
     ansi.write_at(ansi.MENU_TOP,     1,
@@ -232,7 +234,6 @@ def action_explore(player, world, cfg, rng):
         return
 
     ansi.result(f"{ansi.DG}> Scanning the network...{ansi.RST}")
-    ansi.spinner(ansi.RES_BOT, 3, "Scanning", duration=1.5)
 
     found = world.explore(
         world.get_node_by_name(player.current_node).index
@@ -242,9 +243,7 @@ def action_explore(player, world, cfg, rng):
 
     if found:
         ansi.result(f"{ansi.C}> Node discovered: {ansi.W}{found.name}{ansi.RST}")
-        ansi.typewriter(ansi.RES_BOT, 3,
-                        f"  {found.description}  ·  {found.hops} hops from home",
-                        colour=ansi.DG, delay=0.03)
+        ansi.result(f"  {ansi.DG}{found.description} · {found.hops} hops from home{ansi.RST}")
         if found.is_legendary:
             ansi.result(
                 f"{ansi.Y}*** LEGENDARY NODE FOUND! The scene will remember this. ***{ansi.RST}")
@@ -254,55 +253,109 @@ def action_explore(player, world, cfg, rng):
 
     ansi.draw_status(player, player.bbs_name)
 
-
 def action_travel(player, world, cfg, rng):
     page = 0
+    page_size = 5
 
     while True:
-        screen = ansi.screen_map(player, world, page=page)
-        prompt = screen["prompt"]
-        choice = ansi.get_input("", max_len=2).strip().upper()
+        discovered = world.discovered_nodes()
+        total = len(discovered)
+        page_count = max(1, (total + page_size - 1) // page_size)
+        page = max(0, min(page, page_count - 1))
+        start = page * page_size
+        shown = discovered[start:start + page_size]
 
-        if not choice or choice == "Q":
+        ansi.screen_map(player, world, page=page, page_size=page_size)
+        prompt_col = len(f"  Travel to node [1-{max(1, len(shown))}] or Q: ") + 1
+        ansi.move(ansi.CMD_ROW, prompt_col)
+        key = ansi.get_key()
+        key = (key or "").upper()
+
+        if key == "Q":
             return
-        if choice == "N" and screen["total_pages"] > 1 and page < screen["total_pages"] - 1:
+        if key == "N" and page_count > 1 and page < page_count - 1:
             page += 1
             continue
-        if choice == "P" and screen["total_pages"] > 1 and page > 0:
+        if key == "P" and page_count > 1 and page > 0:
             page -= 1
             continue
-        if not choice.isdigit():
-            ansi.write_at(ansi.CMD_ROW, 1, prompt + f"{ansi.R}Invalid selection.{ansi.RST}", reset=False)
-            continue
+        if key.isdigit():
+            idx = int(key) - 1
+            if 0 <= idx < len(shown):
+                node = shown[idx]
+                break
 
-        idx = int(choice) - 1
-        if idx < 0 or idx >= len(screen["page_nodes"]):
-            ansi.write_at(ansi.CMD_ROW, 1, prompt + f"{ansi.R}Invalid selection.{ansi.RST}", reset=False)
-            continue
+        ansi.write_at_no_clear(ansi.CMD_ROW, prompt_col,
+                               f"{ansi.R}Invalid selection.{ansi.RST}   ")
 
-        node = screen["page_nodes"][idx]
-
-        if not player.use_turns(1):
-            ansi.write_at(ansi.CMD_ROW, 1,
-                          f"  {ansi.R}Not enough turns to travel.{ansi.RST}", reset=False)
-            return
-
-        player.current_node = node.name
-
-        ansi.write_at(ansi.RES_TOP + 1, 1,
-                      f"  {ansi.DG}Dialling {node.name}...{ansi.RST}", reset=False)
-        ansi.dial(ansi.RES_TOP + 2, 3, node.name)
-        ansi.write_at(ansi.RES_TOP + 3, 1,
-                      f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}"
-                      f"  {ansi.DG}{node.description}{ansi.RST}", reset=False)
-        if node.crew:
-            ansi.write_at(ansi.RES_TOP, 1,
-                          f"  {ansi.R}{node.crew} is present here.{ansi.RST}", reset=False)
-
-        ansi.draw_status(player)
-        import time
-        time.sleep(1.0)
+    if not player.use_turns(1):
+        ansi.write_at(ansi.CMD_ROW, 1,
+                      f"  {ansi.R}Not enough turns to travel.{ansi.RST}")
         return
+
+    player.current_node = node.name
+
+    ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.DG}Dialling {node.name}...{ansi.RST}")
+    ansi.dial(ansi.RES_TOP + 1, 3, node.name)
+    ansi.write_at(ansi.RES_TOP + 2, 1,
+                  f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}")
+    ansi.write_at(ansi.RES_TOP + 3, 1,
+                  f"  {ansi.DG}{node.description}{ansi.RST}")
+    if node.crew:
+        ansi.write_at(ansi.RES_TOP, 1,
+                      f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
+
+    ansi.draw_status(player)
+    import time
+    time.sleep(1.0)
+
+def action_trade(player, world, cfg, rng):
+    discovered = world.discovered_nodes()
+
+    # Draw map screen — already shows numbered node list
+    ansi.screen_map(player, world)
+
+    # Input prompt is already drawn by screen_map at RES_BOT
+    # Just position cursor there and read the number
+    ansi.move(ansi.RES_BOT, 53)
+    num_str = ansi.get_input("", max_len=2)
+
+    try:
+        num = int(num_str)
+    except ValueError:
+        return
+    if num == 0:
+        return
+
+    idx = num - 1
+    if idx < 0 or idx >= len(discovered):
+        ansi.write_at(ansi.RES_BOT, 1,
+                      f"  {ansi.R}Invalid selection.{ansi.RST}")
+        return
+
+    node = discovered[idx]
+
+    if not player.use_turns(1):
+        ansi.write_at(ansi.RES_BOT, 1,
+                      f"  {ansi.R}Not enough turns to travel.{ansi.RST}")
+        return
+
+    player.current_node = node.name
+
+    # Dial animation in result zone
+    ansi.write_at(ansi.RES_BOT - 1, 1,
+                  f"  {ansi.DG}Dialling {node.name}...{ansi.RST}")
+    ansi.dial(ansi.RES_BOT, 3, node.name)
+    ansi.write_at(ansi.RES_BOT, 1,
+                  f"  {ansi.C}Connected: {ansi.W}{node.name}{ansi.RST}"
+                  f"  {ansi.DG}{node.description}{ansi.RST}")
+    if node.crew:
+        ansi.write_at(ansi.RES_BOT - 1, 1,
+                      f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
+
+    ansi.draw_status(player)
+    import time
+    time.sleep(1.0)
 
 
 def action_trade(player, world, cfg, rng):
@@ -455,42 +508,63 @@ def action_raid(player, world, cfg, rng):
         return
 
     # Target selection screen
-    ansi.clear_screen()
-    ansi.draw_art("raid")
-    ansi.draw_divider(ansi.DIV_1)
-    ansi.move(ansi.STATUS, 1)
-    ansi.writeln(f"  {ansi.C}SELECT TARGET:{ansi.RST}")
-    ansi.draw_divider(ansi.DIV_2)
+    page_size = 5
+    page = 0
+    while True:
+        page_count = max(1, (len(targets) + page_size - 1) // page_size)
+        page = max(0, min(page, page_count - 1))
+        start = page * page_size
+        shown = targets[start:start + page_size]
 
-    for i, (crew, node) in enumerate(targets):
-        agg = "!!!" if crew.aggression == 3 else \
-              ("!!"  if crew.aggression == 2 else "!")
-        col = ansi.R if crew.aggression == 3 else \
-              (ansi.Y if crew.aggression == 2 else ansi.W)
-        ansi.move(ansi.MENU_TOP + i, 1)
-        ansi.writeln(
-            f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
-            f"  at {ansi.B}{node.name:<24}{ansi.RST}"
-            f"  {ansi.DG}aggression: {agg}{ansi.RST}")
+        ansi.screen_base("raid", player, player.bbs_name)
+        ansi.write_at(ansi.MENU_TOP, 1,
+                      f"  {ansi.C}SELECT TARGET{ansi.RST}  {ansi.W}Page {page + 1}/{page_count}{ansi.RST}")
+        ansi.write_at(ansi.MENU_TOP + 1, 1,
+                      f"  {ansi.DG}{'#':<4}{'CREW':<18}{'NODE':<24}AGG{ansi.RST}")
 
-    ansi.draw_divider(ansi.DIV_3)
-    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
-    ansi.write_at(ansi.RES_TOP, 1,
-                  f"  {ansi.DG}Enter number, or 00 to cancel{ansi.RST}")
+        row = ansi.MENU_TOP + 2
+        for i, (crew, node) in enumerate(shown, start=1):
+            agg = "!!!" if crew.aggression == 3 else ("!!" if crew.aggression == 2 else "!")
+            col = ansi.R if crew.aggression == 3 else (ansi.Y if crew.aggression == 2 else ansi.W)
+            ansi.write_at(row, 1,
+                          f"  {ansi.C}[{i}]{ansi.RST} {col}{crew.name:<16}{ansi.RST}"
+                          f"  {ansi.B}{node.name:<24}{ansi.RST}"
+                          f"  {ansi.DG}{agg}{ansi.RST}")
+            row += 1
+        while row <= ansi.MENU_TOP + 6:
+            ansi.clear_line(row)
+            row += 1
 
-    num_str = ansi.get_input("  Enter number: ")
-    try:
-        num = int(num_str)
-    except ValueError:
-        return
-    if num == 0:
-        return
+        nav_parts = []
+        if page_count > 1 and page > 0:
+            nav_parts.append(f"{ansi.C}[P]{ansi.RST}revious")
+        if page_count > 1 and page < page_count - 1:
+            nav_parts.append(f"{ansi.C}[N]{ansi.RST}ext")
+        ansi.write_at(ansi.MENU_TOP + 7, 1, "  " + "   ".join(nav_parts) if nav_parts else "")
 
-    idx = num - 1
-    if idx < 0 or idx >= len(targets):
-        return
+        prompt = f"Raid crew {ansi.C}[1-{len(shown)}]{ansi.RST} or {ansi.C}Q{ansi.RST}: "
+        ansi.write_at(ansi.CMD_ROW, 1, "  " + prompt)
+        prompt_col = len(f"  Raid crew [1-{len(shown)}] or Q: ") + 1
+        ansi.move(ansi.CMD_ROW, prompt_col)
+        key = ansi.get_key()
+        key = (key or "").upper()
 
-    target_crew, target_node = targets[idx]
+        if key == "Q":
+            return
+        if key == "N" and page_count > 1 and page < page_count - 1:
+            page += 1
+            continue
+        if key == "P" and page_count > 1 and page > 0:
+            page -= 1
+            continue
+        if key.isdigit():
+            choice = int(key) - 1
+            if 0 <= choice < len(shown):
+                target_crew, target_node = shown[choice]
+                break
+
+        ansi.write_at_no_clear(ansi.CMD_ROW, prompt_col,
+                               f"{ansi.R}Invalid selection.{ansi.RST}   ")
 
     if not player.use_turns(3):
         ansi.result(f"{ansi.R}> Not enough turns to raid (costs 3).{ansi.RST}")
