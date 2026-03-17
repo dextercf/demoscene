@@ -168,9 +168,17 @@ def draw_art(name, speed=0):
         move(ART_TOP + i, 1)
         _out(ERASE_LINE); _out(line)
 
-def draw_divider(row, char="─", colour=DG):
+def draw_divider(row, char=None, colour=DG):
+    """Draw a horizontal divider using CP437 \xc4 (─) sent as raw bytes."""
     move(row, 1)
-    _out(ERASE_LINE); _out(colour + char * SCREEN_W + RST)
+    _out(ERASE_LINE)
+    _out(colour)
+    if char is None:
+        # Use raw CP437 horizontal line byte — correct on any BBS terminal
+        _out(b"\xc4" * SCREEN_W)
+    else:
+        _out(char * SCREEN_W)
+    _out(RST)
 
 def draw_status(player, bbs_name="", node=1):
     move(STATUS, 1)
@@ -358,13 +366,13 @@ def _draw_exp_labels():
     The bar content (inside the brackets) is left empty —
     animate_scan_bar fills it during the animation.
     """
-    # Bar row: label + empty brackets, content filled by animation
+    # Bar row: draw label and brackets only, leave inside empty.
+    # animate_scan_bar will fill the bar content char by char.
     BAR_W = 30
     move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}")
-    _out(f"[{DG}")
-    _out(b"\xb0" * BAR_W)   # empty bar — animation overwrites this
-    _out(f"{RST}]")
+    _out(f"   {DG}Network scanner: {RST}[")
+    _out(b" " * BAR_W)   # blank spaces — animation writes over these
+    _out("]")
 
     move(EXP_NODE, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
@@ -563,9 +571,15 @@ def animate_scan_bar(found=None):
                 bar += DG + EMPTY
         bar += RST
 
-        # Move to first bar char position (bracket already drawn by _draw_exp_labels)
+        # Overwrite entire bar content on each frame (blank spaces underneath)
         move(EXP_SCAN, BAR_COL)
         _out(bar)
+        # Ensure remainder is filled with dim dots so bar looks complete
+        remaining_dots = BAR_WIDTH - step
+        if remaining_dots > 0:
+            _out(DG)
+            _out(b"\xb0" * remaining_dots)
+            _out(RST)
 
         step += 1
 
