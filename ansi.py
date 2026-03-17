@@ -303,12 +303,8 @@ EXP_RES_TOP  = 18
 EXP_RES_BOT  = 23
 
 def _div(row):
-    """Draw a CP437 horizontal-line divider using raw bytes."""
-    move(row, 1)
-    _out(ERASE_LINE)
-    _out(DG)
-    _out(b"\xc4" * SCREEN_W)
-    _out(RST)
+    """Draw a CP437 horizontal-line divider."""
+    draw_divider(row)
 
 
 def screen_explore(player):
@@ -357,13 +353,18 @@ def screen_explore(player):
 
 
 def _draw_exp_labels():
-    """Draw the three fixed label lines in the scanner zone."""
+    """
+    Draw the three fixed label lines in the scanner zone.
+    The bar content (inside the brackets) is left empty —
+    animate_scan_bar fills it during the animation.
+    """
+    # Bar row: label + empty brackets, content filled by animation
+    BAR_W = 30
     move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[")
-    _out(DG)
-    _out(b"\xb0" * 20)   # light shade fill placeholder
-    _out(b"\xb0" * 10)
-    _out(RST + "]")
+    _out(f"   {DG}Network scanner: {RST}")
+    _out(f"[{DG}")
+    _out(b"\xb0" * BAR_W)   # empty bar — animation overwrites this
+    _out(f"{RST}]")
 
     move(EXP_NODE, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
@@ -522,7 +523,7 @@ def animate_scan_bar(found=None):
     """
     import random as _rnd
     BAR_WIDTH   = 30
-    BAR_COL     = 21          # column where [ starts (after "   Network scanner: ")
+    BAR_COL     = 22          # column of first bar char (after "   Network scanner: [")
     TOTAL_TIME  = 7.5         # seconds for full bar
     NODE_AT     = 3.0         # seconds when node name appears
     hide_cursor()
@@ -562,8 +563,9 @@ def animate_scan_bar(found=None):
                 bar += DG + EMPTY
         bar += RST
 
+        # Move to first bar char position (bracket already drawn by _draw_exp_labels)
         move(EXP_SCAN, BAR_COL)
-        _out(f"[{bar}]")
+        _out(bar)
 
         step += 1
 
