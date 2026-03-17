@@ -1,5 +1,5 @@
 @echo off
-set GAME_DIR=C:\games\demoscene
+set GAME_DIR=C:\demoscene
 set PYTHON=C:\Users\dexte\AppData\Local\Python\bin\python.exe
 set NODE=%1
 set HANDLE=%2
