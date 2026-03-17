@@ -233,18 +233,37 @@ def screen_title():
     draw_divider(DIV_3); clear_line(STATUS); hide_cursor()
 
 def screen_hq(player):
-    clear_screen(); draw_art("hq"); draw_divider(9); clear_zone(10, 22)
-    rows = [
-        [("[E]", "Explore"), ("[T]", "Travel"), ("[P]", "Produce")],
-        [("[R]", "Raid"),    ("[D]", "Defend"), ("[B]", "Trade")],
-        [("[M]", "Messages"), ("[S]", "Scores"), ("[Q]", "Quit / save")],
+    """
+    HQ screen. Menu lives in MENU_TOP..MENU_BOT (rows 10-12) so the
+    result zone (rows 14-22) never overwrites it when result() is called.
+    """
+    clear_screen()
+    draw_art("hq")
+    draw_divider(DIV_1)          # row 9
+
+    # Menu in rows 10-12 (MENU_TOP..MENU_BOT) -- safe from result() redraws
+    actions = [
+        ("[E] Explore", "[T] Travel",   "[P] Produce"),
+        ("[R] Raid",    "[D] Defend",   "[B] Trade"),
+        ("[M] Messages","[S] Scores",   "[Q] Quit/Save"),
     ]
-    col_starts, start_row = [3, 30, 57], 19
-    for r_idx, items in enumerate(rows):
-        row = start_row + r_idx
-        for col, (hk, lbl) in zip(col_starts, items):
-            move(row, col); _out(f"{C}{hk}{RST} {W}{lbl}{RST}")
-    draw_divider(18); draw_divider(23); draw_status(player, player.bbs_name)
+    col_starts = [3, 29, 55]
+    for r_idx, row_items in enumerate(actions):
+        row = MENU_TOP + r_idx
+        for col, item in zip(col_starts, row_items):
+            # Split "[X]" from label
+            bracket_end = item.index("]") + 1
+            key_part   = item[:bracket_end]
+            label_part = item[bracket_end:]
+            move(row, col)
+            _out(f"{C}{key_part}{RST}{W}{label_part}{RST}")
+
+    draw_divider(DIV_3)          # row 13
+    clear_zone(RES_TOP, RES_BOT) # rows 14-22
+    draw_divider(STATUS_DIV)     # row 23
+    draw_status(player, player.bbs_name)
+    global _result_buf
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
 
 def screen_map(player, world, page=0, page_size=5):
     clear_screen(); draw_art("map"); draw_divider(11); clear_zone(12, 22)
