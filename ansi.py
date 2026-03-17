@@ -265,11 +265,10 @@ def screen_explore(player):
       Row  16     Divider
       Row  17     [S] Scan network   [Q] Back to HQ
       Row  18     Divider
-      Row  19     (empty)
-      Row  20     Network scanner: [bar]
-      Row  21     Node: <n>
-      Row  22     Info: <description>
-      Row  23     (empty)
+      Row  19     Network scanner: [bar]
+      Row  20     Node: <n>
+      Row  21     Info: <description>
+      Rows 22-23  (empty)
       Row  24     Divider
       Row  25     Status bar
     """
@@ -289,20 +288,19 @@ def screen_explore(player):
 
     draw_divider(18)                        # divider below menu
 
-    move(19, 1); _out(ERASE_LINE)          # empty row
-
-    # Scanner label rows 20-22
-    move(20, 1); _out(ERASE_LINE)
+    # Scanner label rows 19-21 (no empty row above — art fills to 15, dividers 16/18)
+    move(19, 1); _out(ERASE_LINE)
     _out(f"   {DG}Network scanner: {RST}[")
     _out(b"\xb0" * 30)
     _out("]")
 
-    move(21, 1); _out(ERASE_LINE)
+    move(20, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
 
-    move(22, 1); _out(ERASE_LINE)
+    move(21, 1); _out(ERASE_LINE)
     _out(f"   {DG}Info:{RST}")
 
+    move(22, 1); _out(ERASE_LINE)          # empty row
     move(23, 1); _out(ERASE_LINE)          # empty row above divider
 
     draw_divider(24)                        # divider above status
@@ -321,9 +319,9 @@ def screen_explore(player):
 
 
 # Explore screen row constants (used by animation helpers and game.py)
-EXP_SCAN  = 20   # Network scanner bar row
-EXP_NODE  = 21   # Node name row
-EXP_INFO  = 22   # Info/description row
+EXP_SCAN  = 19   # Network scanner bar row
+EXP_NODE  = 20   # Node name row
+EXP_INFO  = 21   # Info/description row
 
 
 def _draw_exp_labels():
@@ -331,7 +329,6 @@ def _draw_exp_labels():
     Redraw the three scanner label rows (20-22) with empty content.
     Called before each new scan to reset the zone.
     """
-    move(19, 1); _out(ERASE_LINE)           # empty row above scanner
     move(EXP_SCAN, 1); _out(ERASE_LINE)
     _out(f"   {DG}Network scanner: {RST}[")
     _out(b"\xb0" * 30)
