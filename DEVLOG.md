@@ -6,106 +6,158 @@ Update this file at the end of every session before closing the chat.
 
 ---
 
-## 2026-03-17  —  Session 5
+## 2026-03-18  —  Session 6
 
 ### Goal
-Restore all action handlers stripped in sessions 3-4. Fix HQ menu being
-wiped by result zone redraws. Set up GitHub workflow.
+Fix all HQ menu actions (B, P, R, D, M, S), fix explore screen layout and
+animation, fix SyncTerm disconnect on door exit, set up GitHub workflow.
 
 ### Files changed
-- `game.py` — restored all missing action handlers
-- `ansi.py` — restored all missing screen builders and animation primitives,
-  fixed screen_hq zone conflict
+- `game.py` — restored all action handlers, fixed action_explore animation
+- `ansi.py` — multiple fixes, restored 14 missing screen functions
+- `run.bat` — fixed GAME_DIR path from C:\games\demoscene to C:\demoscene
 
 ### GitHub setup completed this session
-- Created repo at https://github.com/dextercf/demoscene
-- Installed Git on Windows 11 VM
-- GitHub connector connected to Claude
-- Workflow: download outputs -> copy to C:\demoscene\ -> git add/commit/push
-- Key recovery command if repo broken: git clone https://github.com/dextercf/demoscene.git
-- Key sync command: git pull --rebase
+- Repo: https://github.com/dextercf/demoscene
+- Git installed on Windows 11 VM, GitHub connector connected to Claude
+- Key commands: git pull --rebase / git add / git commit -m "" / git push
+- If repo broken: git clone https://github.com/dextercf/demoscene.git
 
 ### Bugs fixed
-- All action handlers (B, P, R, D, M, S) stripped in sessions 3-4.
-  hq_loop only accepted E, T, Q.
+
+- All HQ action handlers (B, P, R, D, M, S) stripped in sessions 3-4.
+  hq_loop only accepted E, T, Q. Caused silent no-op on those keys.
   Fix: restored action_trade, action_produce, action_raid, action_defend,
-  action_messages, action_hof, action_party, end_day, _random_event,
-  _generate_messages, _new_game, _exit_cleanly, _ordinal.
+  action_messages, action_hof, action_party, end_day, _random_event etc.
   hq_loop now accepts ETPRDBMSQetpRdbmsq.
 
-- All screen builders stripped from ansi.py in sessions 3-4.
-  screen_trade, screen_produce, screen_raid, screen_messages, screen_hof,
-  screen_party, screen_game_over, dots, progress_bar, spinner, typewriter,
-  combat_bar, animate_combat_bars all missing.
-  Fix: appended all back to ansi.py.
+- screen_messages, screen_hof, screen_trade, screen_produce, screen_raid,
+  screen_party, screen_game_over, dots, spinner, progress_bar, combat_bar,
+  animate_combat_bars, wait_for_key all missing from ansi.py.
+  Caused AttributeError crash (disconnect) when pressing M, B, S etc.
+  Fix: extracted and restored all 14 functions from session 1 original.
 
-- HQ menu drawn at rows 19-21 — inside result zone (rows 14-22).
-  Every call to result() redraws rows 14-22, wiping the menu.
-  B, P, R, D, M, S appeared not to work because their labels were erased
-  immediately after being drawn.
-  Fix: screen_hq now draws menu at rows 10-12 (MENU_TOP..MENU_BOT),
-  above DIV_3 (row 13), completely safe from result() redraws.
+- HQ menu drawn at rows 19-21 inside result zone (rows 14-22).
+  Every result() call redraws 14-22, wiping the menu.
+  Fix: screen_hq() draws menu at MENU_TOP (rows 10-12), above DIV_3.
 
-- SyncTerm disconnect on door exit.
-  io.close() was never called in main(). Python GC closed socket hard.
-  Fix: main() calls io.close() which calls sock.setblocking(True) then
-  sock.detach() — releases fd without closing the OS socket.
+- SyncTerm disconnects on door exit instead of returning to BBS menu.
+  io.close() was never called. Python GC closed socket hard.
+  Fix: _exit_cleanly() calls sock.setblocking(True) then sock.detach().
 
-### What was NOT done (defer to next session)
-- Map pagination needs testing now that all actions work
-- screen_messages() and screen_hof() need player passed for status bar
-- Counter-raid response in end_day() (flag set, nothing acts on it)
-- Courier mission system
-- Crew management screen
-- combat.py render_result() still unused
+- run.bat GAME_DIR pointed to wrong path after git clone to C:\demoscene.
+  Fix: updated GAME_DIR=C:\demoscene.
+
+- draw_divider() used Unicode chr(0x2500) "─" which encodes incorrectly
+  in cp437 over Mystic BBS socket — showed as "A" or wrong char.
+  Fix: default sends raw b"\xc4" bytes directly.
+
+- ERASE_LINE (\x1b[2K) unreliable over Mystic socket — terminal cursor
+  row tracking can drift, causing wrong row to be erased.
+  Mitigation: replaced with full 80-char padded line writes where possible.
+
+- Writing to column 80 on the last terminal row (25) triggers scroll.
+  Any byte after col 80 causes entire screen to scroll up one line.
+  Fix: pad to col 79 max, park cursor at (1,1) after last-row writes.
+
+### Explore screen — new custom layout implemented
+  Row  1-15  Art zone (load_art("explorer_menu") or fallback)
+  Row  16    Divider
+  Row  17    [S] Scan network   [Q] Back to HQ
+  Row  18    Divider
+  Row  19    Network scanner: [bar]
+  Row  20    Node: <n>
+  Row  21    Info: <description>
+  Rows 22-23 Empty
+  Row  24    Divider
+  Row  25    Status bar
+
+Constants: EXP_SCAN=19, EXP_NODE=20, EXP_INFO=21, EXP_STATUS=25
+
+New animation functions added to ansi.py:
+- animate_scan_bar(): fills bar left to right over ~7-8s with random
+  tempo. Bright green leading edge fades to dark green. Node name
+  revealed at ~3 seconds via animate_explore_line().
+- animate_explore_line(): types text char by char. First 2 letters of
+  each word bright green, remaining letters dark green.
+- screen_explore() called once on entry — results persist until [Q].
+
+### Known remaining issue — NOT fixed this session
+The explore screen shows a double "Network scanner:" bar when [S] pressed.
+Investigated causes:
+- screen_explore() draws scanner label on init
+- animate_scan_bar() redraws it again before animating
+- Terminal cursor row tracking drift causes second draw to land on wrong row
+Multiple approaches tried without full resolution. Left for next session.
 
 ### Resume here next session
-All 9 HQ menu keys should now work. Test the full game flow first,
-then pick from the deferred list above.
-Recommended next: test thoroughly, then courier missions or crew management.
+RECOMMENDED: Fix explore double-bar.
+Approach: have screen_explore() draw scanner labels in idle state only.
+animate_scan_bar() should be the only function that draws during animation,
+moving cursor precisely to (EXP_SCAN, BAR_COL) without any prior label draw.
+Test with ERASE_LINE removed entirely from animation path.
+
+Other tasks queued:
+- Map pagination (nodes > 7 still not all visible in list)
+- screen_messages() and screen_hof() need player arg for status bar
+- Counter-raid response in end_day() (counter_risk flag set, nothing acts)
+- Courier mission system
+- Crew management screen
 
 ---
 
-## 2026-03-17  —  Session 4
+## 2026-03-17  —  Session 5
 
 ### Goal
-Stabilize I/O layer for Mystic BBS compatibility, resolve silent hang
-on connection, prepare for crew management.
+Bug fixing on ansi.py, wire combat.py into game.py, fix scrolling in
+new_game(), fix map screen input overlapping node list.
 
 ### Files changed
-- `socketio.py` — removed aggressive Telnet negotiation, passive I/O model
-- `ansi.py` — hardened _truncate_ansi, added row 23/24 layout guards
-- `game.py` — refactored title_loop and main(), merged trade logic
-  NOTE: this session accidentally stripped most action handlers and screen
-  builders — fixed in session 5.
-- `readme.txt` — updated technical requirements and installation steps
+- `ansi.py` — CMD_ROW defined, screen_base cmd_hint param, 5 screen
+  callers fixed, screen_hq zone fix, draw_cmd removed
+- `game.py` — action_raid/end_day wired to combat.py, new_game() rewrite,
+  map input prompt repositioned
 
 ### Bugs fixed
-- Aggressive Telnet handshakes caused socket drops on some Mystic configs.
-  Fix: passive I/O model, no IAC negotiation on connect.
-- ANSI truncation bug causing raw escape code bytes visible as "<90".
-  Fix: truncate on visible character width not raw byte length.
-- Two conflicting action_trade functions merged into one.
+- CMD_ROW undefined in wait_for_key() and screen_game_over().
+- screen_base() missing cmd_hint param causing TypeError.
+- Command hint strings passed as bbs_name in 5 screen functions.
+- ansi.draw_cmd() called but never defined.
+- combat.py never wired into game.py — action_raid and end_day now use it.
+- new_game() used writeln() causing scroll. Rewritten with write_at().
+- Map screen input prompt at DIV_3 overlapped node list.
+
+---
+
+## 2026-03-16  —  Session 4
+
+### Goal
+Stabilize I/O layer, resolve silent hang on connection, passive socket model.
+
+### Files changed
+- `socketio.py` — removed Telnet negotiation, passive I/O model
+- `ansi.py` — _truncate_ansi added, STATUS_DIV/STATUS row guards
+- `game.py` — refactored (NOTE: accidentally stripped most action handlers)
+- `readme.txt` — updated technical requirements
+
+### Architecture changes kept in later sessions
+- Zone layout: STATUS_DIV=23, STATUS=24. All gameplay on rows 1-22.
+- _truncate_ansi() — truncates strings on visible char width, not bytes.
+- write_at() guards against writing rows >= STATUS_DIV.
 
 ---
 
 ## 2026-03-16  —  Session 3
 
 ### Goal
-Stabilize screen layout, implement map pagination, fix chrome/status bar,
-refactor HQ and Explore UI flow.
+Screen layout stabilization, map pagination, HQ redesign, explore screen.
 
 ### Files changed
-- `ansi.py` — layout adjustments, ANSI truncation, chrome row protection
-  NOTE: screen builders stripped — fixed session 5.
-- `game.py` — map pagination, HQ redesign, explore screen separation
-  NOTE: action handlers stripped — fixed session 5.
-- `socketio.py` — input echo handling adjustments
+- `ansi.py` — layout, ANSI truncation (NOTE: screen builders stripped)
+- `game.py` — map pagination, explore screen (NOTE: action handlers stripped)
+- `socketio.py` — input echo adjustments
 
-### Architecture changes (kept in later sessions)
-- Zone layout: STATUS_DIV=23, STATUS=24. All gameplay on rows 1-22.
-- _truncate_ansi() added — truncates on visible width.
-- write_at() guards against writing to rows >= STATUS_DIV.
+### Architecture changes kept
 - screen_explore() added as dedicated explore screen.
 - Map pagination: 5 nodes per page, [N]ext/[P]rev navigation.
 
@@ -114,45 +166,27 @@ refactor HQ and Explore UI flow.
 ## 2026-03-15  —  Session 2
 
 ### Goal
-Bug fixing pass on ansi.py, wire combat.py into game.py, fix scrolling.
-
-### Files changed
-- `ansi.py` — multiple bug fixes
-- `game.py` — new_game() rewrite, action_raid() rewrite, end_day() fix,
-  combat.py wired in
+Bug fixing pass on ansi.py, wire combat.py, fix display scrolling.
 
 ### Bugs fixed
-- CMD_ROW undefined. Fix: added CMD_ROW = 24 constant.
-- screen_base() missing cmd_hint param. Fix: added cmd_hint='' param.
-- Command hints passed as bbs_name in 5 screen functions. Fix: all corrected.
-- ansi.draw_cmd() called but never defined. Fix: replaced with write_at().
-- combat.py never used. Fix: action_raid() and end_day() now use it.
-- new_game() used writeln() causing scroll. Fix: full rewrite with write_at().
-- Map screen input overlapped node list. Fix: reserved bottom 2 rows.
+CMD_ROW undefined, screen_base cmd_hint missing, bbs_name confusion,
+draw_cmd not defined, combat.py not wired, new_game scroll, map overlap.
 
 ---
 
 ## 2026-03-15  —  Session 1
 
 ### Goal
-Initial build. Create all core game modules from scratch.
+Initial build. All core modules created from scratch.
 
 ### Files created
-- `game.py`      Main game loop, all action handlers, NPC message generator
-- `ansi.py`      Display engine, screen builders, animations, art loader
-- `combat.py`    Raid/combat resolver, tactic system, defence resolver
-- `player.py`    Player state, save/load, leaderboard
-- `world.py`     Procedural world gen: nodes, NPC crews, party schedule
-- `door.py`      DOOR.SYS / DORINFO1.DEF reader, debug fallback
-- `socketio.py`  TCP socket I/O for Mystic BBS, DebugIO fallback
-- `config.ini`   SysOp configuration file
-- `run.bat`      Windows batch launcher for Mystic BBS
-- `readme.txt`   Installation and configuration documentation
+game.py, ansi.py, combat.py, player.py, world.py, door.py,
+socketio.py, config.ini, run.bat, readme.txt
 
 ### Architecture decisions
-- 80x24 fixed cursor-placement. Nothing scrolls. Ever.
+- 80x25 fixed cursor-placement. Nothing scrolls. Ever.
 - All output via socketio.get_io() — never stdout directly.
-- Plain INI-style save files in saves/ folder.
+- Plain INI save files in saves/ folder.
 - Standard library only — no pip packages.
 - cp437 encoding throughout.
 
