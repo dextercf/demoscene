@@ -277,13 +277,96 @@ def screen_map(player, world, page=0, page_size=5):
         row += 1
     write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
 
+# Explore screen zone constants (custom layout, not screen_base)
+EXP_ART_BOT  = 12   # art fills rows 1-12
+EXP_DIV_TOP  = 13   # divider above menu
+EXP_MENU     = 14   # single menu row
+EXP_DIV_BOT  = 15   # divider below menu / above results
+EXP_RES_TOP  = 16   # result zone top
+EXP_RES_BOT  = 22   # result zone bottom
+
+
 def screen_explore(player):
     """
-    Explore screen. Uses screen_base() so the result zone is properly
-    cleared, _result_buf is reset, and result() output has full space.
+    Explore screen — custom layout:
+      Rows  1-12  Art zone (taller than default)
+      Row  13     Divider
+      Row  14     [X] Scan network   [Q] Back to HQ
+      Row  15     Divider
+      Rows 16-22  Result zone (spinner + found node output)
+      Row  23     Divider
+      Row  24     Status bar
     """
-    screen_base("map", player, player.bbs_name,
-                cmd_hint="[X] Scan network   [Q] Back")
+    global _result_buf
+    clear_screen()
+
+    # Art zone rows 1-12
+    move(ART_TOP, 1)
+    if not load_art("map"):
+        lines = FALLBACK_ART.get("map", [])
+        for i, line in enumerate(lines):
+            if ART_TOP + i > EXP_ART_BOT:
+                break
+            move(ART_TOP + i, 1)
+            _out(ERASE_LINE)
+            _out(line)
+    # Ensure any short art is padded to row 12
+    for row in range(ART_TOP + len(FALLBACK_ART.get("map", [])), EXP_ART_BOT + 1):
+        move(row, 1); _out(ERASE_LINE)
+
+    # Divider above menu
+    draw_divider(EXP_DIV_TOP)
+
+    # Menu row — single line between two dividers
+    move(EXP_MENU, 1)
+    _out(ERASE_LINE)
+    _out(f"  {C}[X]{RST} {W}Scan network{RST}"
+         f"          {C}[Q]{RST} {W}Back to HQ{RST}")
+
+    # Divider below menu
+    draw_divider(EXP_DIV_BOT)
+
+    # Clear result zone
+    clear_zone(EXP_RES_TOP, EXP_RES_BOT)
+    _result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
+
+    # Status divider + bar
+    draw_divider(STATUS_DIV)
+    draw_status(player, player.bbs_name)
+    hide_cursor()
+
+
+def _exp_redraw_results(buf):
+    """Redraw the explore result zone from its own buffer."""
+    for i, line in enumerate(buf):
+        move(EXP_RES_TOP + i, 1)
+        _out(ERASE_LINE)
+        if line:
+            _out(_truncate_ansi(line, SCREEN_W))
+
+
+def exp_result(text, colour=""):
+    """
+    Add a line to the explore result zone (rows 16-22).
+    Uses its own buffer separate from the main result zone.
+    """
+    global _exp_result_buf
+    formatted = colour + text + (RST if colour else "")
+    size = EXP_RES_BOT - EXP_RES_TOP + 1
+    _exp_result_buf = (_exp_result_buf + [formatted])[-size:]
+    _exp_redraw_results(_exp_result_buf)
+    hide_cursor()
+
+
+def exp_clear_results():
+    """Clear the explore result zone."""
+    global _exp_result_buf
+    _exp_result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
+    _exp_redraw_results(_exp_result_buf)
+    hide_cursor()
+
+
+_exp_result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
 
 # ---------------------------------------------------------------------------
 # Animation primitives (restored)
