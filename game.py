@@ -59,16 +59,12 @@ def action_explore(player, world, cfg, rng):
         if key == "Q":
             return
         if player.use_turns(2):
-            # Clear scanner zone and reset labels before new scan
-            ansi._draw_exp_labels()
-            for row in range(21, 24):
-                ansi.move(row, 1); ansi._out(ansi.ERASE_LINE)
-
             # Resolve what will be found
             curr = world.get_node_by_name(player.current_node)
             found = world.explore(curr.index if curr else 0, rng)
 
             # Animate progress bar (~7-8s), node name revealed at ~3s
+            # animate_scan_bar redraws the scanner row itself from scratch
             ansi.animate_scan_bar(found)
 
             # After bar completes, animate info line

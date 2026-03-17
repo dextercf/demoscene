@@ -290,9 +290,7 @@ def screen_explore(player):
 
     # Scanner label rows 19-21 (no empty row above — art fills to 15, dividers 16/18)
     move(19, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[")
-    _out(b"\xb0" * 30)
-    _out("]")
+    _out(f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
 
     move(20, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
@@ -330,9 +328,7 @@ def _draw_exp_labels():
     Called before each new scan to reset the zone.
     """
     move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[")
-    _out(b"\xb0" * 30)
-    _out("]")
+    _out(f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
     move(EXP_NODE, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
     move(EXP_INFO, 1); _out(ERASE_LINE)
@@ -370,6 +366,18 @@ def animate_scan_bar(found=None):
     FILL     = b"\xdb".decode("cp437")   # █
     EMPTY    = b"\xb0".decode("cp437")   # ░
 
+    # Redraw the scanner row cleanly before animation starts
+    # This guarantees no leftover content from previous scan
+    move(EXP_SCAN, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Network scanner: {RST}[" + " " * BAR_WIDTH + "]")
+    # Clear node and info rows too
+    move(EXP_NODE, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Node:{RST}")
+    move(EXP_INFO, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Info:{RST}")
+    move(22, 1); _out(ERASE_LINE)
+    move(23, 1); _out(ERASE_LINE)
+
     node_revealed = False
     start = time.time()
     step = 0
@@ -386,7 +394,8 @@ def animate_scan_bar(found=None):
                 move(EXP_NODE, 1); _out(ERASE_LINE)
                 _out(f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
 
-        # Build bar string
+        # Build complete bar: filled (green) + unfilled (dim dots)
+        # Always write all 30 chars so no placeholder shows through
         bright_portion = max(0, step - 4)
         bar = ""
         for i in range(BAR_WIDTH):
@@ -398,6 +407,7 @@ def animate_scan_bar(found=None):
                 bar += DG + EMPTY
         bar += RST
 
+        # Write bar content only (brackets already drawn, stay fixed)
         move(EXP_SCAN, BAR_COL)
         _out(bar)
 
