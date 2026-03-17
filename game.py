@@ -54,38 +54,35 @@ def cfg_bool(cfg, sec, key, default=True):
 def action_explore(player, world, cfg, rng):
     while True:
         ansi.screen_explore(player)
-        key = ansi.get_key(valid_keys="XQ")
+        key = ansi.get_key(valid_keys="SXQ")
         if key == "Q":
             return
         if player.use_turns(2):
-            # Clear zone, run spinner while scanning
-            ansi.exp_clear_results()
-            ansi.spinner(ansi.EXP_RES_TOP, 3, "Scanning the network",
-                         duration=1.5)
-            # Clear spinner row, then type results in with fade effect
-            ansi.move(ansi.EXP_RES_TOP, 1)
-            ansi._out(ansi.ERASE_LINE)
+            # Resolve scan result upfront so animation can reveal it
             curr = world.get_node_by_name(player.current_node)
             found = world.explore(curr.index if curr else 0, rng)
+
+            # Progress bar animation (~7-8s); node name revealed at ~3s
+            ansi.animate_scan_bar(found)
+
+            # After bar completes, animate info line
             if found:
-                ansi.exp_result_animated(
-                    f"> Node discovered: {found.name}")
-                ansi.exp_result_animated(
-                    f"  {found.description}")
-                ansi.exp_result_animated(
-                    f"  {found.hops} hops from home  .  {found.label}")
+                ansi.animate_explore_line(ansi.EXP_INFO,
+                    found.description)
                 if found.is_legendary:
-                    ansi.exp_result_animated(
-                        f"  *** LEGENDARY NODE! +50 reputation ***",
-                        delay=0.05)
+                    ansi.animate_explore_line(ansi.EXP_INFO + 1,
+                        "*** LEGENDARY NODE! +50 reputation ***")
                     player.adjust_resource("reputation", 50)
             else:
-                ansi.exp_result_animated(
-                    "> Nothing found. The network stays quiet.")
+                ansi.animate_explore_line(ansi.EXP_INFO,
+                    "Nothing found on this frequency.")
         else:
-            ansi.exp_result_animated(
-                "> Not enough turns to scan (costs 2).")
-        ansi.draw_status(player, player.bbs_name)
+            ansi.move(ansi.EXP_SCAN, 1)
+            ansi._out(ansi.ERASE_LINE)
+            ansi._out(f"   {ansi.R}Not enough turns to scan (costs 2).{ansi.RST}")
+            time.sleep(1.5)
+            ansi.screen_explore(player)
+        ansi._draw_explore_status(player)
 
 # ---------------------------------------------------------------------------
 # Action: Travel

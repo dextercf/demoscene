@@ -277,63 +277,92 @@ def screen_map(player, world, page=0, page_size=5):
         row += 1
     write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
 
-# Explore screen zone constants (custom layout, not screen_base)
-EXP_ART_BOT  = 12   # art fills rows 1-12
-EXP_DIV_TOP  = 13   # divider above menu
-EXP_MENU     = 14   # single menu row
-EXP_DIV_BOT  = 15   # divider below menu / above results
-EXP_RES_TOP  = 16   # result zone top
-EXP_RES_BOT  = 22   # result zone bottom
+# Explore screen zone constants — matches explorer_menu.ans layout
+EXP_ART_BOT  = 14   # art fills rows 1-14
+EXP_DIV_MENU = 15   # divider with menu embedded (row 15)
+EXP_DIV_BOT  = 16   # second divider below menu (row 16)
+EXP_SCAN     = 17   # "Network scanner: [bar]" row
+EXP_NODE     = 18   # "Node: <name>" row
+EXP_INFO     = 19   # "Info: <description>" row
+EXP_RES_TOP  = 17   # result zone top (same as SCAN)
+EXP_RES_BOT  = 21   # result zone bottom
+EXP_STATUS   = 22   # status bar embedded in bottom divider
 
 
 def screen_explore(player):
     """
-    Explore screen — custom layout:
-      Rows  1-12  Art zone (taller than default)
-      Row  13     Divider
-      Row  14     [X] Scan network   [Q] Back to HQ
-      Row  15     Divider
-      Rows 16-22  Result zone (spinner + found node output)
-      Row  23     Divider
-      Row  24     Status bar
+    Explore screen — layout matches explorer_menu.ans:
+      Rows  1-14  Art zone
+      Row  15     Divider with menu embedded:
+                  ─── [S] Scan network   [Q] Back to HQ ───
+      Row  16     Divider (plain)
+      Row  17     Network scanner: [░░░░░░░░░░░░░░░░░·····]
+      Row  18     Node: <name>
+      Row  19     Info: <description>
+      Rows 20-21  Empty
+      Row  22     Divider with status embedded:
+                  ─── HANDLE: x  CREW: y  TURNS n/10 · DAY n · NODE 1
     """
-    global _result_buf
+    global _exp_result_buf
     clear_screen()
 
-    # Art zone rows 1-12
-    move(ART_TOP, 1)
-    if not load_art("map"):
-        lines = FALLBACK_ART.get("map", [])
-        for i, line in enumerate(lines):
-            if ART_TOP + i > EXP_ART_BOT:
-                break
-            move(ART_TOP + i, 1)
-            _out(ERASE_LINE)
-            _out(line)
-    # Ensure any short art is padded to row 12
-    for row in range(ART_TOP + len(FALLBACK_ART.get("map", [])), EXP_ART_BOT + 1):
+    # Art zone rows 1-14
+    if not load_art("explorer_menu"):
+        # Fallback: use map art stretched to 14 rows
+        art = FALLBACK_ART.get("map", [])
+        for i in range(EXP_ART_BOT):
+            row = ART_TOP + i
+            move(row, 1); _out(ERASE_LINE)
+            if i < len(art):
+                _out(art[i])
+
+    # Row 15: divider with menu embedded
+    move(EXP_DIV_MENU, 1); _out(ERASE_LINE)
+    menu_txt = f"  {DG}[{RST}{C}{BOLD}S{RST}{DG}]{RST}{W} Scan network{RST}   {DG}[{RST}{C}{BOLD}Q{RST}{DG}]{RST}{W} Back to HQ{RST}  "
+    menu_plain = "  [S] Scan network   [Q] Back to HQ  "
+    pad = SCREEN_W - len(menu_plain)
+    half = pad // 2
+    _out(DG + "Ä" * half + RST + menu_txt + DG + "Ä" * (pad - half) + RST)
+
+    # Row 16: plain divider
+    move(EXP_DIV_BOT, 1); _out(ERASE_LINE)
+    _out(DG + "Ä" * SCREEN_W + RST)
+
+    # Rows 17-19: fixed label lines (always visible, content filled by animation)
+    move(EXP_SCAN, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Network scanner: {RST}[{DG}" + "°" * 20 + " " * 10 + f"{RST}]")
+    move(EXP_NODE, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Node:{RST}")
+    move(EXP_INFO, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Info:{RST}")
+
+    # Rows 20-21: empty
+    for row in range(20, 22):
         move(row, 1); _out(ERASE_LINE)
 
-    # Divider above menu
-    draw_divider(EXP_DIV_TOP)
+    # Row 22: divider with status bar embedded
+    _draw_explore_status(player)
 
-    # Menu row — single line between two dividers
-    move(EXP_MENU, 1)
-    _out(ERASE_LINE)
-    _out(f"  {C}[X]{RST} {W}Scan network{RST}"
-         f"          {C}[Q]{RST} {W}Back to HQ{RST}")
-
-    # Divider below menu
-    draw_divider(EXP_DIV_BOT)
-
-    # Clear result zone
-    clear_zone(EXP_RES_TOP, EXP_RES_BOT)
-    _result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
-
-    # Status divider + bar
-    draw_divider(STATUS_DIV)
-    draw_status(player, player.bbs_name)
+    _exp_result_buf = ["", "", "", "", ""]
     hide_cursor()
+
+
+def _draw_explore_status(player):
+    """Draw status embedded in the row 22 divider line."""
+    move(EXP_STATUS, 1); _out(ERASE_LINE)
+    status = (f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
+              f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
+              f"               "
+              f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
+              f" {DG}ú{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+              f" {DG}ú{RST} {DG}NODE{RST} {W}1{RST} ")
+    status_plain = (f" HANDLE: {player.handle}"
+                    f"       CREW: {player.crew_name}"
+                    f"               "
+                    f"TURNS {player.turns_remaining}/10"
+                    f" . DAY {player.day} . NODE 1 ")
+    pad = max(0, SCREEN_W - len(status_plain))
+    _out(DG + "Ä" * (pad // 2) + RST + status + DG + "Ä" * (pad - pad // 2) + RST)
 
 
 def _exp_redraw_results(buf):
@@ -452,6 +481,117 @@ def typewriter(row, col, text, colour=None, delay=0.04):
         move(row, col)
         _out(colour + text[:i] + RST + " ")
         time.sleep(delay)
+
+
+def animate_scan_bar(found=None):
+    """
+    Animate the Network Scanner progress bar on EXP_SCAN row.
+    - Bar fills left to right over ~7-8 seconds with random tempo
+    - Bar chars: bright green -> dark green as it progresses
+    - At ~3 seconds, the node name (if found) is revealed on EXP_NODE
+    - After bar completes, Info line is left for caller to animate
+
+    Bar area: 30 chars wide inside [ ] brackets
+    Positions 0-29 fill with block chars
+    """
+    import random as _rnd
+    BAR_WIDTH   = 30
+    BAR_COL     = 22          # column where [ starts (after "   Network scanner: ")
+    TOTAL_TIME  = 7.5         # seconds for full bar
+    NODE_AT     = 3.0         # seconds when node name appears
+    hide_cursor()
+
+    BRIGHT_G = FG["bright_green"]
+    DARK_G   = FG["green"]
+    FILL     = "Û"         # CP437 full block
+    EMPTY    = "°"         # CP437 light shade
+
+    node_revealed = False
+    start = time.time()
+
+    step = 0
+    while step <= BAR_WIDTH:
+        elapsed = time.time() - start
+
+        # Reveal node name at NODE_AT seconds
+        if not node_revealed and elapsed >= NODE_AT:
+            node_revealed = True
+            if found:
+                animate_explore_line(EXP_NODE, found.name)
+            else:
+                # Write dashes to indicate nothing found (bar still runs)
+                move(EXP_NODE, 1); _out(ERASE_LINE)
+                _out(f"   {DG}Node:{RST}  {DG}---{RST}")
+
+        # Build bar: filled portion bright green, rest dark green -> empty
+        bright_portion = max(0, step - 4)   # last 4 filled stay bright
+        bar = ""
+        for i in range(BAR_WIDTH):
+            if i < bright_portion:
+                bar += DARK_G + FILL
+            elif i < step:
+                bar += BRIGHT_G + FILL
+            else:
+                bar += DG + EMPTY
+        bar += RST
+
+        move(EXP_SCAN, BAR_COL)
+        _out(f"[{bar}]")
+
+        step += 1
+
+        # Random tempo: faster at start, slightly variable throughout
+        remaining = TOTAL_TIME - elapsed
+        steps_left = BAR_WIDTH - step + 1
+        if steps_left > 0:
+            base_delay = remaining / max(1, steps_left)
+            jitter = _rnd.uniform(-0.08, 0.18)
+            delay = max(0.05, base_delay + jitter)
+        else:
+            delay = 0.0
+        time.sleep(delay)
+
+    # Make sure node was revealed even if timing was fast
+    if not node_revealed and found:
+        animate_explore_line(EXP_NODE, found.name)
+
+
+def animate_explore_line(row, text, bright=None):
+    """
+    Write text on a fixed row with the demoscene fade effect:
+    First two letters of each word are bright green,
+    remaining letters of the word are dark green.
+    Written one character at a time.
+    """
+    if bright is None:
+        bright = FG["bright_green"]
+    dark = FG["green"]
+
+    hide_cursor()
+    move(row, 1); _out(ERASE_LINE)
+
+    # Write label prefix if on a known label row
+    if row == EXP_NODE:
+        _out(f"   {DG}Node:{RST}  ")
+        col = 12
+    elif row == EXP_INFO:
+        _out(f"   {DG}Info:{RST}  ")
+        col = 12
+    else:
+        _out("   ")
+        col = 4
+
+    # Write text character by character with fade
+    word_char = 0  # position within current word
+    for ch in text:
+        if ch == " ":
+            word_char = 0
+            _out(DG + ch + RST)
+        else:
+            colour = bright if word_char < 2 else dark
+            _out(colour + ch + RST)
+            word_char += 1
+        time.sleep(0.04)
 
 
 def fade_typewriter(row, col, text, delay=0.04):
