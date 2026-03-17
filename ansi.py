@@ -292,7 +292,9 @@ def screen_explore(player):
     def _wr(row, text):
         import re as _re
         plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
-        move(row, 1); _out(text + " " * max(0, SCREEN_W - len(plain)))
+        move(row, 1)
+        _out(text + " " * max(0, (SCREEN_W - 1) - len(plain)))
+        move(1, 1)  # park cursor away from bottom-right to prevent scroll
 
     _wr(19, f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
     _wr(20, f"   {DG}Node:{RST}")
@@ -302,14 +304,14 @@ def screen_explore(player):
 
     draw_divider(24)                        # divider above status
 
-    move(25, 1); _out(ERASE_LINE)          # status row
+    move(25, 1); _out(ERASE_LINE)          # status row — stop at col 79
     _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
          f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-         f"               "
+         f"          "
          f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-         f" {DG}.")
-    _out(f"{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}.{RST} {DG}NODE{RST} {W}1{RST}")
+         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+         f" {DG}.{RST} {DG}NODE 1{RST}")
+    move(1, 1)  # park cursor top-left to prevent scroll
 
     _result_buf = [""] * 5
     hide_cursor()
@@ -336,14 +338,16 @@ def _draw_exp_labels():
 
 
 def _draw_explore_status(player):
-    """Redraw status on row 25 after turns change."""
-    move(25, 1); _out(ERASE_LINE)
+    """Redraw status on row 25. Stop at col 79 — col 80 on last row causes scroll."""
+    move(25, 1)
+    _out(ERASE_LINE)
     _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
          f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-         f"               "
+         f"          "
          f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
          f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}.{RST} {DG}NODE{RST} {W}1{RST}")
+         f" {DG}.{RST} {DG}NODE 1{RST}")
+    move(1, 1)  # park cursor top-left after writing last row
 
 
 def animate_scan_bar(found=None):
@@ -368,13 +372,14 @@ def animate_scan_bar(found=None):
     # Draw the scanner zone cleanly using full 80-char lines (no ERASE_LINE
     # during animation — avoids terminal cursor tracking issues)
     def _write_row(row, text):
-        """Write exactly SCREEN_W chars to a row, padding with spaces."""
+        """Write a row, padding to SCREEN_W-1 chars then moving cursor safe."""
         move(row, 1)
-        # Strip ANSI for length calculation
         import re as _re
         plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
-        padded = text + " " * max(0, SCREEN_W - len(plain))
+        # Pad to SCREEN_W-1 (col 79) — writing to col 80 on last row causes scroll
+        padded = text + " " * max(0, (SCREEN_W - 1) - len(plain))
         _out(padded)
+        move(1, 1)  # park cursor top-left so no accidental scroll
 
     # Row EXP_SCAN: scanner label + empty bar
     _write_row(EXP_SCAN,
