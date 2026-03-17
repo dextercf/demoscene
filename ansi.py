@@ -366,6 +366,40 @@ def exp_clear_results():
     hide_cursor()
 
 
+def exp_result_animated(text, delay=0.03):
+    """
+    Add a line to the explore result zone using the fade typewriter effect.
+    Previous lines scroll up in gray. The new line types in with the
+    bright-white -> white -> gray fade per character.
+    """
+    global _exp_result_buf
+    size = EXP_RES_BOT - EXP_RES_TOP + 1
+
+    # Scroll existing lines up (stored as plain settled text, no ANSI)
+    # Strip ANSI for storage so redraw can re-colour them as gray
+    plain = ANSI_RE.sub("", text)
+    _exp_result_buf = (_exp_result_buf + [""])[-size:]
+
+    # Redraw settled lines (all gray) above the new line
+    _exp_redraw_results(_exp_result_buf)
+
+    # Find the row for the new line (last non-empty slot, or last row)
+    new_row = EXP_RES_TOP + size - 1
+    for i, line in enumerate(_exp_result_buf):
+        if line == "":
+            new_row = EXP_RES_TOP + i
+            break
+
+    # Clear that row and type in with fade effect
+    move(new_row, 1)
+    _out(ERASE_LINE)
+    fade_typewriter(new_row, 3, plain, delay=delay)
+
+    # Store the settled plain text so future scrolls render it gray
+    _exp_result_buf = (_exp_result_buf[:-1] + [plain])[-size:]
+    hide_cursor()
+
+
 _exp_result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
 
 # ---------------------------------------------------------------------------
@@ -418,6 +452,40 @@ def typewriter(row, col, text, colour=None, delay=0.04):
         move(row, col)
         _out(colour + text[:i] + RST + " ")
         time.sleep(delay)
+
+
+def fade_typewriter(row, col, text, delay=0.04):
+    """
+    Write text one character at a time with a fade effect.
+    Each character lights up bright white, then dims to white,
+    then settles to gray — like a phosphor glow fading.
+
+    The already-written portion is rendered in DG (gray) so only
+    the leading edge is bright.
+    """
+    hide_cursor()
+    # Colour stages per character: bright white -> white -> gray
+    BRIGHT = FG["bright_white"]   # just arrived
+    MID    = FG["white"]          # settling
+    DARK   = FG["bright_black"]   # settled (DG)
+
+    for i in range(len(text)):
+        # Redraw entire line so settled chars are gray and current is bright
+        move(row, col)
+        # Already settled chars (0..i-1) in gray
+        if i > 0:
+            _out(DARK + text[:i] + RST)
+        # Current char bright white
+        _out(BRIGHT + text[i] + RST)
+        time.sleep(delay * 0.5)
+        # Flash mid-tone briefly
+        move(row, col + i)
+        _out(MID + text[i] + RST)
+        time.sleep(delay * 0.5)
+
+    # Final pass: entire line settled to gray
+    move(row, col)
+    _out(DARK + text + RST)
 
 
 def combat_bar(row, col, label, value, max_val, width=20, colour=None):

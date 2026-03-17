@@ -58,23 +58,33 @@ def action_explore(player, world, cfg, rng):
         if key == "Q":
             return
         if player.use_turns(2):
-            # Spinner in the explore result zone (rows 16-22)
+            # Clear zone, run spinner while scanning
             ansi.exp_clear_results()
-            ansi.spinner(ansi.EXP_RES_TOP, 3, "Scanning the network", duration=1.5)
-            ansi.exp_clear_results()  # wipe spinner before results appear
+            ansi.spinner(ansi.EXP_RES_TOP, 3, "Scanning the network",
+                         duration=1.5)
+            # Clear spinner row, then type results in with fade effect
+            ansi.move(ansi.EXP_RES_TOP, 1)
+            ansi._out(ansi.ERASE_LINE)
             curr = world.get_node_by_name(player.current_node)
             found = world.explore(curr.index if curr else 0, rng)
             if found:
-                ansi.exp_result(f"{ansi.C}> Node discovered: {ansi.W}{found.name}{ansi.RST}")
-                ansi.exp_result(f"  {ansi.DG}{found.description}{ansi.RST}")
-                ansi.exp_result(f"  {ansi.DG}{found.hops} hops from home  ·  {found.label}{ansi.RST}")
+                ansi.exp_result_animated(
+                    f"> Node discovered: {found.name}")
+                ansi.exp_result_animated(
+                    f"  {found.description}")
+                ansi.exp_result_animated(
+                    f"  {found.hops} hops from home  .  {found.label}")
                 if found.is_legendary:
-                    ansi.exp_result(f"{ansi.Y}*** LEGENDARY NODE FOUND! +50 reputation ***{ansi.RST}")
+                    ansi.exp_result_animated(
+                        f"  *** LEGENDARY NODE! +50 reputation ***",
+                        delay=0.05)
                     player.adjust_resource("reputation", 50)
             else:
-                ansi.exp_result(f"{ansi.DG}> Nothing found. The network stays quiet.{ansi.RST}")
+                ansi.exp_result_animated(
+                    "> Nothing found. The network stays quiet.")
         else:
-            ansi.exp_result(f"{ansi.R}> Not enough turns to scan (costs 2).{ansi.RST}")
+            ansi.exp_result_animated(
+                "> Not enough turns to scan (costs 2).")
         ansi.draw_status(player, player.bbs_name)
 
 # ---------------------------------------------------------------------------
