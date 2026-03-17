@@ -278,9 +278,12 @@ def screen_map(player, world, page=0, page_size=5):
     write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
 
 def screen_explore(player):
-    clear_screen(); draw_art("map"); draw_divider(11); clear_zone(12, 22)
-    write_at(13, 1, f"  {DG}[X] Scan network   [Q] Back{RST}")
-    draw_divider(14); draw_divider(23); draw_status(player, player.bbs_name)
+    """
+    Explore screen. Uses screen_base() so the result zone is properly
+    cleared, _result_buf is reset, and result() output has full space.
+    """
+    screen_base("map", player, player.bbs_name,
+                cmd_hint="[X] Scan network   [Q] Back")
 
 # ---------------------------------------------------------------------------
 # Animation primitives (restored)

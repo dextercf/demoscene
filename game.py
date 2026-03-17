@@ -58,18 +58,21 @@ def action_explore(player, world, cfg, rng):
         if key == "Q":
             return
         if player.use_turns(2):
+            # Scanning animation in result zone
+            ansi.spinner(ansi.RES_TOP, 3, "Scanning the network", duration=1.5)
             curr = world.get_node_by_name(player.current_node)
             found = world.explore(curr.index if curr else 0, rng)
             if found:
                 ansi.result(f"{ansi.C}> Node discovered: {ansi.W}{found.name}{ansi.RST}")
-                ansi.result(f"  {ansi.DG}{found.description}  ·  {found.hops} hops from home{ansi.RST}")
+                ansi.result(f"  {ansi.DG}{found.description}{ansi.RST}")
+                ansi.result(f"  {ansi.DG}{found.hops} hops from home  ·  {found.label}{ansi.RST}")
                 if found.is_legendary:
-                    ansi.result(f"{ansi.Y}*** LEGENDARY NODE FOUND! ***{ansi.RST}")
+                    ansi.result(f"{ansi.Y}*** LEGENDARY NODE FOUND! +50 reputation ***{ansi.RST}")
                     player.adjust_resource("reputation", 50)
             else:
                 ansi.result(f"{ansi.DG}> Nothing found. The network stays quiet.{ansi.RST}")
         else:
-            ansi.result(f"{ansi.R}> Not enough turns (costs 2).{ansi.RST}")
+            ansi.result(f"{ansi.R}> Not enough turns to scan (costs 2).{ansi.RST}")
         ansi.draw_status(player, player.bbs_name)
 
 # ---------------------------------------------------------------------------
