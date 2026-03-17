@@ -4,6 +4,42 @@
 Format: newest entry at the top.
 Update this file at the end of every session before closing the chat.
 
+
+# DEVLOG — Demoscene: The Exploration of Art
+# A Cellfish Production
+
+Format: newest entry at the top.
+Update this file at the end of every session before closing the chat.
+
+--- 
+
+2026-03-17 — Session 4
+Goal
+Stabilize I/O layer for Mystic BBS compatibility, resolve "Silent Hang" on connection, and prepare for Crew Management.
+Files changed
+socketio.py — Removed aggressive Telnet negotiation to prevent disconnects/hangs.
+ansi.py — Hardened _truncate_ansi to fix <90 bug and added Row 23/24 layout guards.
+game.py — Refactored title_loop and main() for immediate display; merged trade logic.
+README.txt — Updated technical requirements and installation steps.
+---
+I/O Stabilization
+Identified that aggressive Telnet handshakes (IAC WILL ECHO) caused socket drops on certain Mystic configurations.
+Moved socketio.py to a "Passive" I/O model.
+Improved socket timeout handling to prevent ghost sessions in the BBS node folder.
+---
+Layout & Logic
+The <90 truncation bug is officially resolved; all strings are now measured by visible width.
+Merged two conflicting action_trade functions in game.py into a single resource-swapping handler.
+Bypassed potential initialization hangs by triggering the title screen immediately after socket setup.
+---
+Remaining issues / future work
+Implement actual Crew recruitment and skill leveling.
+Define "Demo Production" resource costs (CPU time, Art, Code).
+Message board and Courier systems are still placeholders.
+---
+Recommended next task
+Rewrite player.py to support a 'crew_list' collection and implement the 'screen_crew()' UI in ansi.py.
+
 --- 
 
 2026-03-16 — Session 3
