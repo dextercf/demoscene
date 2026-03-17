@@ -10,7 +10,7 @@ import time
 import socketio as _sio
 import re
 
-SCREEN_W, SCREEN_H = 80, 25
+SCREEN_W, SCREEN_H = 80, 24
 ART_TOP, ART_BOT, DIV_1 = 1, 8, 9
 MENU_TOP, MENU_BOT = 10, 12
 DIV_3, RES_TOP, RES_BOT = 13, 14, 22
@@ -168,17 +168,9 @@ def draw_art(name, speed=0):
         move(ART_TOP + i, 1)
         _out(ERASE_LINE); _out(line)
 
-def draw_divider(row, char=None, colour=DG):
-    """Draw a horizontal divider using CP437 \xc4 (─) sent as raw bytes."""
+def draw_divider(row, char="─", colour=DG):
     move(row, 1)
-    _out(ERASE_LINE)
-    _out(colour)
-    if char is None:
-        # Use raw CP437 horizontal line byte — correct on any BBS terminal
-        _out(b"\xc4" * SCREEN_W)
-    else:
-        _out(char * SCREEN_W)
-    _out(RST)
+    _out(ERASE_LINE); _out(colour + char * SCREEN_W + RST)
 
 def draw_status(player, bbs_name="", node=1):
     move(STATUS, 1)
@@ -241,37 +233,18 @@ def screen_title():
     draw_divider(DIV_3); clear_line(STATUS); hide_cursor()
 
 def screen_hq(player):
-    """
-    HQ screen. Menu lives in MENU_TOP..MENU_BOT (rows 10-12) so the
-    result zone (rows 14-22) never overwrites it when result() is called.
-    """
-    clear_screen()
-    draw_art("hq")
-    draw_divider(DIV_1)          # row 9
-
-    # Menu in rows 10-12 (MENU_TOP..MENU_BOT) -- safe from result() redraws
-    actions = [
-        ("[E] Explore", "[T] Travel",   "[P] Produce"),
-        ("[R] Raid",    "[D] Defend",   "[B] Trade"),
-        ("[M] Messages","[S] Scores",   "[Q] Quit/Save"),
+    clear_screen(); draw_art("hq"); draw_divider(9); clear_zone(10, 22)
+    rows = [
+        [("[E]", "Explore"), ("[T]", "Travel"), ("[P]", "Produce")],
+        [("[R]", "Raid"),    ("[D]", "Defend"), ("[B]", "Trade")],
+        [("[M]", "Messages"), ("[S]", "Scores"), ("[Q]", "Quit / save")],
     ]
-    col_starts = [3, 29, 55]
-    for r_idx, row_items in enumerate(actions):
-        row = MENU_TOP + r_idx
-        for col, item in zip(col_starts, row_items):
-            # Split "[X]" from label
-            bracket_end = item.index("]") + 1
-            key_part   = item[:bracket_end]
-            label_part = item[bracket_end:]
-            move(row, col)
-            _out(f"{C}{key_part}{RST}{W}{label_part}{RST}")
-
-    draw_divider(DIV_3)          # row 13
-    clear_zone(RES_TOP, RES_BOT) # rows 14-22
-    draw_divider(STATUS_DIV)     # row 23
-    draw_status(player, player.bbs_name)
-    global _result_buf
-    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
+    col_starts, start_row = [3, 30, 57], 19
+    for r_idx, items in enumerate(rows):
+        row = start_row + r_idx
+        for col, (hk, lbl) in zip(col_starts, items):
+            move(row, col); _out(f"{C}{hk}{RST} {W}{lbl}{RST}")
+    draw_divider(18); draw_divider(23); draw_status(player, player.bbs_name)
 
 def screen_map(player, world, page=0, page_size=5):
     clear_screen(); draw_art("map"); draw_divider(11); clear_zone(12, 22)
@@ -285,267 +258,119 @@ def screen_map(player, world, page=0, page_size=5):
         row += 1
     write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
 
-# ---------------------------------------------------------------------------
-# Explore screen — custom zone layout
-# Row  1-14  Art zone
-# Row  15    Divider above menu
-# Row  16    [S] Scan network   [Q] Back to HQ
-# Row  17    Divider below menu
-# Row  18    Network scanner: [bar]
-# Row  19    Node: <name>
-# Row  20    Info: <description>
-# Row 21-23  Empty
-# Row  24    Divider
-# Row  25    Status bar (HANDLE / CREW / TURNS / DAY / NODE)
-# ---------------------------------------------------------------------------
-EXP_ART_BOT  = 14
-EXP_DIV_TOP  = 15
-EXP_MENU_ROW = 16
-EXP_DIV_MID  = 17
-EXP_SCAN     = 18
-EXP_NODE     = 19
-EXP_INFO     = 20
-EXP_DIV_BOT  = 24
-EXP_STATUS   = 25
-EXP_RES_TOP  = 18
-EXP_RES_BOT  = 23
-
-def _div(row):
-    """Draw a CP437 horizontal-line divider."""
-    draw_divider(row)
-
-
 def screen_explore(player):
     """
-    Explore screen — fixed 80x25 layout.
-    Rows 1-14  art, 15 divider, 16 menu, 17 divider,
-    18-20 scanner/node/info, 21-23 empty, 24 divider, 25 status.
-    Results stay on screen until next scan — no auto-clear on redraw.
+    Explore screen layout:
+      Rows  1-15  Art zone
+      Row  16     Divider
+      Row  17     [S] Scan network   [Q] Back to HQ
+      Row  18     Divider
+      Row  19     (empty)
+      Row  20     Network scanner: [bar]
+      Row  21     Node: <n>
+      Row  22     Info: <description>
+      Row  23     (empty)
+      Row  24     Divider
+      Row  25     Status bar
     """
-    global _exp_result_buf, _exp_node_text, _exp_info_text
+    global _result_buf
     clear_screen()
 
-    # Art zone rows 1-14
-    if not load_art("explorer_menu"):
-        art = FALLBACK_ART.get("map", [])
-        for i in range(EXP_ART_BOT):
-            move(ART_TOP + i, 1); _out(ERASE_LINE)
-            if i < len(art):
-                _out(art[i])
-
-    # Row 15: divider above menu
-    _div(EXP_DIV_TOP)
-
-    # Row 16: menu
-    move(EXP_MENU_ROW, 1); _out(ERASE_LINE)
-    _out(f"  {DG}[{RST}{C}{BOLD}S{RST}{DG}]{RST}{W} Scan network{RST}"
-         f"     {DG}[{RST}{C}{BOLD}Q{RST}{DG}]{RST}{W} Back to HQ{RST}")
-
-    # Row 17: divider below menu
-    _div(EXP_DIV_MID)
-
-    # Rows 18-20: scanner labels — always visible
-    _draw_exp_labels()
-
-    # Rows 21-23: empty
-    for row in range(21, 24):
+    # Art zone rows 1-15
+    draw_art("map")
+    for row in range(9, 16):
         move(row, 1); _out(ERASE_LINE)
 
-    # Row 24: divider above status
-    _div(EXP_DIV_BOT)
+    draw_divider(16)                        # divider above menu
 
-    # Row 25: status bar
-    _draw_explore_status(player)
+    move(17, 1); _out(ERASE_LINE)          # menu row
+    _out(f"  {C}[S]{RST} {W}Scan network{RST}"
+         f"     {C}[Q]{RST} {W}Back to HQ{RST}")
 
+    draw_divider(18)                        # divider below menu
+
+    move(19, 1); _out(ERASE_LINE)          # empty row
+
+    # Scanner label rows 20-22
+    move(20, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Network scanner: {RST}[")
+    _out(b"\xb0" * 30)
+    _out("]")
+
+    move(21, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Node:{RST}")
+
+    move(22, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Info:{RST}")
+
+    move(23, 1); _out(ERASE_LINE)          # empty row above divider
+
+    draw_divider(24)                        # divider above status
+
+    move(25, 1); _out(ERASE_LINE)          # status row
+    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
+         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
+         f"               "
+         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
+         f" {DG}.")
+    _out(f"{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+         f" {DG}.{RST} {DG}NODE{RST} {W}1{RST}")
+
+    _result_buf = [""] * 5
     hide_cursor()
 
 
 def _draw_exp_labels():
     """
-    Draw the three fixed label lines in the scanner zone.
-    The bar content (inside the brackets) is left empty —
-    animate_scan_bar fills it during the animation.
+    Redraw the three scanner label rows (20-22) with empty content.
+    Called before each new scan to reset the zone.
     """
-    # Bar row: draw label and brackets only, leave inside empty.
-    # animate_scan_bar will fill the bar content char by char.
-    BAR_W = 30
+    move(19, 1); _out(ERASE_LINE)           # empty row above scanner
     move(EXP_SCAN, 1); _out(ERASE_LINE)
     _out(f"   {DG}Network scanner: {RST}[")
-    _out(b" " * BAR_W)   # blank spaces — animation writes over these
+    _out(b"\xb0" * 30)
     _out("]")
-
     move(EXP_NODE, 1); _out(ERASE_LINE)
     _out(f"   {DG}Node:{RST}")
-
     move(EXP_INFO, 1); _out(ERASE_LINE)
     _out(f"   {DG}Info:{RST}")
+    move(23, 1); _out(ERASE_LINE)           # empty row below info
 
 
 def _draw_explore_status(player):
-    """Draw status bar on row 25."""
-    move(EXP_STATUS, 1); _out(ERASE_LINE)
+    """Redraw status on row 25 after turns change."""
+    move(25, 1); _out(ERASE_LINE)
     _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
          f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
          f"               "
          f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-         f" {DG}")
-    _out(b"\xfa")   # bullet ·
-    _out(f"{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}")
-    _out(b"\xfa")
-    _out(f"{RST} {DG}NODE{RST} {W}1{RST}")
-
-
-# Persistent text for the explore screen (survives redraw)
-_exp_node_text = ""
-_exp_info_text = ""
-
-def _exp_redraw_results(buf):
-    """Redraw the explore result zone from its own buffer."""
-    for i, line in enumerate(buf):
-        move(EXP_RES_TOP + i, 1)
-        _out(ERASE_LINE)
-        if line:
-            _out(_truncate_ansi(line, SCREEN_W))
-
-
-def exp_result(text, colour=""):
-    """
-    Add a line to the explore result zone (rows 16-22).
-    Uses its own buffer separate from the main result zone.
-    """
-    global _exp_result_buf
-    formatted = colour + text + (RST if colour else "")
-    size = EXP_RES_BOT - EXP_RES_TOP + 1
-    _exp_result_buf = (_exp_result_buf + [formatted])[-size:]
-    _exp_redraw_results(_exp_result_buf)
-    hide_cursor()
-
-
-def exp_clear_results():
-    """Clear the explore result zone."""
-    global _exp_result_buf
-    _exp_result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
-    _exp_redraw_results(_exp_result_buf)
-    hide_cursor()
-
-
-def exp_result_animated(text, delay=0.03):
-    """
-    Add a line to the explore result zone using the fade typewriter effect.
-    Previous lines scroll up in gray. The new line types in with the
-    bright-white -> white -> gray fade per character.
-    """
-    global _exp_result_buf
-    size = EXP_RES_BOT - EXP_RES_TOP + 1
-
-    # Scroll existing lines up (stored as plain settled text, no ANSI)
-    # Strip ANSI for storage so redraw can re-colour them as gray
-    plain = ANSI_RE.sub("", text)
-    _exp_result_buf = (_exp_result_buf + [""])[-size:]
-
-    # Redraw settled lines (all gray) above the new line
-    _exp_redraw_results(_exp_result_buf)
-
-    # Find the row for the new line (last non-empty slot, or last row)
-    new_row = EXP_RES_TOP + size - 1
-    for i, line in enumerate(_exp_result_buf):
-        if line == "":
-            new_row = EXP_RES_TOP + i
-            break
-
-    # Clear that row and type in with fade effect
-    move(new_row, 1)
-    _out(ERASE_LINE)
-    fade_typewriter(new_row, 3, plain, delay=delay)
-
-    # Store the settled plain text so future scrolls render it gray
-    _exp_result_buf = (_exp_result_buf[:-1] + [plain])[-size:]
-    hide_cursor()
-
-
-_exp_result_buf = [""] * (EXP_RES_BOT - EXP_RES_TOP + 1)
-
-# ---------------------------------------------------------------------------
-# Animation primitives (restored)
-# ---------------------------------------------------------------------------
-
-SPINNER_FRAMES = ["/", "-", "\\", "|"]
-
-
-def spinner(row, col, message, duration=1.5, colour=None):
-    if colour is None: colour = C
-    hide_cursor()
-    end = time.time() + duration
-    i   = 0
-    while time.time() < end:
-        frame = SPINNER_FRAMES[i % 4]
-        write_at_no_clear(row, col, f"{colour}[{frame}]{RST} {DG}{message}{RST}")
-        time.sleep(0.1)
-        i += 1
-    move(row, col)
-    _out(" " * (len(message) + 5))
-
-
-def dots(row, col, message, count=8, delay=0.15, colour=None):
-    if colour is None: colour = DG
-    hide_cursor()
-    for i in range(count + 1):
-        write_at_no_clear(row, col,
-                          f"{colour}{message}{'.' * i}{RST}"
-                          + " " * (count - i))
-        time.sleep(delay)
-
-
-def progress_bar(row, col, label, width=24, duration=1.2, colour=None):
-    if colour is None: colour = G
-    hide_cursor()
-    for i in range(width + 1):
-        filled = "\u2588" * i
-        empty  = "\u2591" * (width - i)
-        pct    = int((i / width) * 100)
-        bar    = f"{colour}[{filled}{empty}]{RST} {W}{pct:>3}%{RST}"
-        write_at_no_clear(row, col, f"{DG}{label} {RST}{bar}")
-        time.sleep(duration / width)
-
-
-def typewriter(row, col, text, colour=None, delay=0.04):
-    if colour is None: colour = W
-    hide_cursor()
-    for i in range(len(text) + 1):
-        move(row, col)
-        _out(colour + text[:i] + RST + " ")
-        time.sleep(delay)
+         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+         f" {DG}.{RST} {DG}NODE{RST} {W}1{RST}")
 
 
 def animate_scan_bar(found=None):
     """
-    Animate the Network Scanner progress bar on EXP_SCAN row.
-    - Bar fills left to right over ~7-8 seconds with random tempo
-    - Bar chars: bright green -> dark green as it progresses
-    - At ~3 seconds, the node name (if found) is revealed on EXP_NODE
-    - After bar completes, Info line is left for caller to animate
-
-    Bar area: 30 chars wide inside [ ] brackets
-    Positions 0-29 fill with block chars
+    Animate the Network Scanner progress bar on row EXP_SCAN.
+    Bar fills left to right over ~7-8 seconds with random tempo.
+    Bright green leading edge fades to dark green.
+    Node name is revealed at ~3 seconds on EXP_NODE.
     """
     import random as _rnd
-    BAR_WIDTH   = 30
-    BAR_COL     = 22          # column of first bar char (after "   Network scanner: [")
-    TOTAL_TIME  = 7.5         # seconds for full bar
-    NODE_AT     = 3.0         # seconds when node name appears
+    BAR_WIDTH  = 30
+    BAR_COL    = 22       # column of first bar char (after "   Network scanner: [")
+    TOTAL_TIME = 7.5
+    NODE_AT    = 3.0
     hide_cursor()
 
     BRIGHT_G = FG["bright_green"]
     DARK_G   = FG["green"]
-    # CP437 chars as single-byte encoded strings via cp437
-    FILL     = b"\xdb".decode("cp437")   # █ full block
-    EMPTY    = b"\xb0".decode("cp437")   # ░ light shade
+    FILL     = b"\xdb".decode("cp437")   # █
+    EMPTY    = b"\xb0".decode("cp437")   # ░
 
     node_revealed = False
     start = time.time()
-
     step = 0
+
     while step <= BAR_WIDTH:
         elapsed = time.time() - start
 
@@ -555,12 +380,11 @@ def animate_scan_bar(found=None):
             if found:
                 animate_explore_line(EXP_NODE, found.name)
             else:
-                # Write dashes to indicate nothing found (bar still runs)
                 move(EXP_NODE, 1); _out(ERASE_LINE)
-                _out(f"   {DG}Node:{RST}  {DG}---{RST}")
+                _out(f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
 
-        # Build bar: filled portion bright green, rest dark green -> empty
-        bright_portion = max(0, step - 4)   # last 4 filled stay bright
+        # Build bar string
+        bright_portion = max(0, step - 4)
         bar = ""
         for i in range(BAR_WIDTH):
             if i < bright_portion:
@@ -571,19 +395,11 @@ def animate_scan_bar(found=None):
                 bar += DG + EMPTY
         bar += RST
 
-        # Overwrite entire bar content on each frame (blank spaces underneath)
         move(EXP_SCAN, BAR_COL)
         _out(bar)
-        # Ensure remainder is filled with dim dots so bar looks complete
-        remaining_dots = BAR_WIDTH - step
-        if remaining_dots > 0:
-            _out(DG)
-            _out(b"\xb0" * remaining_dots)
-            _out(RST)
 
         step += 1
 
-        # Random tempo: faster at start, slightly variable throughout
         remaining = TOTAL_TIME - elapsed
         steps_left = BAR_WIDTH - step + 1
         if steps_left > 0:
@@ -594,331 +410,36 @@ def animate_scan_bar(found=None):
             delay = 0.0
         time.sleep(delay)
 
-    # Make sure node was revealed even if timing was fast
+    # Ensure node was revealed
     if not node_revealed and found:
         animate_explore_line(EXP_NODE, found.name)
 
 
-def animate_explore_line(row, text, bright=None):
+def animate_explore_line(row, text):
     """
-    Write text on a fixed row with the demoscene fade effect:
-    First two letters of each word are bright green,
-    remaining letters of the word are dark green.
-    Written one character at a time.
+    Write text on a fixed row one character at a time.
+    First two letters of each word: bright green.
+    Remaining letters: dark green.
     """
-    if bright is None:
-        bright = FG["bright_green"]
-    dark = FG["green"]
-
+    BRIGHT_G = FG["bright_green"]
+    DARK_G   = FG["green"]
     hide_cursor()
-    move(row, 1); _out(ERASE_LINE)
 
-    # Write label prefix if on a known label row
+    move(row, 1); _out(ERASE_LINE)
     if row == EXP_NODE:
         _out(f"   {DG}Node:{RST}  ")
-        col = 12
     elif row == EXP_INFO:
         _out(f"   {DG}Info:{RST}  ")
-        col = 12
     else:
         _out("   ")
-        col = 4
 
-    # Write text character by character with fade
-    word_char = 0  # position within current word
+    word_char = 0
     for ch in text:
         if ch == " ":
             word_char = 0
             _out(DG + ch + RST)
         else:
-            colour = bright if word_char < 2 else dark
+            colour = BRIGHT_G if word_char < 2 else DARK_G
             _out(colour + ch + RST)
             word_char += 1
         time.sleep(0.04)
-
-
-def fade_typewriter(row, col, text, delay=0.04):
-    """
-    Write text one character at a time with a fade effect.
-    Each character lights up bright white, then dims to white,
-    then settles to gray — like a phosphor glow fading.
-
-    The already-written portion is rendered in DG (gray) so only
-    the leading edge is bright.
-    """
-    hide_cursor()
-    # Colour stages per character: bright white -> white -> gray
-    BRIGHT = FG["bright_white"]   # just arrived
-    MID    = FG["white"]          # settling
-    DARK   = FG["bright_black"]   # settled (DG)
-
-    for i in range(len(text)):
-        # Redraw entire line so settled chars are gray and current is bright
-        move(row, col)
-        # Already settled chars (0..i-1) in gray
-        if i > 0:
-            _out(DARK + text[:i] + RST)
-        # Current char bright white
-        _out(BRIGHT + text[i] + RST)
-        time.sleep(delay * 0.5)
-        # Flash mid-tone briefly
-        move(row, col + i)
-        _out(MID + text[i] + RST)
-        time.sleep(delay * 0.5)
-
-    # Final pass: entire line settled to gray
-    move(row, col)
-    _out(DARK + text + RST)
-
-
-def combat_bar(row, col, label, value, max_val, width=20, colour=None):
-    if colour is None: colour = G
-    pct    = max(0, min(1.0, value / max_val)) if max_val > 0 else 0
-    filled = int(pct * width)
-    bar    = "\u2588" * filled + "\u2591" * (width - filled)
-    write_at_no_clear(row, col,
-                      f"{DG}{label:<12}{RST}{colour}[{bar}]{RST}"
-                      f" {W}{value:>3}{RST}")
-
-
-def animate_combat_bars(row, player_power, enemy_power):
-    hide_cursor()
-    max_p = 100
-    steps = 20
-    for i in range(steps + 1):
-        pp = int((i / steps) * player_power)
-        ep = int((i / steps) * enemy_power)
-        combat_bar(row,     2, "Your crew",  pp, max_p, colour=G)
-        combat_bar(row + 1, 2, "Enemy crew", ep, max_p, colour=R)
-        time.sleep(0.05)
-    time.sleep(0.3)
-
-
-# ---------------------------------------------------------------------------
-# Screen builders — trade, produce, raid, messages, hof, party, game over
-# ---------------------------------------------------------------------------
-
-def screen_trade(player, node):
-    from player import RESOURCE_NAMES
-    screen_base("trade", player, player.bbs_name,
-                cmd_hint="[1-7] Select  [B] Buy  [S] Sell  [Q] Back")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}LOCATION {RST}{B}{node.name}{RST}"
-         f"  {DG}·{RST}  {DG}YOUR CREDITS {RST}{Y}{player.phone_credits}{RST}")
-
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'ITEM':<16}  {'BUY':>7}  {'SELL':>7}  {'YOURS':>6}{RST}")
-
-    trade_keys = ["floppy_disks", "source_code", "artwork",
-                  "mod_music", "hardware", "tools", "beer"]
-    for i, key in enumerate(trade_keys):
-        row = MENU_TOP + 2 + i
-        if row >= STATUS_DIV:
-            break
-        name  = RESOURCE_NAMES.get(key, key)
-        buy   = node.prices.get(key, 0)
-        sell  = node.sell_price(key)
-        yours = player.get_resource(key)
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {C}[{i+1}]{RST} {W}{name:<14}{RST}"
-             f"  {G}{buy:>6}c{RST}"
-             f"  {R}{sell:>6}c{RST}"
-             f"  {Y}{yours:>6}{RST}")
-
-
-def screen_produce(player):
-    screen_base("produce", player, player.bbs_name,
-                cmd_hint="[1-5] Select  [Q] Back")
-
-    demos = [
-        ("1", "Cracktro",  {"source_code": 50,  "artwork": 20},       40),
-        ("2", "4K Intro",  {"source_code": 120, "artwork": 40},       120),
-        ("3", "64K Intro", {"source_code": 200, "artwork": 80},       280),
-        ("4", "Musicdisk", {"source_code": 80,  "mod_music": 300},    200),
-        ("5", "Full Demo", {"source_code": 400, "artwork": 200,
-                            "mod_music": 150},                         600),
-    ]
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'':4}{'TYPE':<16}{'COST':<32}{'REP':>8}{RST}")
-
-    for i, (key, label, costs, rep) in enumerate(demos):
-        row = MENU_TOP + 1 + i
-        if row >= STATUS_DIV:
-            break
-        can      = player.can_afford(costs)
-        col      = W if can else DG
-        cost_str = "  ".join(f"{v} {k[:3]}" for k, v in costs.items())
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {C if can else DG}[{key}]{RST}"
-             f" {col}{label:<16}{RST}"
-             f"  {DG}{cost_str:<30}{RST}"
-             f"  {Y if can else DG}+{rep} rep{RST}")
-
-    # Resource hint row
-    hint_row = MENU_TOP + len(demos) + 2
-    if hint_row < STATUS_DIV:
-        move(hint_row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {DG}src:{RST}{W}{player.source_code:>5}{RST}  "
-             f"{DG}art:{RST}{W}{player.artwork:>5}{RST}  "
-             f"{DG}mod:{RST}{W}{player.mod_music:>5}{RST}  "
-             f"{DG}rep:{RST}{C}{player.reputation:>5}{RST}")
-
-
-def screen_raid(player, npc_crew):
-    screen_base("raid", player, player.bbs_name,
-                cmd_hint="[A] Assault  [S] Sneak  [H] Hit&run  [Q] Retreat")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}RAIDING {RST}{R}{npc_crew.name}{RST}")
-
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'YOUR CREW':<38}{'ENEMY CREW'}{RST}")
-
-    combat_bar(MENU_TOP + 2, 2,  "Strength",
-               player.tools * 2 + 20, 100, colour=G)
-    combat_bar(MENU_TOP + 2, 42, "Strength",
-               npc_crew.strength,     100, colour=R)
-    combat_bar(MENU_TOP + 3, 2,  "Defense",
-               player.defense,        100, colour=B)
-    combat_bar(MENU_TOP + 3, 42, "Defense",
-               npc_crew.defense,      100, colour=R)
-
-    loot_c = npc_crew.resources.get("phone_credits", 0) // 3
-    loot_d = npc_crew.resources.get("floppy_disks",  0) // 3
-    row = MENU_TOP + 5
-    if row < STATUS_DIV:
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {DG}Potential loot: {RST}"
-             f"{Y}~{loot_c} credits{RST}  "
-             f"{W}~{loot_d} disks{RST}")
-
-
-def screen_messages(messages, player=None):
-    screen_base("messages", player, player.bbs_name if player else "",
-                cmd_hint="[Q] Back")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'':3}{'FROM':<18}{'SUBJECT':<34}{'DAY'}{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(DG + "\xb7" * SCREEN_W + RST)
-
-    row = MENU_TOP + 2
-    for msg in (messages or []):
-        if row >= STATUS_DIV:
-            break
-        new_tag = f"{C}NEW{RST}" if msg.get("new") else "   "
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {new_tag} "
-             f"{B}{msg.get('from','???'):<18}{RST}"
-             f"{W}{msg.get('subject',''):<34}{RST}"
-             f"{DG}Day {msg.get('day','?')}{RST}")
-        row += 1
-
-
-def screen_hof(entries, player_handle, player=None):
-    screen_base("hof", player, player.bbs_name if player else "",
-                cmd_hint="[Q] Back")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'#':<4}{'HANDLE':<16}{'CREW':<22}"
-         f"{'BBS':<18}{'SCORE':>8}{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(DG + "\xb7" * SCREEN_W + RST)
-
-    row = MENU_TOP + 2
-    for i, e in enumerate(entries[:5]):
-        if row >= STATUS_DIV:
-            break
-        is_p = e["handle"].upper() == player_handle.upper()
-        col  = G if is_p else W
-        rnk  = Y if i == 0 else (W if i < 3 else DG)
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {rnk}{str(i+1)+'.':<4}{RST}"
-             f"{col}{e['handle']:<16}{RST}"
-             f"{DG}{e['crew']:<22}{RST}"
-             f"{DG}{e['bbs']:<18}{RST}"
-             f"{Y}{e['score']:>8}{RST}")
-        row += 1
-
-
-def screen_party(party, player):
-    from world import COMPO_DEFS
-    screen_base("party", player, player.bbs_name,
-                cmd_hint=f"[1-{len(party.compos)}] Compo  [D] Bar  [R] Rave  [Q] Leave")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {Y}{party.name}{RST}  {DG}\xb7{RST}  {DG}{party.location}{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{party.flavour}{RST}")
-
-    row = MENU_TOP + 2
-    for i, key in enumerate(party.compos):
-        if row >= STATUS_DIV:
-            break
-        cdef = COMPO_DEFS.get(key, {})
-        if not cdef:
-            continue
-        can  = player.can_afford(cdef.get("costs", {}))
-        col  = W if can else DG
-        cost = "  ".join(f"{v}{k[:3]}"
-                         for k, v in cdef.get("costs", {}).items())
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {C if can else DG}[{i+1}]{RST}"
-             f" {col}{cdef.get('label',''):<20}{RST}"
-             f"  {DG}{cost:<28}{RST}"
-             f"  {Y if can else DG}+{cdef.get('rep_1st',0)} rep{RST}")
-        row += 1
-
-
-def screen_game_over(player, rank):
-    screen_base("gameover")
-
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {Y}GAME OVER \u2014 YOUR LEGACY IS WRITTEN{RST}")
-
-    stats = [
-        ("Handle",           player.handle,              W),
-        ("Crew",             player.crew_name,            W),
-        ("Days played",      str(player.day),             W),
-        ("Final score",      str(player.total_score),     Y),
-        ("Hall of Fame",     f"#{rank}" if rank else "unranked", G),
-        ("Demos produced",   str(player.demos_produced),  W),
-        ("Raids won",        str(player.raids_won),       W),
-        ("Parties attended", str(player.parties_attended), W),
-        ("Beers drunk",      str(player.beers_drunk),     Y),
-    ]
-    row = MENU_TOP + 1
-    for label, value, col in stats:
-        if row >= STATUS_DIV:
-            break
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {DG}{label:<20}{RST}{col}{value}{RST}")
-        row += 1
-
-    move(RES_BOT, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}Press any key to return to BBS...{RST}"
-         + " " * 20
-         + f"{DG}A CELLFISH PRODUCTION{RST}")
