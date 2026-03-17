@@ -288,18 +288,17 @@ def screen_explore(player):
 
     draw_divider(18)                        # divider below menu
 
-    # Scanner label rows 19-21 (no empty row above — art fills to 15, dividers 16/18)
-    move(19, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
+    # Scanner label rows 19-21 — write full 80-char lines, no ERASE_LINE
+    def _wr(row, text):
+        import re as _re
+        plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
+        move(row, 1); _out(text + " " * max(0, SCREEN_W - len(plain)))
 
-    move(20, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Node:{RST}")
-
-    move(21, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Info:{RST}")
-
-    move(22, 1); _out(ERASE_LINE)          # empty row
-    move(23, 1); _out(ERASE_LINE)          # empty row above divider
+    _wr(19, f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
+    _wr(20, f"   {DG}Node:{RST}")
+    _wr(21, f"   {DG}Info:{RST}")
+    _wr(22, "")
+    _wr(23, "")
 
     draw_divider(24)                        # divider above status
 
@@ -366,17 +365,29 @@ def animate_scan_bar(found=None):
     FILL     = b"\xdb".decode("cp437")   # █
     EMPTY    = b"\xb0".decode("cp437")   # ░
 
-    # Redraw the scanner row cleanly before animation starts
-    # This guarantees no leftover content from previous scan
-    move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[" + " " * BAR_WIDTH + "]")
-    # Clear node and info rows too
-    move(EXP_NODE, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Node:{RST}")
-    move(EXP_INFO, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Info:{RST}")
-    move(22, 1); _out(ERASE_LINE)
-    move(23, 1); _out(ERASE_LINE)
+    # Draw the scanner zone cleanly using full 80-char lines (no ERASE_LINE
+    # during animation — avoids terminal cursor tracking issues)
+    def _write_row(row, text):
+        """Write exactly SCREEN_W chars to a row, padding with spaces."""
+        move(row, 1)
+        # Strip ANSI for length calculation
+        import re as _re
+        plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
+        padded = text + " " * max(0, SCREEN_W - len(plain))
+        _out(padded)
+
+    # Row EXP_SCAN: scanner label + empty bar
+    _write_row(EXP_SCAN,
+        f"   {DG}Network scanner: {RST}[" + " " * BAR_WIDTH + "]")
+    # Row EXP_NODE: node label blank
+    _write_row(EXP_NODE, f"   {DG}Node:{RST}")
+    # Row EXP_INFO: info label blank
+    _write_row(EXP_INFO, f"   {DG}Info:{RST}")
+    # Rows 22-23: blank
+    _write_row(22, "")
+    _write_row(23, "")
+    # Row 24: redraw divider to ensure it is present
+    draw_divider(24)
 
     node_revealed = False
     start = time.time()
@@ -391,11 +402,10 @@ def animate_scan_bar(found=None):
             if found:
                 animate_explore_line(EXP_NODE, found.name)
             else:
-                move(EXP_NODE, 1); _out(ERASE_LINE)
-                _out(f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
+                _write_row(EXP_NODE,
+                    f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
 
-        # Build complete bar: filled (green) + unfilled (dim dots)
-        # Always write all 30 chars so no placeholder shows through
+        # Build complete 30-char bar (filled green + dim dots for remainder)
         bright_portion = max(0, step - 4)
         bar = ""
         for i in range(BAR_WIDTH):
@@ -407,7 +417,7 @@ def animate_scan_bar(found=None):
                 bar += DG + EMPTY
         bar += RST
 
-        # Write bar content only (brackets already drawn, stay fixed)
+        # Write bar directly at BAR_COL — no ERASE_LINE, just overwrite
         move(EXP_SCAN, BAR_COL)
         _out(bar)
 
