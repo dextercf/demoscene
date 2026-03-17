@@ -52,17 +52,23 @@ def cfg_bool(cfg, sec, key, default=True):
 # ---------------------------------------------------------------------------
 
 def action_explore(player, world, cfg, rng):
+    # Draw screen once — results persist until player leaves
+    ansi.screen_explore(player)
     while True:
-        ansi.screen_explore(player)
         key = ansi.get_key(valid_keys="SXQ")
         if key == "Q":
             return
         if player.use_turns(2):
-            # Resolve scan result upfront so animation can reveal it
+            # Clear scanner zone and reset labels before new scan
+            ansi._draw_exp_labels()
+            for row in range(21, 24):
+                ansi.move(row, 1); ansi._out(ansi.ERASE_LINE)
+
+            # Resolve what will be found
             curr = world.get_node_by_name(player.current_node)
             found = world.explore(curr.index if curr else 0, rng)
 
-            # Progress bar animation (~7-8s); node name revealed at ~3s
+            # Animate progress bar (~7-8s), node name revealed at ~3s
             ansi.animate_scan_bar(found)
 
             # After bar completes, animate info line
@@ -77,11 +83,11 @@ def action_explore(player, world, cfg, rng):
                 ansi.animate_explore_line(ansi.EXP_INFO,
                     "Nothing found on this frequency.")
         else:
-            ansi.move(ansi.EXP_SCAN, 1)
-            ansi._out(ansi.ERASE_LINE)
+            # Flash error on scanner row, leave other results intact
+            ansi.move(ansi.EXP_SCAN, 1); ansi._out(ansi.ERASE_LINE)
             ansi._out(f"   {ansi.R}Not enough turns to scan (costs 2).{ansi.RST}")
             time.sleep(1.5)
-            ansi.screen_explore(player)
+            ansi._draw_exp_labels()  # restore labels
         ansi._draw_explore_status(player)
 
 # ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@ import time
 import socketio as _sio
 import re
 
-SCREEN_W, SCREEN_H = 80, 24
+SCREEN_W, SCREEN_H = 80, 25
 ART_TOP, ART_BOT, DIV_1 = 1, 8, 9
 MENU_TOP, MENU_BOT = 10, 12
 DIV_3, RES_TOP, RES_BOT = 13, 14, 22
@@ -277,93 +277,119 @@ def screen_map(player, world, page=0, page_size=5):
         row += 1
     write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
 
-# Explore screen zone constants — matches explorer_menu.ans layout
-EXP_ART_BOT  = 14   # art fills rows 1-14
-EXP_DIV_MENU = 15   # divider with menu embedded (row 15)
-EXP_DIV_BOT  = 16   # second divider below menu (row 16)
-EXP_SCAN     = 17   # "Network scanner: [bar]" row
-EXP_NODE     = 18   # "Node: <name>" row
-EXP_INFO     = 19   # "Info: <description>" row
-EXP_RES_TOP  = 17   # result zone top (same as SCAN)
-EXP_RES_BOT  = 21   # result zone bottom
-EXP_STATUS   = 22   # status bar embedded in bottom divider
+# ---------------------------------------------------------------------------
+# Explore screen — custom zone layout
+# Row  1-14  Art zone
+# Row  15    Divider above menu
+# Row  16    [S] Scan network   [Q] Back to HQ
+# Row  17    Divider below menu
+# Row  18    Network scanner: [bar]
+# Row  19    Node: <name>
+# Row  20    Info: <description>
+# Row 21-23  Empty
+# Row  24    Divider
+# Row  25    Status bar (HANDLE / CREW / TURNS / DAY / NODE)
+# ---------------------------------------------------------------------------
+EXP_ART_BOT  = 14
+EXP_DIV_TOP  = 15
+EXP_MENU_ROW = 16
+EXP_DIV_MID  = 17
+EXP_SCAN     = 18
+EXP_NODE     = 19
+EXP_INFO     = 20
+EXP_DIV_BOT  = 24
+EXP_STATUS   = 25
+EXP_RES_TOP  = 18
+EXP_RES_BOT  = 23
+
+def _div(row):
+    """Draw a CP437 horizontal-line divider using raw bytes."""
+    move(row, 1)
+    _out(ERASE_LINE)
+    _out(DG)
+    _out(b"\xc4" * SCREEN_W)
+    _out(RST)
 
 
 def screen_explore(player):
     """
-    Explore screen — layout matches explorer_menu.ans:
-      Rows  1-14  Art zone
-      Row  15     Divider with menu embedded:
-                  ─── [S] Scan network   [Q] Back to HQ ───
-      Row  16     Divider (plain)
-      Row  17     Network scanner: [░░░░░░░░░░░░░░░░░·····]
-      Row  18     Node: <name>
-      Row  19     Info: <description>
-      Rows 20-21  Empty
-      Row  22     Divider with status embedded:
-                  ─── HANDLE: x  CREW: y  TURNS n/10 · DAY n · NODE 1
+    Explore screen — fixed 80x25 layout.
+    Rows 1-14  art, 15 divider, 16 menu, 17 divider,
+    18-20 scanner/node/info, 21-23 empty, 24 divider, 25 status.
+    Results stay on screen until next scan — no auto-clear on redraw.
     """
-    global _exp_result_buf
+    global _exp_result_buf, _exp_node_text, _exp_info_text
     clear_screen()
 
     # Art zone rows 1-14
     if not load_art("explorer_menu"):
-        # Fallback: use map art stretched to 14 rows
         art = FALLBACK_ART.get("map", [])
         for i in range(EXP_ART_BOT):
-            row = ART_TOP + i
-            move(row, 1); _out(ERASE_LINE)
+            move(ART_TOP + i, 1); _out(ERASE_LINE)
             if i < len(art):
                 _out(art[i])
 
-    # Row 15: divider with menu embedded
-    move(EXP_DIV_MENU, 1); _out(ERASE_LINE)
-    menu_txt = f"  {DG}[{RST}{C}{BOLD}S{RST}{DG}]{RST}{W} Scan network{RST}   {DG}[{RST}{C}{BOLD}Q{RST}{DG}]{RST}{W} Back to HQ{RST}  "
-    menu_plain = "  [S] Scan network   [Q] Back to HQ  "
-    pad = SCREEN_W - len(menu_plain)
-    half = pad // 2
-    _out(DG + "Ä" * half + RST + menu_txt + DG + "Ä" * (pad - half) + RST)
+    # Row 15: divider above menu
+    _div(EXP_DIV_TOP)
 
-    # Row 16: plain divider
-    move(EXP_DIV_BOT, 1); _out(ERASE_LINE)
-    _out(DG + "Ä" * SCREEN_W + RST)
+    # Row 16: menu
+    move(EXP_MENU_ROW, 1); _out(ERASE_LINE)
+    _out(f"  {DG}[{RST}{C}{BOLD}S{RST}{DG}]{RST}{W} Scan network{RST}"
+         f"     {DG}[{RST}{C}{BOLD}Q{RST}{DG}]{RST}{W} Back to HQ{RST}")
 
-    # Rows 17-19: fixed label lines (always visible, content filled by animation)
-    move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[{DG}" + "°" * 20 + " " * 10 + f"{RST}]")
-    move(EXP_NODE, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Node:{RST}")
-    move(EXP_INFO, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Info:{RST}")
+    # Row 17: divider below menu
+    _div(EXP_DIV_MID)
 
-    # Rows 20-21: empty
-    for row in range(20, 22):
+    # Rows 18-20: scanner labels — always visible
+    _draw_exp_labels()
+
+    # Rows 21-23: empty
+    for row in range(21, 24):
         move(row, 1); _out(ERASE_LINE)
 
-    # Row 22: divider with status bar embedded
+    # Row 24: divider above status
+    _div(EXP_DIV_BOT)
+
+    # Row 25: status bar
     _draw_explore_status(player)
 
-    _exp_result_buf = ["", "", "", "", ""]
     hide_cursor()
 
 
-def _draw_explore_status(player):
-    """Draw status embedded in the row 22 divider line."""
-    move(EXP_STATUS, 1); _out(ERASE_LINE)
-    status = (f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
-              f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-              f"               "
-              f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-              f" {DG}ú{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-              f" {DG}ú{RST} {DG}NODE{RST} {W}1{RST} ")
-    status_plain = (f" HANDLE: {player.handle}"
-                    f"       CREW: {player.crew_name}"
-                    f"               "
-                    f"TURNS {player.turns_remaining}/10"
-                    f" . DAY {player.day} . NODE 1 ")
-    pad = max(0, SCREEN_W - len(status_plain))
-    _out(DG + "Ä" * (pad // 2) + RST + status + DG + "Ä" * (pad - pad // 2) + RST)
+def _draw_exp_labels():
+    """Draw the three fixed label lines in the scanner zone."""
+    move(EXP_SCAN, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Network scanner: {RST}[")
+    _out(DG)
+    _out(b"\xb0" * 20)   # light shade fill placeholder
+    _out(b"\xb0" * 10)
+    _out(RST + "]")
 
+    move(EXP_NODE, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Node:{RST}")
+
+    move(EXP_INFO, 1); _out(ERASE_LINE)
+    _out(f"   {DG}Info:{RST}")
+
+
+def _draw_explore_status(player):
+    """Draw status bar on row 25."""
+    move(EXP_STATUS, 1); _out(ERASE_LINE)
+    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
+         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
+         f"               "
+         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
+         f" {DG}")
+    _out(b"\xfa")   # bullet ·
+    _out(f"{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+         f" {DG}")
+    _out(b"\xfa")
+    _out(f"{RST} {DG}NODE{RST} {W}1{RST}")
+
+
+# Persistent text for the explore screen (survives redraw)
+_exp_node_text = ""
+_exp_info_text = ""
 
 def _exp_redraw_results(buf):
     """Redraw the explore result zone from its own buffer."""
@@ -496,15 +522,16 @@ def animate_scan_bar(found=None):
     """
     import random as _rnd
     BAR_WIDTH   = 30
-    BAR_COL     = 22          # column where [ starts (after "   Network scanner: ")
+    BAR_COL     = 21          # column where [ starts (after "   Network scanner: ")
     TOTAL_TIME  = 7.5         # seconds for full bar
     NODE_AT     = 3.0         # seconds when node name appears
     hide_cursor()
 
     BRIGHT_G = FG["bright_green"]
     DARK_G   = FG["green"]
-    FILL     = "Û"         # CP437 full block
-    EMPTY    = "°"         # CP437 light shade
+    # CP437 chars as single-byte encoded strings via cp437
+    FILL     = b"\xdb".decode("cp437")   # █ full block
+    EMPTY    = b"\xb0".decode("cp437")   # ░ light shade
 
     node_revealed = False
     start = time.time()
