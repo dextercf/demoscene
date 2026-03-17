@@ -320,6 +320,12 @@ def screen_explore(player):
     hide_cursor()
 
 
+# Explore screen row constants (used by animation helpers and game.py)
+EXP_SCAN  = 20   # Network scanner bar row
+EXP_NODE  = 21   # Node name row
+EXP_INFO  = 22   # Info/description row
+
+
 def _draw_exp_labels():
     """
     Redraw the three scanner label rows (20-22) with empty content.
