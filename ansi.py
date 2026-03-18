@@ -276,7 +276,12 @@ def screen_explore(player):
     clear_screen()
 
     # Art zone rows 1-15
-    draw_art("map")
+    # Try to load art/header.ans first (custom explore header, 15 rows tall).
+    # Fall back to art/map.ans, then built-in ASCII map art if neither exists.
+    move(1, 1)
+    if not load_art("header"):
+        draw_art("map")
+    # Ensure rows 9-15 are cleared if art is shorter than 15 rows
     for row in range(9, 16):
         move(row, 1); _out(ERASE_LINE)
 
