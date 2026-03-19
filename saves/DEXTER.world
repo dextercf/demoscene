@@ -1,0 +1,261 @@
+[world]
+seed = 3668851657
+
+[node_0]
+name = Cellfish BBS
+node_type = home
+hops = 0
+index = 0
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:85|source_code:175|artwork:189|mod_music:180|beer:54|hardware:384|tools:307
+
+[node_1]
+name = The Dungeon
+node_type = coding
+hops = 1
+index = 1
+discovered = True
+crew = The Silents
+prices = phone_credits:1|floppy_disks:75|source_code:139|artwork:196|mod_music:148|beer:49|hardware:381|tools:320
+
+[node_2]
+name = Iron Gate
+node_type = trading
+hops = 3
+index = 2
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:53|source_code:224|artwork:179|mod_music:147|beer:51|hardware:411|tools:330
+
+[node_3]
+name = Raster Interrupt
+node_type = social
+hops = 3
+index = 3
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:73|source_code:212|artwork:163|mod_music:179|beer:46|hardware:394|tools:265
+
+[node_4]
+name = SID Station
+node_type = warez
+hops = 3
+index = 4
+discovered = True
+crew = ACiD
+prices = phone_credits:1|floppy_disks:71|source_code:212|artwork:163|mod_music:151|beer:56|hardware:421|tools:222
+
+[node_5]
+name = POPNet
+node_type = warez
+hops = 3
+index = 5
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:88|source_code:180|artwork:204|mod_music:178|beer:49|hardware:422|tools:192
+
+[node_6]
+name = The Swap Shop
+node_type = art
+hops = 3
+index = 6
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:70|source_code:174|artwork:137|mod_music:160|beer:52|hardware:345|tools:268
+
+[node_7]
+name = Violent Playground
+node_type = warez
+hops = 4
+index = 7
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:73|source_code:217|artwork:166|mod_music:156|beer:43|hardware:338|tools:215
+
+[node_8]
+name = The Void
+node_type = coding
+hops = 3
+index = 8
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:85|source_code:129|artwork:195|mod_music:164|beer:48|hardware:338|tools:274
+
+[node_9]
+name = The Warez Pit
+node_type = music
+hops = 5
+index = 9
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:81|source_code:181|artwork:180|mod_music:126|beer:43|hardware:326|tools:258
+
+[node_10]
+name = The Tracker Den
+node_type = warez
+hops = 3
+index = 10
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:80|source_code:217|artwork:185|mod_music:147|beer:52|hardware:376|tools:184
+
+[node_11]
+name = Apocalypse Now
+node_type = trading
+hops = 5
+index = 11
+discovered = True
+crew = Skid Row
+prices = phone_credits:1|floppy_disks:48|source_code:171|artwork:198|mod_music:178|beer:44|hardware:354|tools:301
+
+[node_12]
+name = Death Valley
+node_type = music
+hops = 4
+index = 12
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:89|source_code:215|artwork:154|mod_music:118|beer:54|hardware:430|tools:268
+
+[node_13]
+name = Metal ANet
+node_type = warez
+hops = 3
+index = 13
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:73|source_code:204|artwork:161|mod_music:161|beer:45|hardware:409|tools:233
+
+[node_14]
+name = Road to Nowhere
+node_type = music
+hops = 3
+index = 14
+discovered = True
+crew = Fairlight
+prices = phone_credits:1|floppy_disks:71|source_code:218|artwork:168|mod_music:97|beer:51|hardware:366|tools:339
+
+[node_15]
+name = Gates of Asgard
+node_type = legendary
+hops = 7
+index = 15
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:81|source_code:180|artwork:198|mod_music:159|beer:54|hardware:359|tools:263
+
+[node_16]
+name = Southern Comfort
+node_type = elite
+hops = 6
+index = 16
+discovered = True
+crew = Byterapers
+prices = phone_credits:1|floppy_disks:80|source_code:171|artwork:162|mod_music:137|beer:46|hardware:427|tools:301
+
+[node_17]
+name = The Hardware Bazaar
+node_type = art
+hops = 10
+index = 17
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:87|source_code:210|artwork:126|mod_music:161|beer:48|hardware:418|tools:270
+
+[node_18]
+name = The Art Gallery
+node_type = art
+hops = 7
+index = 18
+discovered = True
+crew = 
+prices = phone_credits:1|floppy_disks:69|source_code:195|artwork:133|mod_music:167|beer:49|hardware:421|tools:281
+
+[node_19]
+name = Helter Skelter
+node_type = elite
+hops = 7
+index = 19
+discovered = True
+crew = Paranoimia
+prices = phone_credits:1|floppy_disks:79|source_code:223|artwork:195|mod_music:180|beer:52|hardware:344|tools:344
+
+[crew_0]
+name = Paranoimia
+style = demo
+aggression = 1
+rep = 600
+home_node = 19
+strength = 38
+defense = 52
+resources = phone_credits:221|floppy_disks:291|source_code:82|artwork:93|mod_music:47|tools:70|hardware:79
+
+[crew_1]
+name = Skid Row
+style = warez
+aggression = 3
+rep = 800
+home_node = 11
+strength = 69
+defense = 65
+resources = phone_credits:177|floppy_disks:204|source_code:65|artwork:86|mod_music:102|tools:50|hardware:44
+
+[crew_2]
+name = Fairlight
+style = warez
+aggression = 2
+rep = 760
+home_node = 14
+strength = 30
+defense = 43
+resources = phone_credits:140|floppy_disks:129|source_code:113|artwork:148|mod_music:107|tools:50|hardware:62
+
+[crew_3]
+name = ACiD
+style = art
+aggression = 2
+rep = 820
+home_node = 4
+strength = 79
+defense = 61
+resources = phone_credits:294|floppy_disks:196|source_code:246|artwork:104|mod_music:37|tools:72|hardware:21
+
+[crew_4]
+name = Byterapers
+style = demo
+aggression = 2
+rep = 650
+home_node = 16
+strength = 57
+defense = 49
+resources = phone_credits:385|floppy_disks:170|source_code:114|artwork:51|mod_music:124|tools:63|hardware:48
+
+[crew_5]
+name = The Silents
+style = demo
+aggression = 1
+rep = 700
+home_node = 1
+strength = 32
+defense = 56
+resources = phone_credits:369|floppy_disks:151|source_code:219|artwork:133|mod_music:111|tools:26|hardware:20
+
+[party_0]
+name = Gubbdata
+day = 12
+attended = False
+results = {}
+
+[party_1]
+name = The Party
+day = 27
+attended = False
+results = {}
+
+[party_2]
+name = Kindergarten
+day = 40
+attended = False
+results = {}
+

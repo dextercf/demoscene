@@ -1,0 +1,33 @@
+[player]
+handle = dexter
+crew_name = cellfish
+bbs_name = Cellfish BBS
+last_played = 2026-03-17
+
+[stats]
+day = 2
+turns_remaining = 20
+current_node = Cellfish BBS
+home_node = Cellfish BBS
+defense = 100
+reputation = 60
+demos_produced = 0
+raids_won = 0
+raids_lost = 0
+parties_attended = 0
+raves_attended = 0
+5k_runs = 0
+beers_drunk = 0
+total_score = 0
+game_over = False
+
+[resources]
+phone_credits = 200
+floppy_disks = 100
+source_code = 80
+artwork = 50
+mod_music = 30
+beer = 0
+hardware = 0
+tools = 0
+
