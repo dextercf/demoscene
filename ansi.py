@@ -185,11 +185,14 @@ def draw_status(player, bbs_name="", node=1):
             f"  {DG}·{RST}  " f"{DG}HANDLE {RST}{G}{player.handle}{RST}"
             f"  {DG}·{RST}  " f"{DG}TURNS {RST}{Y}{player.turns_remaining}{DG}/10{RST}"
             f"  {DG}·{RST}  " f"{DG}DAY {RST}{W}{player.day}{RST}")
-    right = f"{DG}NODE {node}{RST} "
+    right = f"{DG}NODE {node}{RST}"
     left_plain = f" CREW {player.crew_name}  ·  HANDLE {player.handle}  ·  TURNS {player.turns_remaining}/10  ·  DAY {player.day}"
-    right_plain = f"NODE {node} "
-    pad = SCREEN_W - len(left_plain) - len(right_plain)
+    right_plain = f"NODE {node}"
+    # Stop at SCREEN_W-1 (col 79) — writing to col 80 on the last row
+    # causes the terminal to scroll the entire screen up one line
+    pad = (SCREEN_W - 1) - len(left_plain) - len(right_plain)
     _out(left + " " * max(0, pad) + right)
+    move(1, 1)  # park cursor at top-left after writing to last row
 
 def dial(row, col, node_name, colour=C):
     hide_cursor()
