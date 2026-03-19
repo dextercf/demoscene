@@ -315,6 +315,9 @@ def action_raid(player, world, cfg, rng):
 
     combat.apply_raid_result(player, result)
 
+    # Store counter_risk on player so end_day() can act on it
+    player.pending_counter_raid = result.counter_risk and result.victory
+
     if result.victory:
         ansi.result(f"{ansi.G}> RAID SUCCESSFUL! +{combat.REP_WIN} rep{ansi.RST}")
         if result.loot:
@@ -481,9 +484,22 @@ def end_day(player, world, cfg, rng):
     ap = cfg_int(cfg, "gameplay", "action_points_per_day", 10)
     player.end_day(ap)
 
-    if world.npc_crews and rng.random() < 0.15:
-        raider = rng.choice(world.npc_crews)
-        if raider.aggression >= 2:
+    # Check for counter-raid: triggered if player won a raid this day
+    # and the enemy had high aggression (counter_risk flag was set).
+    # Falls back to a random 15% chance for unprovoked raids.
+    counter_triggered = getattr(player, 'pending_counter_raid', False)
+    player.pending_counter_raid = False  # always reset
+
+    do_raid = counter_triggered or (world.npc_crews and rng.random() < 0.15)
+    if do_raid and world.npc_crews:
+        # Prefer aggressive crews for counter-raids
+        if counter_triggered:
+            aggressive = [c for c in world.npc_crews if c.aggression >= 2]
+            raider = rng.choice(aggressive) if aggressive else rng.choice(world.npc_crews)
+            ansi.result(f"{ansi.R}> Intel: a rival crew is moving on your board tonight...{ansi.RST}")
+        else:
+            raider = rng.choice(world.npc_crews)
+        if counter_triggered or raider.aggression >= 2:
             defence = combat.resolve_defence(player, raider, rng)
             ansi.result(
                 f"{ansi.G if defence['success'] else ansi.R}"

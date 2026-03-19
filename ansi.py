@@ -688,7 +688,7 @@ def screen_raid(player, npc_crew):
 
 def screen_messages(messages, player=None):
     """Message board screen."""
-    screen_base("messages", cmd_hint="[Q] Back")
+    screen_base("messages", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
@@ -713,7 +713,7 @@ def screen_messages(messages, player=None):
 
 def screen_hof(entries, player_handle, player=None):
     """Hall of Fame screen."""
-    screen_base("hof", cmd_hint="[Q] Back")
+    screen_base("hof", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
