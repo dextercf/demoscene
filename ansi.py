@@ -385,13 +385,13 @@ def animate_scan_bar(found=None):
     FILL     = b"\xdb".decode("cp437")   # █
     EMPTY    = b"\xb0".decode("cp437")   # ░
 
-    # Do NOT redraw labels here — screen_explore() already drew them.
-    # Just overwrite the bar area (cols 22-51) from a clean empty state,
-    # then animate in place. No label redraw = no double-bar.
-    # First, clear just the bar content area to spaces so animation starts clean.
+    # Reset cursor to a known position before any row-relative moves.
+    # After get_key() the cursor position is unknown — the terminal may
+    # have drifted. An explicit move(1,1) then move(EXP_SCAN, BAR_COL)
+    # guarantees we land on the right row regardless of prior state.
+    move(1, 1)
     move(EXP_SCAN, BAR_COL)
-    _out(" " * BAR_WIDTH)
-    move(1, 1)  # park cursor
+    _out(" " * BAR_WIDTH)  # blank the bar area before animating
 
     node_revealed = False
     start = time.time()
@@ -452,6 +452,8 @@ def animate_explore_line(row, text):
     DARK_G   = FG["green"]
     hide_cursor()
 
+    # Reset cursor tracking before writing to this row
+    move(1, 1)
     move(row, 1); _out(ERASE_LINE)
     if row == EXP_NODE:
         _out(f"   {DG}Node:{RST}  ")
