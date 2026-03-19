@@ -179,20 +179,20 @@ def draw_divider(row, char=None, colour=DG):
     _out(RST)
 
 def draw_status(player, bbs_name="", node=1):
+    """
+    Draw the status bar on the last row (STATUS=24).
+    Format matches the explore screen bar — identical across all screens.
+    Stops at col 79 to prevent terminal scroll. Parks cursor at (1,1).
+    """
     move(STATUS, 1)
     _out(ERASE_LINE)
-    left = (f" {DG}CREW {RST}{W}{player.crew_name}{RST}"
-            f"  {DG}·{RST}  " f"{DG}HANDLE {RST}{G}{player.handle}{RST}"
-            f"  {DG}·{RST}  " f"{DG}TURNS {RST}{Y}{player.turns_remaining}{DG}/10{RST}"
-            f"  {DG}·{RST}  " f"{DG}DAY {RST}{W}{player.day}{RST}")
-    right = f"{DG}NODE {node}{RST}"
-    left_plain = f" CREW {player.crew_name}  ·  HANDLE {player.handle}  ·  TURNS {player.turns_remaining}/10  ·  DAY {player.day}"
-    right_plain = f"NODE {node}"
-    # Stop at SCREEN_W-1 (col 79) — writing to col 80 on the last row
-    # causes the terminal to scroll the entire screen up one line
-    pad = (SCREEN_W - 1) - len(left_plain) - len(right_plain)
-    _out(left + " " * max(0, pad) + right)
-    move(1, 1)  # park cursor at top-left after writing to last row
+    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
+         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
+         f"          "
+         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
+         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
+         f" {DG}.{RST} {DG}NODE{RST} {W}{node}{RST}")
+    move(1, 1)  # park cursor at top-left — never leave it on the last row
 
 def dial(row, col, node_name, colour=C):
     hide_cursor()
@@ -319,15 +319,8 @@ def screen_explore(player):
 
     draw_divider(23)                        # divider above status
 
-    # Status bar on row 24 — never write past col 79 to avoid scroll
-    move(24, 1); _out(ERASE_LINE)
-    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
-         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-         f"          "
-         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}.{RST} {DG}NODE 1{RST}")
-    move(1, 1)  # park cursor at top-left — never leave it at row 24 col 79+
+    # Status bar — use draw_status for consistency across all screens
+    draw_status(player, player.bbs_name)
 
     _result_buf = [""] * (RES_BOT - RES_TOP + 1)
     hide_cursor()
@@ -358,15 +351,8 @@ def _draw_exp_labels():
 
 
 def _draw_explore_status(player):
-    """Redraw the status bar on row 24 after a scan (turns change)."""
-    move(24, 1); _out(ERASE_LINE)
-    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
-         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-         f"          "
-         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}.{RST} {DG}NODE 1{RST}")
-    move(1, 1)  # park cursor away from last row
+    """Redraw the status bar on the explore screen — delegates to draw_status."""
+    draw_status(player, player.bbs_name)
 
 
 def animate_scan_bar(found=None):
