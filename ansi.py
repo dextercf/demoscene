@@ -76,14 +76,14 @@ def _truncate_ansi(text, width):
     return "".join(out)
 
 def write_at(row, col, text, colour="", reset=True):
-    if row >= STATUS_DIV: return
+    if row > STATUS: return  # block writes beyond STATUS row (25+)
     move(row, col)
     _out(ERASE_LINE)
     out = colour + text + (RST if reset and colour else "")
     _out(_truncate_ansi(out, SCREEN_W - col + 1))
 
 def write_at_no_clear(row, col, text, colour="", reset=True):
-    if row >= STATUS_DIV: return
+    if row > STATUS: return  # block writes beyond STATUS row (25+)
     move(row, col)
     out = colour + text + (RST if reset and colour else "")
     _out(_truncate_ansi(out, SCREEN_W - col + 1))
@@ -173,9 +173,9 @@ def draw_divider(row, char=None, colour=DG):
     _out(ERASE_LINE)
     _out(colour)
     if char is None:
-        _out(b"\xc4" * SCREEN_W)   # CP437 horizontal line ─
+        _out(b"\xc4" * (SCREEN_W - 1))   # CP437 ─, stop at col 79 to prevent scroll
     else:
-        _out(char * SCREEN_W)
+        _out(char * (SCREEN_W - 1))
     _out(RST)
 
 def draw_status(player, bbs_name="", node=1):
@@ -326,7 +326,7 @@ def screen_explore(player):
          f" {DG}.{RST} {DG}NODE 1{RST}")
     move(1, 1)  # park cursor at top-left — never leave it at row 24 col 79+
 
-    _result_buf = [""] * 5
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
     hide_cursor()
 
 
@@ -338,16 +338,20 @@ EXP_INFO  = 20   # Info/description row
 
 def _draw_exp_labels():
     """
-    Redraw the three scanner label rows (20-22) with empty content.
-    Called before each new scan to reset the zone.
+    Reset the scanner zone to idle state.
+    Uses same full-width write as screen_explore — no ERASE_LINE.
     """
-    move(EXP_SCAN, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
-    move(EXP_NODE, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Node:{RST}")
-    move(EXP_INFO, 1); _out(ERASE_LINE)
-    _out(f"   {DG}Info:{RST}")
-    move(23, 1); _out(ERASE_LINE)           # empty row below info
+    import re as _re
+    def _wr(row, text):
+        plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
+        move(row, 1)
+        _out(text + " " * max(0, (SCREEN_W - 1) - len(plain)))
+        move(1, 1)
+    _wr(EXP_SCAN, f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
+    _wr(EXP_NODE, f"   {DG}Node:{RST}")
+    _wr(EXP_INFO, f"   {DG}Info:{RST}")
+    _wr(21, "")
+    _wr(22, "")
 
 
 def _draw_explore_status(player):
@@ -381,31 +385,13 @@ def animate_scan_bar(found=None):
     FILL     = b"\xdb".decode("cp437")   # █
     EMPTY    = b"\xb0".decode("cp437")   # ░
 
-    # Draw the scanner zone cleanly using full 80-char lines (no ERASE_LINE
-    # during animation — avoids terminal cursor tracking issues)
-    def _write_row(row, text):
-        """Write a row, padding to SCREEN_W-1 chars then moving cursor safe."""
-        move(row, 1)
-        import re as _re
-        plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
-        # Pad to SCREEN_W-1 (col 79) — writing to col 80 on last row causes scroll
-        padded = text + " " * max(0, (SCREEN_W - 1) - len(plain))
-        _out(padded)
-        move(1, 1)  # park cursor top-left so no accidental scroll
-
-    # Row EXP_SCAN: scanner label + empty bar
-    _write_row(EXP_SCAN,
-        f"   {DG}Network scanner: {RST}[" + " " * BAR_WIDTH + "]")
-    # Row EXP_NODE: node label blank
-    _write_row(EXP_NODE, f"   {DG}Node:{RST}")
-    # Row EXP_INFO: info label blank
-    _write_row(EXP_INFO, f"   {DG}Info:{RST}")
-    # Rows 22-23: blank
-    _write_row(21, "")
-    _write_row(22, "")
-    draw_divider(23)  # ensure divider stays at row 23
-    # Redraw status at row 24
-    _draw_explore_status(found and found or type("_", (), {"handle": "", "crew_name": "", "turns_remaining": 0, "day": 0})())
+    # Do NOT redraw labels here — screen_explore() already drew them.
+    # Just overwrite the bar area (cols 22-51) from a clean empty state,
+    # then animate in place. No label redraw = no double-bar.
+    # First, clear just the bar content area to spaces so animation starts clean.
+    move(EXP_SCAN, BAR_COL)
+    _out(" " * BAR_WIDTH)
+    move(1, 1)  # park cursor
 
     node_revealed = False
     start = time.time()
@@ -420,8 +406,8 @@ def animate_scan_bar(found=None):
             if found:
                 animate_explore_line(EXP_NODE, found.name)
             else:
-                _write_row(EXP_NODE,
-                    f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
+                move(EXP_NODE, 1); _out(ERASE_LINE)
+                _out(f"   {DG}Node:{RST}  {DG}--- no signal ---{RST}")
 
         # Build complete 30-char bar (filled green + dim dots for remainder)
         bright_portion = max(0, step - 4)
