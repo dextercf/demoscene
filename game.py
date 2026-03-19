@@ -55,7 +55,7 @@ def action_explore(player, world, cfg, rng):
     # Draw screen once — results persist until player leaves
     ansi.screen_explore(player)
     while True:
-        key = ansi.get_key(valid_keys="SXQ")
+        key = ansi.get_key(valid_keys="SQ")
         if key == "Q":
             return
         if player.use_turns(2):
@@ -486,7 +486,7 @@ def end_day(player, world, cfg, rng):
         if raider.aggression >= 2:
             defence = combat.resolve_defence(player, raider, rng)
             ansi.result(
-                f"{ansi.R if defence['success'] else ansi.G}"
+                f"{ansi.G if defence['success'] else ansi.R}"
                 f"> Overnight: {defence['message']}{ansi.RST}")
             ansi.draw_status(player, player.bbs_name)
 

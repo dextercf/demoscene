@@ -10,7 +10,7 @@ import time
 import socketio as _sio
 import re
 
-SCREEN_W, SCREEN_H = 80, 24
+SCREEN_W, SCREEN_H = 80, 25
 ART_TOP, ART_BOT, DIV_1 = 1, 8, 9
 MENU_TOP, MENU_BOT = 10, 12
 DIV_3, RES_TOP, RES_BOT = 13, 14, 22
@@ -168,9 +168,15 @@ def draw_art(name, speed=0):
         move(ART_TOP + i, 1)
         _out(ERASE_LINE); _out(line)
 
-def draw_divider(row, char="─", colour=DG):
+def draw_divider(row, char=None, colour=DG):
     move(row, 1)
-    _out(ERASE_LINE); _out(colour + char * SCREEN_W + RST)
+    _out(ERASE_LINE)
+    _out(colour)
+    if char is None:
+        _out(b"\xc4" * SCREEN_W)   # CP437 horizontal line ─
+    else:
+        _out(char * SCREEN_W)
+    _out(RST)
 
 def draw_status(player, bbs_name="", node=1):
     move(STATUS, 1)
@@ -219,7 +225,7 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1, cmd_hint=""):
         move(DIV_3, 1); _out(ERASE_LINE)
         hint = f" {DG}{cmd_hint}{RST} "
         pad = max(0, SCREEN_W - (len(cmd_hint) + 2))
-        _out(DG + "─" * (pad // 2) + RST + hint + DG + "─" * (pad - pad // 2) + RST)
+        _out(DG); _out(b"\xc4" * (pad // 2)); _out(RST + hint); _out(DG); _out(b"\xc4" * (pad - pad // 2)); _out(RST)
     else: draw_divider(DIV_3)
     clear_zone(RES_TOP, RES_BOT)
     draw_divider(STATUS_DIV)
@@ -233,18 +239,22 @@ def screen_title():
     draw_divider(DIV_3); clear_line(STATUS); hide_cursor()
 
 def screen_hq(player):
-    clear_screen(); draw_art("hq"); draw_divider(9); clear_zone(10, 22)
+    clear_screen(); draw_art("hq"); draw_divider(DIV_1)
+    # Menu at rows MENU_TOP (10-12) — safely above the result zone (14-22)
+    # so result() calls never wipe the menu
+    clear_zone(MENU_TOP, MENU_BOT)
     rows = [
-        [("[E]", "Explore"), ("[T]", "Travel"), ("[P]", "Produce")],
-        [("[R]", "Raid"),    ("[D]", "Defend"), ("[B]", "Trade")],
-        [("[M]", "Messages"), ("[S]", "Scores"), ("[Q]", "Quit / save")],
+        [("[E]", "Explore"), ("[T]", "Travel"),   ("[P]", "Produce")],
+        [("[R]", "Raid"),    ("[D]", "Defend"),    ("[B]", "Trade")],
+        [("[M]", "Messages"),("[S]", "Scores"),    ("[Q]", "Quit / save")],
     ]
-    col_starts, start_row = [3, 30, 57], 19
+    col_starts = [3, 30, 57]
     for r_idx, items in enumerate(rows):
-        row = start_row + r_idx
+        row = MENU_TOP + r_idx
         for col, (hk, lbl) in zip(col_starts, items):
             move(row, col); _out(f"{C}{hk}{RST} {W}{lbl}{RST}")
-    draw_divider(18); draw_divider(23); draw_status(player, player.bbs_name)
+    draw_divider(DIV_3); clear_zone(RES_TOP, RES_BOT)
+    draw_divider(STATUS_DIV); draw_status(player, player.bbs_name)
 
 def screen_map(player, world, page=0, page_size=5):
     clear_screen(); draw_art("map"); draw_divider(11); clear_zone(12, 22)
@@ -260,72 +270,70 @@ def screen_map(player, world, page=0, page_size=5):
 
 def screen_explore(player):
     """
-    Explore screen layout:
-      Rows  1-15  Art zone
-      Row  16     Divider
-      Row  17     [S] Scan network   [Q] Back to HQ
-      Row  18     Divider
-      Row  19     Network scanner: [bar]
-      Row  20     Node: <n>
-      Row  21     Info: <description>
-      Rows 22-23  (empty)
-      Row  24     Divider
-      Row  25     Status bar
+    Explore screen layout — strictly 24 rows:
+      Rows  1-14  Art zone (header.ans or map.ans fallback)
+      Row  15     Divider
+      Row  16     [S] Scan network   [Q] Back to HQ
+      Row  17     Divider
+      Row  18     Network scanner: [bar]
+      Row  19     Node: <n>
+      Row  20     Info: <description>
+      Rows 21-22  (empty)
+      Row  23     Divider
+      Row  24     Status bar (HANDLE / CREW / TURNS / DAY / NODE)
     """
     global _result_buf
     clear_screen()
 
-    # Art zone rows 1-15
-    # Try to load art/header.ans first (custom explore header, 15 rows tall).
-    # Fall back to art/map.ans, then built-in ASCII map art if neither exists.
+    # Art zone rows 1-14
     move(1, 1)
     if not load_art("header"):
         draw_art("map")
-    # Ensure rows 9-15 are cleared if art is shorter than 15 rows
-    for row in range(9, 16):
+    # Pad/clear rows 9-14 in case art is shorter than 14 rows
+    for row in range(9, 15):
         move(row, 1); _out(ERASE_LINE)
 
-    draw_divider(16)                        # divider above menu
+    draw_divider(15)                        # divider above menu
 
-    move(17, 1); _out(ERASE_LINE)          # menu row
+    move(16, 1); _out(ERASE_LINE)          # menu row
     _out(f"  {C}[S]{RST} {W}Scan network{RST}"
          f"     {C}[Q]{RST} {W}Back to HQ{RST}")
 
-    draw_divider(18)                        # divider below menu
+    draw_divider(17)                        # divider below menu
 
-    # Scanner label rows 19-21 — write full 80-char lines, no ERASE_LINE
+    # Scanner rows 18-20 — write without ERASE_LINE to avoid cursor drift
     def _wr(row, text):
         import re as _re
         plain = _re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
         move(row, 1)
         _out(text + " " * max(0, (SCREEN_W - 1) - len(plain)))
-        move(1, 1)  # park cursor away from bottom-right to prevent scroll
 
-    _wr(19, f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
-    _wr(20, f"   {DG}Node:{RST}")
-    _wr(21, f"   {DG}Info:{RST}")
+    _wr(18, f"   {DG}Network scanner: {RST}[" + " " * 30 + "]")
+    _wr(19, f"   {DG}Node:{RST}")
+    _wr(20, f"   {DG}Info:{RST}")
+    _wr(21, "")
     _wr(22, "")
-    _wr(23, "")
 
-    draw_divider(24)                        # divider above status
+    draw_divider(23)                        # divider above status
 
-    move(25, 1); _out(ERASE_LINE)          # status row — stop at col 79
+    # Status bar on row 24 — never write past col 79 to avoid scroll
+    move(24, 1); _out(ERASE_LINE)
     _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
          f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
          f"          "
          f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
          f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
          f" {DG}.{RST} {DG}NODE 1{RST}")
-    move(1, 1)  # park cursor top-left to prevent scroll
+    move(1, 1)  # park cursor at top-left — never leave it at row 24 col 79+
 
     _result_buf = [""] * 5
     hide_cursor()
 
 
-# Explore screen row constants (used by animation helpers and game.py)
-EXP_SCAN  = 19   # Network scanner bar row
-EXP_NODE  = 20   # Node name row
-EXP_INFO  = 21   # Info/description row
+# Explore screen row constants
+EXP_SCAN  = 18   # Network scanner bar row
+EXP_NODE  = 19   # Node name row  
+EXP_INFO  = 20   # Info/description row
 
 
 def _draw_exp_labels():
@@ -343,16 +351,15 @@ def _draw_exp_labels():
 
 
 def _draw_explore_status(player):
-    """Redraw status on row 25. Stop at col 79 — col 80 on last row causes scroll."""
-    move(25, 1)
-    _out(ERASE_LINE)
+    """Redraw the status bar on row 24 after a scan (turns change)."""
+    move(24, 1); _out(ERASE_LINE)
     _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
          f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
          f"          "
          f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
          f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
          f" {DG}.{RST} {DG}NODE 1{RST}")
-    move(1, 1)  # park cursor top-left after writing last row
+    move(1, 1)  # park cursor away from last row
 
 
 def animate_scan_bar(found=None):
@@ -394,10 +401,11 @@ def animate_scan_bar(found=None):
     # Row EXP_INFO: info label blank
     _write_row(EXP_INFO, f"   {DG}Info:{RST}")
     # Rows 22-23: blank
+    _write_row(21, "")
     _write_row(22, "")
-    _write_row(23, "")
-    # Row 24: redraw divider to ensure it is present
-    draw_divider(24)
+    draw_divider(23)  # ensure divider stays at row 23
+    # Redraw status at row 24
+    _draw_explore_status(found and found or type("_", (), {"handle": "", "crew_name": "", "turns_remaining": 0, "day": 0})())
 
     node_revealed = False
     start = time.time()
@@ -481,6 +489,8 @@ def animate_explore_line(row, text):
 # Screen builders and animations (restored from original)
 # ---------------------------------------------------------------------------
 
+SPINNER_FRAMES = ["|", "/", "-", "\\"]
+
 def spinner(row, col, message, duration=1.5, colour=C):
     """Animated spinner at fixed position."""
     hide_cursor()
@@ -498,7 +508,7 @@ def spinner(row, col, message, duration=1.5, colour=C):
 
 
 def dots(row, col, message, count=8, delay=0.15, colour=DG):
-    """Dots appearing one by one ΓÇö scanning/connecting feel."""
+    """Dots appearing one by one - scanning/connecting feel."""
     hide_cursor()
     for i in range(count + 1):
         write_at_no_clear(row, col,
@@ -512,8 +522,8 @@ def progress_bar(row, col, label, width=24, duration=1.2, colour=G):
     hide_cursor()
     steps = width
     for i in range(steps + 1):
-        filled = "Γûê" * i
-        empty  = "Γûæ" * (steps - i)
+        filled = b"\xdb".decode("cp437") * i
+        empty  = b"\xb0".decode("cp437") * (steps - i)
         pct    = int((i / steps) * 100)
         bar    = f"{colour}[{filled}{empty}]{RST} {W}{pct:>3}%{RST}"
         write_at_no_clear(row, col, f"{DG}{label} {RST}{bar}")
@@ -549,10 +559,10 @@ def wait_for_key(message=None):
 
 
 def combat_bar(row, col, label, value, max_val, width=20, colour=G):
-    """Draw a single combat stat bar ΓÇö used in raid screen."""
+    """Draw a single combat stat bar - used in raid screen."""
     pct    = max(0, min(1.0, value / max_val)) if max_val > 0 else 0
     filled = int(pct * width)
-    bar    = "Γûê" * filled + "Γûæ" * (width - filled)
+    bar    = b"\xdb".decode("cp437") * filled + b"\xb0".decode("cp437") * (width - filled)
     write_at_no_clear(row, col,
                       f"{DG}{label:<12}{RST}{colour}[{bar}]{RST}"
                       f" {W}{value:>3}{RST}")
@@ -560,7 +570,7 @@ def combat_bar(row, col, label, value, max_val, width=20, colour=G):
 
 def animate_combat_bars(row, player_power, enemy_power):
     """
-    Animate both combat bars simultaneously ΓÇö bars fill up
+    Animate both combat bars simultaneously - bars fill up
     then one drains based on outcome.
     """
     hide_cursor()
@@ -589,7 +599,7 @@ def screen_trade(player, node):
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
     _out(f"  {DG}LOCATION {RST}{B}{node.name}{RST}"
-         f"  {DG}┬╖{RST}  {DG}YOUR CREDITS {RST}{Y}{player.phone_credits}{RST}")
+         f"  {DG}|{RST}  {DG}YOUR CREDITS {RST}{Y}{player.phone_credits}{RST}")
 
     move(MENU_TOP + 1, 1)
     _out(ERASE_LINE)
@@ -688,7 +698,7 @@ def screen_raid(player, npc_crew):
          f"{W}~{loot_d} disks{RST}")
 
 
-def screen_messages(messages):
+def screen_messages(messages, player=None):
     """Message board screen."""
     screen_base("messages", cmd_hint="[Q] Back")
 
@@ -696,7 +706,7 @@ def screen_messages(messages):
     _out(ERASE_LINE)
     _out(f"  {DG}{'':3}{'FROM':<18}{'SUBJECT':<34}{'DAY'}{RST}")
     move(MENU_TOP + 1, 1)
-    _out(DG + "┬╖" * SCREEN_W + RST)
+    _out(DG); _out(b"\xc4" * SCREEN_W); _out(RST)
 
     row = MENU_TOP + 2
     shown = messages[-3:] if messages else []
@@ -713,7 +723,7 @@ def screen_messages(messages):
         row += 1
 
 
-def screen_hof(entries, player_handle):
+def screen_hof(entries, player_handle, player=None):
     """Hall of Fame screen."""
     screen_base("hof", cmd_hint="[Q] Back")
 
@@ -722,7 +732,7 @@ def screen_hof(entries, player_handle):
     _out(f"  {DG}{'#':<4}{'HANDLE':<16}{'CREW':<22}"
          f"{'BBS':<18}{'SCORE':>8}{RST}")
     move(MENU_TOP + 1, 1)
-    _out(DG + "┬╖" * SCREEN_W + RST)
+    _out(DG); _out(b"\xc4" * SCREEN_W); _out(RST)
 
     row = MENU_TOP + 2
     for i, e in enumerate(entries[:3]):
@@ -749,7 +759,7 @@ def screen_party(party, player):
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
-    _out(f"  {Y}{party.name}{RST}  {DG}┬╖{RST}  {DG}{party.location}{RST}")
+    _out(f"  {Y}{party.name}{RST}  {DG}|{RST}  {DG}{party.location}{RST}")
     move(MENU_TOP + 1, 1)
     _out(ERASE_LINE)
     _out(f"  {DG}{party.flavour}{RST}")
@@ -780,7 +790,7 @@ def screen_game_over(player, rank):
 
     move(MENU_TOP, 1)
     _out(ERASE_LINE)
-    _out(f"  {Y}GAME OVER ΓÇö YOUR LEGACY IS WRITTEN{RST}")
+    _out(f"  {Y}GAME OVER - YOUR LEGACY IS WRITTEN{RST}")
 
     stats = [
         ("Handle",           player.handle,           W),
