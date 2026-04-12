@@ -609,19 +609,18 @@ def screen_courier_board(player, mission):
 
     draw_divider(DIV_3)
 
-    write_at(RES_TOP,     1, f"  {W}{mission.desc}{RST}")
-    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{mission.origin}{RST}")
-    write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{mission.dest}{RST}")
-    write_at(RES_TOP + 4, 1,
-        f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} "
-        f"{mission.cargo_key.replace('_', ' ')}{RST}")
-    write_at(RES_TOP + 5, 1,
-        f"  {DG}Reward:{RST}  {G}{mission.reward_summary()}{RST}")
-    write_at(RES_TOP + 6, 1,
-        f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
-    write_at(RES_TOP + 8, 1,
-        f"  {DG}You need {mission.cargo_amt} "
-        f"{mission.cargo_key.replace('_', ' ')} in your inventory to accept.{RST}")
+    desc    = mission.desc[:70]
+    origin  = mission.origin[:24]
+    dest    = mission.dest[:24]
+    cargo   = mission.cargo_key.replace("_", " ")
+    reward  = mission.reward_summary()[:40]
+    write_at(RES_TOP,     1, f"  {W}{desc}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{origin}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{dest}{RST}")
+    write_at(RES_TOP + 4, 1, f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} {cargo}{RST}")
+    write_at(RES_TOP + 5, 1, f"  {DG}Reward:{RST}  {G}{reward}{RST}")
+    write_at(RES_TOP + 6, 1, f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
+    write_at(RES_TOP + 8, 1, f"  {DG}Need {mission.cargo_amt} {cargo} in inventory to accept.{RST}")
 
 
 def screen_courier_active(player, mission):
@@ -636,79 +635,83 @@ def screen_courier_active(player, mission):
 
 
 def screen_trade(player, node):
-    """Trade post screen."""
+    """Trade post screen — 7 items in RES zone."""
     from player import RESOURCE_NAMES
     screen_base("trade", player, player.bbs_name,
                 cmd_hint="[1-7] Select  [B] Buy  [S] Sell  [Q] Back")
 
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}LOCATION {RST}{B}{node.name}{RST}"
-         f"  {DG}|{RST}  {DG}YOUR CREDITS {RST}{Y}{player.phone_credits}{RST}")
+    # Header in MENU zone
+    node_name = node.name[:24]
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {DG}NODE {RST}{B}{node_name:<24}{RST}"
+         f"  {DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    _out(f"  {DG}{'#':<3} {'ITEM':<15} {'BUY':>7}  {'SELL':>6}  {'YOURS':>6}{RST}")
+    move(MENU_TOP + 2, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
 
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'ITEM':<16}  {'BUY':>7}  {'SELL':>7}  "
-         f"{'STOCK':>6}  {'YOURS':>6}{RST}")
-
+    # Item list in RES zone — all 7 fit in 7 rows
     trade_keys = ["floppy_disks", "source_code", "artwork",
                   "mod_music", "hardware", "tools", "beer"]
     for i, key in enumerate(trade_keys):
-        row = MENU_TOP + 2 + i
-        if row > MENU_BOT + 2:
+        row = RES_TOP + i
+        if row > RES_BOT:
             break
         name  = RESOURCE_NAMES.get(key, key)
         buy   = node.prices.get(key, 0)
         sell  = node.sell_price(key)
         yours = player.get_resource(key)
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {C}[{i+1}]{RST} {W}{name:<14}{RST}"
+        # Highlight speciality resource at this node
+        is_spec = (key == node.speciality)
+        col = Y if is_spec else W
+        spec_tag = f"{Y}★{RST}" if is_spec else " "
+        move(row, 1); _out(ERASE_LINE)
+        _out(f"  {C}[{i+1}]{RST}{spec_tag}{col}{name:<15}{RST}"
              f"  {G}{buy:>6}c{RST}"
-             f"  {R}{sell:>6}c{RST}"
-             f"  {DG}{99:>6}{RST}"
+             f"  {R}{sell:>5}c{RST}"
              f"  {Y}{yours:>6}{RST}")
 
 
 def screen_produce(player):
-    """Demo production screen."""
+    """Demo production screen — list in RES zone with affordability and fail chance."""
     screen_base("produce", player, player.bbs_name,
                 cmd_hint="[1-5] Select  [Q] Back")
 
     demos = [
-        ("1", "Cracktro",   {"source_code": 50,  "artwork": 20},        40),
-        ("2", "4K Intro",   {"source_code": 120, "artwork": 40},        120),
-        ("3", "64K Intro",  {"source_code": 200, "artwork": 80},        280),
-        ("4", "Musicdisk",  {"source_code": 80,  "mod_music": 300},     200),
-        ("5", "Full Demo",  {"source_code": 400, "artwork": 200,
-                             "mod_music": 150},                          600),
+        ("1", "Cracktro",  {"source_code": 50,  "artwork": 20},         40,  5),
+        ("2", "4K Intro",  {"source_code": 120, "artwork": 40},        120, 10),
+        ("3", "64K Intro", {"source_code": 200, "artwork": 80},        280, 15),
+        ("4", "Musicdisk", {"source_code": 80,  "mod_music": 300},     200, 10),
+        ("5", "Full Demo", {"source_code": 400, "artwork": 200,
+                            "mod_music": 150},                          600, 20),
     ]
 
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'':4}{'TYPE':<16}{'COST':<32}{'REP GAIN':>10}{RST}")
-
-    for i, (key, label, costs, rep) in enumerate(demos):
-        row = MENU_TOP + 1 + i
-        if row > MENU_BOT + 2:
-            break
-        can      = player.can_afford(costs)
-        col      = W if can else DG
-        cost_str = "  ".join(f"{v} {k[:3]}" for k, v in costs.items())
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {C if can else DG}[{key}]{RST}"
-             f" {col}{label:<16}{RST}"
-             f"  {DG}{cost_str:<30}{RST}"
-             f"  {Y if can else DG}+{rep} rep{RST}")
-
-    # Current resources hint
-    move(MENU_BOT + 1, 1)
-    _out(ERASE_LINE)
+    # Header in MENU zone
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {DG}{'#':<4}{'TYPE':<13}{'COST':<28}{'REP':>5}  {'FAIL%':>5}{RST}")
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     _out(f"  {DG}src:{RST}{W}{player.source_code:>5}{RST}  "
          f"{DG}art:{RST}{W}{player.artwork:>5}{RST}  "
          f"{DG}mod:{RST}{W}{player.mod_music:>5}{RST}  "
-         f"{DG}rep:{RST}{C}{player.reputation:>5}{RST}")
+         f"{DG}turns: 3  rep:{RST}{C}{player.reputation:>5}{RST}")
+    move(MENU_TOP + 2, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+
+    # Demo list in RES zone
+    for i, (key, label, costs, rep, fail_pct) in enumerate(demos):
+        row = RES_TOP + i
+        if row > RES_BOT:
+            break
+        can      = player.can_afford(costs)
+        col      = W if can else DG
+        key_col  = C if can else DG
+        cost_str = "  ".join(f"{v}{k[:3]}" for k, v in costs.items())
+        move(row, 1); _out(ERASE_LINE)
+        _out(f"  {key_col}[{key}]{RST}"
+             f" {col}{label:<13}{RST}"
+             f"  {DG}{cost_str:<26}{RST}"
+             f"  {Y if can else DG}+{rep:<4}{RST}"
+             f"  {R if fail_pct >= 15 else DG}{fail_pct:>4}%{RST}")
 
 
 def screen_raid(player, npc_crew):
@@ -736,11 +739,21 @@ def screen_raid(player, npc_crew):
 
     loot_c = npc_crew.resources.get("phone_credits", 0) // 3
     loot_d = npc_crew.resources.get("floppy_disks",  0) // 3
-    move(MENU_BOT, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}Potential loot: {RST}"
-         f"{Y}~{loot_c} credits{RST}  "
-         f"{W}~{loot_d} disks{RST}")
+    loot_s = npc_crew.resources.get("source_code",   0) // 3
+    # Loot preview in RES zone — safe from divider collision
+    write_at(RES_TOP, 1,
+        f"  {DG}Potential loot if successful:{RST}")
+    write_at(RES_TOP + 1, 1,
+        f"  {Y}~{loot_c} credits{RST}  "
+        f"{W}~{loot_d} disks{RST}  "
+        f"{C}~{loot_s} source{RST}")
+    write_at(RES_TOP + 3, 1,
+        f"  {DG}Enemy strength: {RST}{R}{npc_crew.strength}{RST}"
+        f"  {DG}Defense: {RST}{B}{npc_crew.defense}{RST}"
+        f"  {DG}Aggression: {RST}"
+        + (f"{R}!!!" if npc_crew.aggression == 3
+           else f"{Y}!!" if npc_crew.aggression == 2
+           else f"{DG}!") + RST)
 
 
 def screen_messages(messages, player=None):
@@ -809,14 +822,16 @@ def screen_crew(player):
 
     # ── Header ────────────────────────────────────────────────────────────
     move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {Y}{player.crew_name}{RST}  {DG}|{RST}  "
-         f"{DG}Handle: {RST}{C}{player.handle}{RST}  {DG}|{RST}  "
-         f"{DG}Home: {RST}{B}{player.bbs_name}{RST}")
+    crew  = player.crew_name[:18]
+    hndl  = player.handle[:12]
+    home  = player.bbs_name[:20]
+    _out(f"  {Y}{crew:<18}{RST}  {DG}Handle: {RST}{C}{hndl:<12}{RST}  {DG}Home: {RST}{B}{home}{RST}")
 
     move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    loc   = player.current_node[:18]
     _out(f"  {DG}Rep: {RST}{Y}{player.reputation:<6}{RST}  "
-         f"{DG}Defense: {RST}{_defense_bar(player.defense)}{RST}  "
-         f"{DG}Location: {RST}{C}{player.current_node}{RST}")
+         f"{DG}Defense: {RST}{_defense_bar(player.defense)}  "
+         f"{DG}Loc: {RST}{C}{loc}{RST}")
 
     move(MENU_TOP + 2, 1)
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
@@ -891,8 +906,9 @@ def screen_crew(player):
             + getattr(player, "5k_runs", 0) * 40)
     proj = max(0, proj)
     move(RES_BOT, 1); _out(ERASE_LINE)
-    _out(f"  {DG}Projected score: {RST}{Y}{proj:>8}{RST}"
-         f"  {DG}Best so far: {RST}{C}{player.total_score}{RST}")
+    # Keep to 79 chars — RES_BOT is row 22, col 80 triggers scroll
+    _out(f"  {DG}Projected: {RST}{Y}{proj:>8}{RST}"
+         f"  {DG}Best: {RST}{C}{player.total_score:<8}{RST}")
 
 
 def _resource_bar(value, cap, width=12, colour=G):

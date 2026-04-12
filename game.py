@@ -375,6 +375,9 @@ def action_defend(player, world, cfg, rng):
 def action_crew_screen(player):
     ansi.screen_crew(player)
     ansi.get_key(valid_keys="Qq")
+
+
+def action_courier(player, world, cfg, rng, daily_mission):
     """Show the mission board and let player accept/decline."""
     if daily_mission is None:
         ansi.result(f"{ansi.DG}> No courier missions available today.{ansi.RST}")
