@@ -407,6 +407,11 @@ def animate_scan_bar(found=None):
     # After get_key() the cursor position is unknown — the terminal may
     # have drifted. An explicit move(1,1) then move(EXP_SCAN, BAR_COL)
     # guarantees we land on the right row regardless of prior state.
+    # Clear Node and Info rows before each new scan so stale results
+    # from the previous scan don't linger while the bar is running.
+    move(EXP_NODE, 1); _out(ERASE_LINE); _out(f"   {DG}Node:{RST}")
+    move(EXP_INFO, 1); _out(ERASE_LINE); _out(f"   {DG}Info:{RST}")
+
     move(1, 1)
     move(EXP_SCAN, BAR_COL)
     _out(" " * BAR_WIDTH)  # blank the bar area before animating
