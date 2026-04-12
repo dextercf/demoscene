@@ -150,7 +150,7 @@ def action_trade(player, world, cfg, rng):
             continue
 
         res  = trade_keys[idx]
-        from playermod import RESOURCE_NAMES
+        from player import RESOURCE_NAMES
         name = RESOURCE_NAMES.get(res, res)
         buy  = node.prices.get(res, 0)
         sell = node.sell_price(res)
@@ -338,7 +338,7 @@ def action_raid(player, world, cfg, rng):
     if result.victory:
         ansi.result(f"{ansi.G}> RAID SUCCESSFUL! +{combat.REP_WIN} rep{ansi.RST}")
         if result.loot:
-            from playermod import RESOURCE_NAMES
+            from player import RESOURCE_NAMES
             parts = [f"{amt} {RESOURCE_NAMES.get(res, res)}"
                      for res, amt in result.loot.items()]
             ansi.result(f"  {ansi.Y}Looted: {', '.join(parts[:3])}{ansi.RST}")
@@ -347,7 +347,7 @@ def action_raid(player, world, cfg, rng):
     else:
         ansi.result(f"{ansi.R}> RAID FAILED — {target_crew.name} repelled your crew.{ansi.RST}")
         if result.losses:
-            from playermod import RESOURCE_NAMES
+            from player import RESOURCE_NAMES
             parts = [f"{amt} {RESOURCE_NAMES.get(res, res)}"
                      for res, amt in result.losses.items()]
             ansi.result(f"  {ansi.R}Lost: {', '.join(parts)}{ansi.RST}")
