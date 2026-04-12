@@ -247,29 +247,58 @@ def screen_hq(player):
     # so result() calls never wipe the menu
     clear_zone(MENU_TOP, MENU_BOT)
     rows = [
-        [("[E]", "Explore"), ("[T]", "Travel"),   ("[P]", "Produce")],
-        [("[R]", "Raid"),    ("[D]", "Defend"),    ("[B]", "Trade")],
-        [("[M]", "Messages"),("[S]", "Scores"),    ("[Q]", "Quit / save")],
+        [("[E]", "Explore"),  ("[T]", "Travel"),  ("[P]", "Produce")],
+        [("[R]", "Raid"),     ("[D]", "Defend"),   ("[B]", "Trade")],
+        [("[C]", "Courier"),  ("[M]", "Messages"), ("[W]", "Crew")],
     ]
     col_starts = [3, 30, 57]
     for r_idx, items in enumerate(rows):
         row = MENU_TOP + r_idx
         for col, (hk, lbl) in zip(col_starts, items):
             move(row, col); _out(f"{C}{hk}{RST} {W}{lbl}{RST}")
-    draw_divider(DIV_3); clear_zone(RES_TOP, RES_BOT)
+    # Show [Q] Quit on the DIV_3 line
+    move(DIV_3, 1)
+    _out(ERASE_LINE)
+    _out(f" {DG}{'─' * 48}{RST}  {C}[S]{RST} {W}Scores{RST}  {C}[Q]{RST} {W}Quit/Save{RST}")
+    clear_zone(RES_TOP, RES_BOT)
     draw_divider(STATUS_DIV); draw_status(player, player.bbs_name)
 
-def screen_map(player, world, page=0, page_size=5):
-    clear_screen(); draw_art("map"); draw_divider(11); clear_zone(12, 22)
+def screen_map(player, world, page=0, page_size=7):
+    clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()
-    pg_cnt = max(1, (len(disc) + page_size - 1) // page_size)
+    total = len(disc)
+    pg_cnt = max(1, (total + page_size - 1) // page_size)
     shown = disc[page*page_size : (page+1)*page_size]
-    write_at(12, 1, f"  {DG}NETWORK MAP{RST}  Page {page+1}/{pg_cnt}")
-    row = 14
+
+    # Header row in MENU zone
+    write_at(MENU_TOP, 1,
+        f"  {DG}NETWORK MAP{RST}  "
+        f"{C}Page {page+1}/{pg_cnt}{RST}  "
+        f"{DG}({total} nodes discovered){RST}")
+
+    # Nav hints on MENU_TOP+1
+    nav = []
+    if page > 0:           nav.append(f"{C}[P]{RST} Prev")
+    if page < pg_cnt - 1:  nav.append(f"{C}[N]{RST} Next")
+    nav.append(f"{C}[Q]{RST} Back")
+    write_at(MENU_TOP + 1, 1, "  " + "   ".join(nav))
+
+    draw_divider(DIV_3)
+
+    # Node list in RES zone — up to 7 rows (RES_TOP..RES_TOP+6)
     for idx, node in enumerate(shown, 1):
-        write_at(row, 1, f"  {C}[{idx}]{RST} {W}{node.name:<24} {node.label:<14}")
-        row += 1
-    write_at(22, 1, f"  Travel to node [1-{len(shown)}] or Q: ")
+        crew_tag = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
+        write_at(RES_TOP + idx - 1, 1,
+            f"  {C}[{idx}]{RST} {W}{node.name:<24}{RST} "
+            f"{DG}{node.label:<18}{RST}"
+            f"{crew_tag}")
+
+    # Prompt on RES_BOT (row 22) — safe from status bar
+    write_at(RES_BOT, 1,
+        f"  {DG}Travel [1-{len(shown)}]"
+        + (f"  [N]ext" if page < pg_cnt - 1 else "")
+        + (f"  [P]rev" if page > 0 else "")
+        + f"  [Q]uit: {RST}")
 
 def screen_explore(player):
     """
@@ -567,6 +596,45 @@ def animate_combat_bars(row, player_power, enemy_power):
 # ---------------------------------------------------------------------------
 
 
+def screen_courier_board(player, mission):
+    """Courier mission board screen."""
+    screen_base("courier", player, player.bbs_name,
+                cmd_hint="[A] Accept  [Q] Decline")
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {C}COURIER MISSION BOARD{RST}  {DG}Day {player.day}{RST}")
+
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
+    _out(f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
+
+    draw_divider(DIV_3)
+
+    write_at(RES_TOP,     1, f"  {W}{mission.desc}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{mission.origin}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{mission.dest}{RST}")
+    write_at(RES_TOP + 4, 1,
+        f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} "
+        f"{mission.cargo_key.replace('_', ' ')}{RST}")
+    write_at(RES_TOP + 5, 1,
+        f"  {DG}Reward:{RST}  {G}{mission.reward_summary()}{RST}")
+    write_at(RES_TOP + 6, 1,
+        f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
+    write_at(RES_TOP + 8, 1,
+        f"  {DG}You need {mission.cargo_amt} "
+        f"{mission.cargo_key.replace('_', ' ')} in your inventory to accept.{RST}")
+
+
+def screen_courier_active(player, mission):
+    """Show active mission status on HQ screen result area."""
+    write_at(RES_TOP, 1,
+        f"  {C}ACTIVE MISSION:{RST} {W}{mission.label}{RST}  "
+        f"{DG}→ {mission.dest}{RST}")
+    write_at(RES_TOP + 1, 1,
+        f"  {DG}Deliver {mission.cargo_amt} "
+        f"{mission.cargo_key.replace('_', ' ')} to {mission.dest}"
+        f"  Reward: {mission.reward_summary()}{RST}")
+
+
 def screen_trade(player, node):
     """Trade post screen."""
     from player import RESOURCE_NAMES
@@ -676,60 +744,175 @@ def screen_raid(player, npc_crew):
 
 
 def screen_messages(messages, player=None):
-    """Message board screen."""
+    """Message board screen — uses full RES zone for up to 7 messages."""
     screen_base("messages", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
 
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'':3}{'FROM':<18}{'SUBJECT':<34}{'DAY'}{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(DG); _out(b"\xc4" * SCREEN_W); _out(RST)
+    # Header in MENU zone
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {C}MESSAGE BOARD{RST}  {DG}{len(messages)} message{'s' if len(messages) != 1 else ''}{RST}")
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    _out(f"  {DG}{'':3}{'FROM':<18}{'SUBJECT':<36}{'DAY'}{RST}")
+    move(MENU_TOP + 2, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
 
-    row = MENU_TOP + 2
-    shown = messages[-3:] if messages else []
-    for msg in shown:
-        if row > MENU_BOT:
+    # Messages in RES zone — up to 7 rows (RES_BOT - RES_TOP + 1 = 9, leave 2 for spacing)
+    shown = messages[:7]
+    for i, msg in enumerate(shown):
+        row = RES_TOP + i
+        if row > RES_BOT:
             break
-        new_tag = f"{C}NEW{RST}" if msg.get("new") else "   "
-        move(row, 1)
-        _out(ERASE_LINE)
+        new_tag = f"{C}NEW{RST}" if msg.get("new") else f"{DG}   {RST}"
+        move(row, 1); _out(ERASE_LINE)
         _out(f"  {new_tag} "
-             f"{B}{msg.get('from','???'):<18}{RST}"
-             f"{W}{msg.get('subject',''):<34}{RST}"
-             f"{DG}Day {msg.get('day','?')}{RST}")
-        row += 1
+             f"{B}{msg.get('from', '???'):<18}{RST}"
+             f"{W}{msg.get('subject', ''):<36}{RST}"
+             f"{DG}D{msg.get('day', '?')}{RST}")
 
 
 def screen_hof(entries, player_handle, player=None):
-    """Hall of Fame screen."""
+    """Hall of Fame screen — uses full RES zone for up to 9 entries."""
     screen_base("hof", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
 
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'#':<4}{'HANDLE':<16}{'CREW':<22}"
-         f"{'BBS':<18}{'SCORE':>8}{RST}")
-    move(MENU_TOP + 1, 1)
-    _out(DG); _out(b"\xc4" * SCREEN_W); _out(RST)
+    # Header in MENU zone
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {Y}HALL OF FAME{RST}  {DG}{len(entries)} entr{'ies' if len(entries) != 1 else 'y'}{RST}")
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    _out(f"  {DG}{'#':<4}{'HANDLE':<14}{'CREW':<20}{'BBS':<16}{'SCORE':>8}{'  DAY':>6}{RST}")
+    move(MENU_TOP + 2, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
 
-    row = MENU_TOP + 2
-    for i, e in enumerate(entries[:3]):
-        if row > MENU_BOT:
+    # Entries in RES zone — up to 9 rows
+    for i, e in enumerate(entries[:9]):
+        row = RES_TOP + i
+        if row > RES_BOT:
             break
-        is_p = e["handle"].upper() == player_handle.upper()
-        col  = G if is_p else W
-        rnk  = Y if i == 0 else (W if i < 3 else DG)
-        move(row, 1)
-        _out(ERASE_LINE)
-        _out(f"  {rnk}{str(i+1)+'.':<4}{RST}"
-             f"{col}{e['handle']:<16}{RST}"
-             f"{DG}{e['crew']:<22}{RST}"
-             f"{DG}{e['bbs']:<18}{RST}"
-             f"{Y}{e['score']:>8}{RST}")
-        row += 1
+        is_player = e["handle"].upper() == player_handle.upper()
+        name_col  = G if is_player else W
+        rank_col  = Y if i == 0 else (C if i == 1 else (W if i < 5 else DG))
+        move(row, 1); _out(ERASE_LINE)
+        _out(f"  {rank_col}{str(i+1)+'.':<4}{RST}"
+             f"{name_col}{e['handle']:<14}{RST}"
+             f"{DG}{e['crew']:<20}{RST}"
+             f"{DG}{e['bbs'][:15]:<16}{RST}"
+             f"{Y}{e['score']:>8}{RST}"
+             f"{DG}{str(e.get('day','?')):>6}{RST}")
+
+
+def screen_crew(player):
+    """
+    Crew management / dossier screen.
+    Shows resources as visual bars, career stats, projected score,
+    current node, and home board defense level.
+    Full RES zone used — no data hidden by MENU_BOT cap.
+    """
+    screen_base("hq", player, player.bbs_name, cmd_hint="[Q] Back")
+
+    # ── Header ────────────────────────────────────────────────────────────
+    move(MENU_TOP, 1); _out(ERASE_LINE)
+    _out(f"  {Y}{player.crew_name}{RST}  {DG}|{RST}  "
+         f"{DG}Handle: {RST}{C}{player.handle}{RST}  {DG}|{RST}  "
+         f"{DG}Home: {RST}{B}{player.bbs_name}{RST}")
+
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    _out(f"  {DG}Rep: {RST}{Y}{player.reputation:<6}{RST}  "
+         f"{DG}Defense: {RST}{_defense_bar(player.defense)}{RST}  "
+         f"{DG}Location: {RST}{C}{player.current_node}{RST}")
+
+    move(MENU_TOP + 2, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+
+    # ── Resource bars in RES zone ─────────────────────────────────────────
+    # Layout: two columns, 4 resources each
+    resources_left = [
+        ("Phone Credits", "phone_credits", 9999,  G),
+        ("Floppy Disks",  "floppy_disks",  2000,  C),
+        ("Source Code",   "source_code",   1000,  B),
+        ("Artwork",       "artwork",        1000,  M),
+    ]
+    resources_right = [
+        ("MOD Music",   "mod_music",  1000, Y),
+        ("Beer",        "beer",         48, Y),
+        ("Hardware",    "hardware",    500, DG),
+        ("Tools",       "tools",       500, R),
+    ]
+
+    for i, (lbl, key, cap, col) in enumerate(resources_left):
+        row = RES_TOP + i
+        val = player.get_resource(key)
+        bar = _resource_bar(val, cap, width=12, colour=col)
+        move(row, 1); _out(ERASE_LINE)
+        _out(f"  {DG}{lbl:<14}{RST} {bar} {col}{val:>6}{RST}")
+
+    for i, (lbl, key, cap, col) in enumerate(resources_right):
+        row = RES_TOP + i
+        val = player.get_resource(key)
+        bar = _resource_bar(val, cap, width=12, colour=col)
+        move(row, 41); _out(f"{DG}{lbl:<10}{RST} {bar} {col}{val:>5}{RST}")
+
+    # ── Divider ───────────────────────────────────────────────────────────
+    move(RES_TOP + 4, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+
+    # ── Career stats (two columns) ────────────────────────────────────────
+    stats_left = [
+        ("Demos released",  player.demos_produced),
+        ("Raids won",       player.raids_won),
+        ("Raids lost",      player.raids_lost),
+        ("Parties attended",player.parties_attended),
+    ]
+    stats_right = [
+        ("Raves attended",  player.raves_attended),
+        ("Beers drunk",     player.beers_drunk),
+        ("5K runs",         getattr(player, "5k_runs", 0)),
+        ("Day",             f"{player.day}/50"),
+    ]
+
+    for i, (lbl, val) in enumerate(stats_left):
+        row = RES_TOP + 5 + i
+        if row > RES_BOT:
+            break
+        move(row, 1); _out(ERASE_LINE)
+        _out(f"  {DG}{lbl:<18}{RST} {W}{val}{RST}")
+
+    for i, (lbl, val) in enumerate(stats_right):
+        row = RES_TOP + 5 + i
+        if row > RES_BOT:
+            break
+        move(row, 41)
+        _out(f"{DG}{lbl:<16}{RST} {W}{val}{RST}")
+
+    # ── Projected score ───────────────────────────────────────────────────
+    proj = (player.reputation * 10
+            + player.demos_produced * 50
+            + player.raids_won * 30
+            - player.raids_lost * 10
+            + player.parties_attended * 100
+            + player.raves_attended * 25
+            + getattr(player, "5k_runs", 0) * 40)
+    proj = max(0, proj)
+    move(RES_BOT, 1); _out(ERASE_LINE)
+    _out(f"  {DG}Projected score: {RST}{Y}{proj:>8}{RST}"
+         f"  {DG}Best so far: {RST}{C}{player.total_score}{RST}")
+
+
+def _resource_bar(value, cap, width=12, colour=G):
+    """Render a compact resource bar: ████░░░░ style."""
+    filled = min(width, int((value / max(cap, 1)) * width))
+    empty  = width - filled
+    return f"{colour}{'█' * filled}{DG}{'░' * empty}{RST}"
+
+
+def _defense_bar(defense, width=8):
+    """Render a defense bar with colour coding by level."""
+    filled = min(width, int((defense / 100) * width))
+    empty  = width - filled
+    col = G if defense >= 60 else (Y if defense >= 30 else R)
+    return f"{col}{'█' * filled}{DG}{'░' * empty}{RST} {col}{defense}{RST}"
 
 
 def screen_party(party, player):
     """Demoparty screen."""
+
     from world import COMPO_DEFS
     screen_base("party", player, player.bbs_name,
                 cmd_hint=f"[1-{len(party.compos)}] Compo  [D] Bar  [R] Rave  [Q] Leave")

@@ -16,6 +16,7 @@ import world  as worldmod
 import ansi
 import combat
 import socketio
+import courier as couriermod
 
 GAME_TITLE, DEVELOPER, VERSION = "Demoscene: The Exploration of Art", "Cellfish", "0.1"
 
@@ -91,7 +92,7 @@ def action_explore(player, world, cfg, rng):
 # ---------------------------------------------------------------------------
 
 def action_travel(player, world, cfg, rng):
-    page, pg_sz = 0, 5
+    page, pg_sz = 0, 7
     while True:
         disc = world.discovered_nodes()
         pg_cnt = max(1, (len(disc) + pg_sz - 1) // pg_sz)
@@ -237,6 +238,20 @@ def action_produce(player, world, cfg, rng):
     ansi.progress_bar(ansi.RES_TOP + 3, 3, "Packing  ", width=24, duration=0.4, colour=ansi.C)
 
     luck   = rng.uniform(0.8, 1.2)
+
+    # Production can fail — more complex demos have higher failure chance
+    fail_chance = {
+        "cracktro" : 0.05,
+        "4k"       : 0.10,
+        "64k"      : 0.15,
+        "musicdisk": 0.10,
+        "demo"     : 0.20,
+    }
+    if rng.random() < fail_chance.get(dkey, 0.10):
+        ansi.result(f"{ansi.R}> Production failed. Compiler errors. Resources lost.{ansi.RST}")
+        ansi.draw_status(player, player.bbs_name)
+        return
+
     gained = int(base_rep * luck)
     player.adjust_resource("reputation", gained)
     player.demos_produced += 1
@@ -352,6 +367,64 @@ def action_defend(player, world, cfg, rng):
         f"{ansi.G}> Home board fortified. "
         f"Defense +{boost} (now {player.defense}).{ansi.RST}")
     ansi.draw_status(player, player.bbs_name)
+
+# ---------------------------------------------------------------------------
+# Action: Courier missions
+# ---------------------------------------------------------------------------
+
+def action_crew_screen(player):
+    ansi.screen_crew(player)
+    ansi.get_key(valid_keys="Qq")
+    """Show the mission board and let player accept/decline."""
+    if daily_mission is None:
+        ansi.result(f"{ansi.DG}> No courier missions available today.{ansi.RST}")
+        return
+
+    if daily_mission.is_expired(player.day):
+        ansi.result(f"{ansi.R}> The courier posting has expired.{ansi.RST}")
+        return
+
+    if daily_mission.accepted:
+        # Already accepted — show delivery status
+        if player.current_node == daily_mission.dest:
+            # Player is at destination — deliver
+            ok = couriermod.deliver_mission(player, daily_mission)
+            if ok:
+                ansi.result(f"{ansi.G}> Package delivered to {daily_mission.dest}!{ansi.RST}")
+                ansi.result(f"  {ansi.Y}Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                ansi.draw_status(player, player.bbs_name)
+            else:
+                ansi.result(f"{ansi.R}> Delivery failed.{ansi.RST}")
+        else:
+            ansi.screen_courier_active(player, daily_mission)
+            ansi.result(
+                f"{ansi.DG}> Travel to {ansi.C}{daily_mission.dest}{ansi.DG}"
+                f" to complete delivery.{ansi.RST}")
+        return
+
+    # Show the mission board
+    ansi.screen_courier_board(player, daily_mission)
+    key = ansi.get_key(valid_keys="AQaq").upper()
+    if key == "Q":
+        return
+
+    # Accept
+    if not player.use_turns(1):
+        ansi.result(f"{ansi.R}> Not enough turns.{ansi.RST}")
+        return
+
+    ok = couriermod.accept_mission(player, daily_mission)
+    if not ok:
+        ansi.result(
+            f"{ansi.R}> Not enough {daily_mission.cargo_key.replace('_', ' ')} "
+            f"to accept this mission (need {daily_mission.cargo_amt}).{ansi.RST}")
+        player.turns_remaining += 1  # refund turn
+    else:
+        ansi.result(
+            f"{ansi.G}> Mission accepted. Travel to "
+            f"{ansi.C}{daily_mission.dest}{ansi.G} to deliver.{ansi.RST}")
+        ansi.draw_status(player, player.bbs_name)
+
 
 # ---------------------------------------------------------------------------
 # Action: Messages
@@ -484,6 +557,12 @@ def end_day(player, world, cfg, rng):
     ap = cfg_int(cfg, "gameplay", "action_points_per_day", 10)
     player.end_day(ap)
 
+    # Apply daily defense decay — home board slowly degrades without upkeep
+    combat.apply_defense_decay(player)
+
+    # Replenish NPC resources slightly so raiding stays worthwhile all game
+    combat.apply_npc_daily_trickle(world.npc_crews, rng)
+
     # Check for counter-raid: triggered if player won a raid this day
     # and the enemy had high aggression (counter_risk flag was set).
     # Falls back to a random 15% chance for unprovoked raids.
@@ -530,15 +609,27 @@ def end_day(player, world, cfg, rng):
 
 def hq_loop(player, world, cfg, rng):
     game_len = cfg_int(cfg, "gameplay", "game_length_days", 50)
+    daily_mission = couriermod.get_daily_mission(player, world, rng)
     ansi.screen_hq(player)
     while not player.is_game_over(game_len):
-        key = ansi.get_key(valid_keys="ETPRDBMSQetpRdbmsq").upper()
+        key = ansi.get_key(valid_keys="ETPRDBMSCWQetprdbmscwq").upper()
 
         if key == "E":
             action_explore(player, world, cfg, rng)
             ansi.screen_hq(player)
         elif key == "T":
             action_travel(player, world, cfg, rng)
+            # Auto-deliver courier mission if player arrived at destination
+            if (daily_mission and daily_mission.accepted
+                    and not daily_mission.delivered
+                    and player.current_node == daily_mission.dest):
+                ok = couriermod.deliver_mission(player, daily_mission)
+                if ok:
+                    ansi.result(
+                        f"{ansi.G}> Auto-delivery: package delivered to "
+                        f"{daily_mission.dest}! "
+                        f"Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                    ansi.draw_status(player, player.bbs_name)
             ansi.screen_hq(player)
         elif key == "P":
             action_produce(player, world, cfg, rng)
@@ -550,6 +641,12 @@ def hq_loop(player, world, cfg, rng):
             action_defend(player, world, cfg, rng)
         elif key == "B":
             action_trade(player, world, cfg, rng)
+            ansi.screen_hq(player)
+        elif key == "C":
+            action_courier(player, world, cfg, rng, daily_mission)
+            ansi.screen_hq(player)
+        elif key == "W":
+            action_crew_screen(player)
             ansi.screen_hq(player)
         elif key == "M":
             action_messages(player, world, cfg)
@@ -565,9 +662,14 @@ def hq_loop(player, world, cfg, rng):
             return False
 
         if player.turns_remaining <= 0:
+            # Expire undelivered missions at day end
+            if daily_mission and daily_mission.accepted and not daily_mission.delivered:
+                couriermod.fail_mission(player, daily_mission)
+                ansi.result(f"{ansi.R}> Courier mission expired. Cargo returned. -10 rep.{ansi.RST}")
             ansi.result(f"{ansi.DG}> Day {player.day} is over. Get some sleep.{ansi.RST}")
             time.sleep(0.8)
             end_day(player, world, cfg, rng)
+            daily_mission = couriermod.get_daily_mission(player, world, rng)
             ansi.screen_hq(player)
 
     return True
@@ -710,59 +812,121 @@ def _ordinal(n):
 
 
 def _random_event(player, world, rng):
+    # Each entry: (weight, colour_code, message, effect_fn)
+    # Weight 10 = common, 5 = uncommon, 2 = rare
+    # Mix: ~6 positive, ~6 negative, ~6 neutral/flavour
     events = [
-        (f"{ansi.G}> A courier dropped off a package. +50 floppy disks.{ansi.RST}",
+        # --- Positive ---
+        (10, ansi.G,  "> A courier dropped off a package. +50 floppy disks.",
          lambda: player.adjust_resource("floppy_disks", 50)),
-        (f"{ansi.G}> Someone paid for your last demo. +100 credits.{ansi.RST}",
+        (10, ansi.G,  "> Someone paid for your last demo. +100 credits.",
          lambda: player.adjust_resource("phone_credits", 100)),
-        (f"{ansi.C}> Your reputation spreads. +15 reputation.{ansi.RST}",
+        (8,  ansi.C,  "> Your reputation spreads through the scene. +15 rep.",
          lambda: player.adjust_resource("reputation", 15)),
-        (f"{ansi.Y}> Found an old box of floppies. +30 disks.{ansi.RST}",
+        (8,  ansi.Y,  "> Found an old box of floppies in the corner. +30 disks.",
          lambda: player.adjust_resource("floppy_disks", 30)),
-        (f"{ansi.M}> A scener shared source code with you. +40 src.{ansi.RST}",
+        (8,  ansi.M,  "> A scener shared source code with you. +40 src.",
          lambda: player.adjust_resource("source_code", 40)),
-        (f"{ansi.DG}> Nothing unusual happened today.{ansi.RST}",
+        (5,  ansi.G,  "> A grateful sysop sends beer. +4 beer.",
+         lambda: player.adjust_resource("beer", 4)),
+        (3,  ansi.Y,  "> You find working hardware in a skip. +20 hardware.",
+         lambda: player.adjust_resource("hardware", 20)),
+        # --- Negative ---
+        (8,  ansi.R,  "> Phone company auditing. You lose 80 credits in hasty cover-up.",
+         lambda: player.adjust_resource("phone_credits", -80)),
+        (8,  ansi.R,  "> A floppy shipment went missing. -40 disks.",
+         lambda: player.adjust_resource("floppy_disks", -40)),
+        (6,  ansi.R,  "> Rival crew spread rumours about your crew. -10 rep.",
+         lambda: player.adjust_resource("reputation", -10)),
+        (5,  ansi.R,  "> Your modem burned out. -1 turn today.",
+         lambda: player.use_turns(1)),
+        (4,  ansi.R,  "> A hard drive crash wiped your work. -60 source code.",
+         lambda: player.adjust_resource("source_code", -60)),
+        (3,  ansi.R,  "> Tools got corrupted in a virus outbreak. -25 tools.",
+         lambda: player.adjust_resource("tools", -25)),
+        # --- Neutral / flavour ---
+        (10, ansi.DG, "> Nothing unusual happened today.",
+         lambda: None),
+        (8,  ansi.DG, "> You spend the day dialing random numbers. Nothing found.",
+         lambda: None),
+        (6,  ansi.C,  "> Word reaches you: someone dropped a 64K at a Norwegian party.",
+         lambda: None),
+        (5,  ansi.DG, "> A new e-zine lands in your mailbox. Interesting reading.",
+         lambda: None),
+        (3,  ansi.M,  "> An old friend reconnects. They're back in the scene.",
          lambda: None),
     ]
-    msg, effect = rng.choice(events)
-    ansi.result(msg)
+
+    # Weight the draw — also slightly bias negative events in late game
+    weights = [e[0] for e in events]
+    if player.day > 35:
+        # Increase negative event weight in last act
+        weights = [w * (1.3 if events[i][1] == ansi.R else 1.0)
+                   for i, w in enumerate(weights)]
+
+    chosen = rng.choices(events, weights=weights, k=1)[0]
+    _, col, msg, effect = chosen
+    ansi.result(f"{col}{msg}{ansi.RST}")
     effect()
     ansi.draw_status(player, player.bbs_name)
 
 
 _MSG_TEMPLATES = [
+    # --- Always available ---
     ("{crew} thinks your crew is a bunch of lamers. Prove them wrong.",
-     lambda p, w: w.npc_crews[0].name if w.npc_crews else None, "Taunt"),
+     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Taunt"),
     ("We heard {crew} is planning a raid on your home board. Watch out.",
-     lambda p, w: random.choice(w.npc_crews).name if w.npc_crews else None, "Warning"),
+     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Warning"),
     ("Rumour has it {crew} just dropped a killer 64K.",
-     lambda p, w: random.choice(w.npc_crews).name if w.npc_crews else None, "Scene News"),
+     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Scene News"),
     ("A new node was spotted deep in the network. Very deep.",
-     lambda p, w: None, "Intel"),
+     lambda p, w, r: None, "Intel"),
     ("The phone lines are buzzing. Something big is about to drop.",
-     lambda p, w: None, "Rumour"),
+     lambda p, w, r: None, "Rumour"),
     ("h0ffman is rumoured to be DJing at the next party.",
-     lambda p, w: None, "Party Buzz"),
+     lambda p, w, r: None, "Party Buzz"),
     ("Gates of Asgard is said to be back online. Nobody can confirm it.",
-     lambda p, w: None, "Rumour"),
+     lambda p, w, r: None, "Rumour"),
     ("SysOp of The Dungeon got busted. Board is gone. Moment of silence.",
-     lambda p, w: None, "Scene News"),
+     lambda p, w, r: None, "Scene News"),
     ("Disk couriers wanted. Good pay. No questions asked.",
-     lambda p, w: None, "Opportunity"),
+     lambda p, w, r: None, "Opportunity"),
+    ("Someone's releasing a new art pack. ACiD vs iCE, round 467.",
+     lambda p, w, r: None, "Scene News"),
+    ("Your crew's name was mentioned in a trade channel. People are watching.",
+     lambda p, w, r: None, "Intel"),
+    # --- Early game only (day <= 15) ---
+    ("Welcome to the scene. Don't screw it up.",
+     lambda p, w, r: None if p.day <= 15 else "__skip__", "Welcome"),
+    ("A veteran scener offers advice: explore before you trade.",
+     lambda p, w, r: None if p.day <= 15 else "__skip__", "Tip"),
+    # --- Mid game only (day 15-35) ---
+    ("{crew} has been unusually quiet lately. Suspiciously quiet.",
+     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews and 15 <= p.day <= 35 else "__skip__", "Intel"),
+    ("The network is expanding. New nodes reported in the deep zones.",
+     lambda p, w, r: None if 15 <= p.day <= 35 else "__skip__", "Intel"),
+    # --- Late game only (day > 35) ---
+    ("Only {days} days left. The scene is watching. Make it count.",
+     lambda p, w, r: str(50 - p.day) if p.day > 35 else "__skip__", "Countdown"),
+    ("{crew} is pulling ahead on reputation. Time to act.",
+     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews and p.day > 35 else "__skip__", "Warning"),
 ]
 
 
-def _generate_messages(player, world, current_day, count=5):
+def _generate_messages(player, world, current_day, count=7):
     msgs = []
     rng  = random.Random(current_day + hash(player.handle))
     pool = list(_MSG_TEMPLATES)
     rng.shuffle(pool)
 
-    for template, crew_fn, subject in pool[:count * 2]:
+    for template, crew_fn, subject in pool:
         try:
-            crew_val = crew_fn(player, world)
+            crew_val = crew_fn(player, world, rng)
         except Exception:
             crew_val = None
+
+        if crew_val == "__skip__":
+            continue
 
         sender = "ANONYMOUS"
         if world.npc_crews:
@@ -776,6 +940,7 @@ def _generate_messages(player, world, current_day, count=5):
                 node  = (rng.choice(world.discovered_nodes()).name
                          if world.discovered_nodes() else "Unknown Node"),
                 party = "the next party",
+                days  = crew_val if subject == "Countdown" else "?",
             )
         except (KeyError, IndexError):
             text = template

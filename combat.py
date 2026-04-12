@@ -182,8 +182,8 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
             "floppy_disks" : actual_disks,
         }
 
-        # Enemy gets stronger from winning
-        npc_crew.strength = min(100, npc_crew.strength + rng.randint(2, 6))
+        # Enemy gets stronger from winning, but capped
+        npc_crew.strength = min(90, npc_crew.strength + rng.randint(2, 6))
 
         result.message = _defeat_message(npc_crew.name, result.losses, rng)
         result.flavour = (
@@ -281,6 +281,26 @@ def resolve_defence(player, npc_crew, rng=None):
 # ---------------------------------------------------------------------------
 # Daily defense decay
 # ---------------------------------------------------------------------------
+
+def apply_npc_daily_trickle(npc_crews, rng=None):
+    """
+    Slowly replenish NPC crew resources each day so they remain
+    worth raiding throughout the game. Aggressive crews recover faster.
+    Called by game.py end_day().
+    """
+    if rng is None:
+        rng = random.Random()
+
+    for crew in npc_crews:
+        rate = 5 + (crew.aggression * 3)   # agg=1→8, agg=2→11, agg=3→14
+        for key in ["phone_credits", "floppy_disks", "source_code",
+                    "artwork", "mod_music", "hardware", "tools"]:
+            current = crew.resources.get(key, 0)
+            cap     = 300
+            if current < cap:
+                gain = rng.randint(0, rate)
+                crew.resources[key] = min(cap, current + gain)
+
 
 def apply_defense_decay(player):
     """

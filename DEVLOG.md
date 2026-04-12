@@ -17,6 +17,181 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-12  —  BBS Skill Upgrade Pass (session 3)
+
+### Goal
+screen_messages/hof showing only 3 entries, crew management screen.
+
+### Files changed
+- `ansi.py`  — screen_messages, screen_hof, screen_crew, _resource_bar, _defense_bar
+- `game.py`  — action_crew_screen, W key, _generate_messages count bump
+
+### Changes made
+
+**ansi.py — screen_messages fixed (3 → 7 messages)**
+  Old: messages[-3:] bounded by MENU_BOT (3 rows max).
+  New: messages[:7] in RES zone (RES_TOP..RES_BOT), header shows count,
+       NEW tag coloured cyan, column widths adjusted for 80-char fit.
+
+**ansi.py — screen_hof fixed (3 → 9 entries)**
+  Old: entries[:3] bounded by MENU_BOT.
+  New: entries[:9] in RES zone. Rank colours: gold=1st, cyan=2nd,
+       white=3rd-5th, gray=rest. Day column added. Player row highlighted
+       in green. BBS name truncated to 15 chars to fit 80 cols.
+
+**ansi.py — screen_crew added (new)**
+  Full dossier screen with:
+  - Crew name, handle, home board in header
+  - Reputation + defense bar (colour-coded: green≥60, yellow≥30, red<30)
+  - Resource grid (8 resources, 2 columns) with visual █░░ bars and
+    raw values — bars scale to per-resource cap from config
+  - Career stats grid (2 columns): demos, raids, parties, raves, beer, 5K
+  - Projected score formula shown live (matches final calculate_score())
+  Accessible via [W] Crew on HQ menu.
+
+**ansi.py — HQ menu updated**
+  [W] Crew replaces [S] Scores in menu grid (Scores kept on divider line
+  alongside [Q] Quit/Save so it remains discoverable).
+
+**game.py — _generate_messages count bumped 5 → 7**
+  Matches new screen_messages capacity.
+
+**game.py — action_crew_screen + W key**
+  Thin wrapper: calls screen_crew(player), waits for Q.
+
+### Resume here next session
+Priority 1: Push to GitHub.
+Priority 2: Test on BBS — courier, crew screen, messages.
+Priority 3: Map pagination confirm — test with 15+ discovered nodes.
+
+
+
+### Goal
+Finish the two remaining backlog items from the upgrade pass:
+map pagination fix and courier mission system.
+
+### Files changed
+- `ansi.py`   — screen_map expanded, screen_courier_board/active added, HQ menu updated
+- `game.py`   — action_courier added, hq_loop wired with courier + auto-delivery
+- `combat.py` — apply_defense_decay restored (was accidentally merged into trickle fn)
+- `courier.py` — NEW FILE: full courier mission system
+
+### Changes made
+
+**ansi.py — screen_map pagination fixed**
+  Old: page_size=5, used hardcoded row numbers (12, 14–18, 22), prompt
+       on row 22 collided with result buffer, no node count shown.
+  New: page_size=7 (uses full RES_TOP..RES_BOT zone correctly),
+       header shows total discovered nodes e.g. "(8 nodes discovered)",
+       [N]ext/[P]rev hints shown contextually, crew presence shown inline.
+
+**ansi.py — screen_hq menu updated**
+  Added [C] Courier to third menu row (replaced [Q] which moved to DIV_3
+  divider line — always visible, doesn't consume a menu row).
+
+**game.py — action_courier + hq_loop**
+  action_courier(): handles mission board display, accept flow, and
+  in-place delivery when player is already at destination.
+  hq_loop(): generates daily_mission at day start, refreshes each new
+  day, auto-delivers when player travels to destination, fails mission
+  with cargo return + -10 rep if day ends with active undelivered mission.
+
+**courier.py — new module**
+  5 mission templates scaling by difficulty:
+    difficulty 1 (days 1-10):  disk run (120cr), source drop (160cr)
+    difficulty 2 (days 1-25):  MOD transport (200cr), hardware haul (250cr)
+    difficulty 3 (all game):   elite package (350cr + 40 rep)
+  Full lifecycle: get_daily_mission → accept_mission → deliver_mission / fail_mission
+  Missions expire end of day+1. Aggressive crews recover faster via trickle.
+  Self-test included and passing.
+
+**combat.py — apply_defense_decay restored**
+  Was accidentally merged into apply_npc_daily_trickle body during
+  previous session. Restored as a proper separate function.
+
+### Resume here next session
+Priority 1: Push upgraded files to GitHub.
+Priority 2: Test courier missions end-to-end on BBS.
+Priority 3: screen_messages shows only 3 messages — increase to 5-7.
+Priority 4: Crew management screen (view your crew's stats).
+
+
+
+### Goal
+Full codebase review using the new bbs-game-creator skill. Fix dead code,
+expand content, add balance improvements the skill identified as gaps.
+
+### Files changed
+- `game.py`  — random events, message templates, produce failure, defense decay wired
+- `combat.py` — NPC trickle, NPC strength cap fix
+- `player.py` — resource cap enforcement, _caps dict
+
+### Changes made
+
+**game.py — Random events expanded (6 → 18)**
+  Old: 6 events, all flat-weighted, no negative events, used rng.choice()
+  New: 18 events (7 positive, 7 negative, 4 neutral), weighted by rarity,
+       negative events get 1.3× weight after day 35 for late-game tension.
+  Skill reference: "Generate 10–20 events. Mix positive, negative, and neutral."
+
+**game.py — Message templates (9 → 17, with act awareness)**
+  Old: 9 templates, used module-level random.choice() breaking seeding,
+       crew_fn lambdas took 2 args but called with 3 → silent crashes possible.
+  New: 17 templates with correct 3-arg lambdas (p, w, r), act-gated messages
+       (early/mid/late game), "__skip__" sentinel for out-of-window templates.
+  Bug fixed: random.choice() → rng.choices() — deterministic seeding restored.
+
+**game.py — Produce failure state added**
+  Old: luck only affected reputation amount, never whether demo succeeded.
+  New: per-demo-type failure chance (cracktro 5% → full demo 20%).
+       Resources are spent before the failure check (risk/reward).
+  Skill reference: BDD games need risk — flat-positive actions feel hollow.
+
+**game.py — Defense decay wired**
+  Old: apply_defense_decay() existed in combat.py but was never called.
+  New: called in end_day() before the overnight raid check.
+
+**combat.py — NPC daily resource trickle added**
+  New function: apply_npc_daily_trickle(npc_crews, rng)
+  Aggressive crews (agg=3) recover ~14 resources/day per slot vs ~8 for agg=1.
+  Reason: raided crews had no recovery — after one raid they had nothing left,
+          removing raiding as a viable late-game strategy.
+  Called from end_day() in game.py.
+
+**combat.py — NPC strength cap lowered**
+  Old: min(100, ...) — losing crews could reach max strength of 100.
+  New: min(90, ...) — leaves room for player to always have a fighting chance.
+
+**player.py — Resource caps now enforced**
+  Old: config.ini defined max_* values but set_resource() ignored them.
+  New: _caps dict in __init__ with defaults matching config.ini defaults.
+       apply_config() loads caps from config so sysop values are respected.
+       set_resource() clamps: max(0, min(value, cap)).
+
+### Resume here next session
+Priority 1: Push to GitHub and test on BBS.
+Priority 2: Map pagination — nodes beyond 7 still not all visible.
+Priority 3: Courier mission system (mentioned in session 8 backlog).
+
+
+# A Cellfish Production
+
+Format: newest entry at the top.
+Update this file at the end of every session before closing the chat.
+
+Raw file links (paste directly into Claude chat to fetch):
+  https://raw.githubusercontent.com/dextercf/demoscene/main/ansi.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/game.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/combat.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/door.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/player.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/socketio.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/world.py
+  https://raw.githubusercontent.com/dextercf/demoscene/main/config.ini
+  https://raw.githubusercontent.com/dextercf/demoscene/main/DEVLOG.md
+
+---
+
 ## 2026-03-19  —  Session 8
 
 ### Goal

@@ -81,6 +81,17 @@ class Player:
         for key, val in DEFAULTS.items():
             setattr(self, key, val)
         self._dirty = False  # track unsaved changes
+        # Resource caps — loaded from config, defaults are generous
+        self._caps = {
+            "phone_credits": 9999,
+            "floppy_disks" : 2000,
+            "source_code"  : 1000,
+            "artwork"      : 1000,
+            "mod_music"    : 1000,
+            "beer"         : 48,
+            "hardware"     : 500,
+            "tools"        : 500,
+        }
 
     # ------------------------------------------------------------------
     # Properties
@@ -104,7 +115,8 @@ class Player:
         return getattr(self, key, 0)
 
     def set_resource(self, key, value):
-        setattr(self, key, max(0, int(value)))
+        cap = self._caps.get(key, 999999)
+        setattr(self, key, max(0, min(int(value), cap)))
         self._dirty = True
 
     def adjust_resource(self, key, delta):
@@ -311,6 +323,18 @@ class Player:
         self.reputation      = _int("starting_reputation",     10)
         self.beer            = _int("starting_beer",           0)
         self.turns_remaining = _int("action_points_per_day",   10)
+
+        # Load resource caps from config so set_resource enforces them
+        self._caps = {
+            "phone_credits": _int("max_phone_credits", 9999),
+            "floppy_disks" : _int("max_floppy_disks",  2000),
+            "source_code"  : _int("max_source_code",   1000),
+            "artwork"      : _int("max_artwork",        1000),
+            "mod_music"    : _int("max_mod_music",      1000),
+            "beer"         : _int("max_beer",           48),
+            "hardware"     : _int("max_hardware",       500),
+            "tools"        : _int("max_tools",          500),
+        }
         self._dirty = True
 
     # ------------------------------------------------------------------
