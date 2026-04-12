@@ -598,8 +598,7 @@ def animate_combat_bars(row, player_power, enemy_power):
 
 def screen_courier_board(player, mission):
     """Courier mission board screen."""
-    screen_base("courier", player, player.bbs_name,
-                cmd_hint="[A] Accept  [Q] Decline")
+    screen_base("courier", player, player.bbs_name)
     move(MENU_TOP, 1); _out(ERASE_LINE)
     _out(f"  {C}COURIER MISSION BOARD{RST}  {DG}Day {player.day}{RST}")
 
@@ -607,7 +606,12 @@ def screen_courier_board(player, mission):
     diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
     _out(f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
 
-    draw_divider(DIV_3)
+    # Prompt on DIV_3 — drawn here, not via screen_base, to avoid being overwritten
+    move(DIV_3, 1); _out(ERASE_LINE)
+    _out(f" {DG}{'─' * 38}{RST}  "
+         f"{C}[A]{RST} {W}Accept{RST}   "
+         f"{C}[Q]{RST} {W}Decline{RST}  "
+         f"{DG}{'─' * 14}{RST}")
 
     desc    = mission.desc[:70]
     origin  = mission.origin[:24]
@@ -620,7 +624,8 @@ def screen_courier_board(player, mission):
     write_at(RES_TOP + 4, 1, f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} {cargo}{RST}")
     write_at(RES_TOP + 5, 1, f"  {DG}Reward:{RST}  {G}{reward}{RST}")
     write_at(RES_TOP + 6, 1, f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
-    write_at(RES_TOP + 8, 1, f"  {DG}Need {mission.cargo_amt} {cargo} in inventory to accept.{RST}")
+    write_at(RES_TOP + 7, 1, f"  {DG}Need {mission.cargo_amt} {cargo} in inventory to accept.{RST}")
+    write_at(RES_BOT,     1, f"  {C}[A]{RST} {W}Accept mission{RST}   {C}[Q]{RST} {W}Decline{RST}")
 
 
 def screen_courier_active(player, mission):
@@ -993,5 +998,3 @@ def screen_game_over(player, rank):
     _out(f"  {DG}Press any key to return to BBS...{RST}"
          + " " * 20
          + f"{DG}A CELLFISH PRODUCTION{RST}")
-
-
