@@ -155,15 +155,17 @@ def action_trade(player, world, cfg, rng):
         buy  = node.prices.get(res, 0)
         sell = node.sell_price(res)
 
-        ansi.result(
-            f"  {ansi.W}{name}{ansi.RST}  "
-            f"{ansi.G}Buy: {buy}c{ansi.RST}  "
+        # Write item info and B/S/Q prompt at fixed safe rows in RES zone
+        ansi.write_at(ansi.RES_BOT - 1, 1,
+            f"  {ansi.W}{name:<16}{ansi.RST}  "
+            f"{ansi.G}Buy: {buy}c{ansi.RST}   "
             f"{ansi.R}Sell: {sell}c{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.C}[B]{ansi.RST} Buy  "
+            f"{ansi.C}[S]{ansi.RST} Sell  "
+            f"{ansi.C}[Q]{ansi.RST} Cancel: ")
 
-        action = ansi.get_key(
-            prompt=f"  {ansi.DG}[B] Buy  [S] Sell  [Q] Cancel: {ansi.RST}",
-            valid_keys="BSQbsq"
-        ).upper()
+        action = ansi.get_key(valid_keys="BSQbsq").upper()
 
         if action == "Q":
             continue
