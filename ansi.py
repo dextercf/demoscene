@@ -939,7 +939,47 @@ def _produce_upload_sequence(label, dkey, rng):
     ]
 
     def _dial_board(board_name, phone, location, is_home):
-        """Dial one board, upload, get sysop response."""
+        """
+        Dial one board and upload.
+        The area between DIV_3 and RES_BOT acts as a scrolling terminal —
+        new lines appear at the bottom, old ones scroll up and off the top.
+        A fixed progress bar row sits just above RES_BOT for scan/upload bars.
+        """
+        # Terminal window: DIV_3+1 (row 14) .. RES_BOT-2 (row 20) = 7 visible lines
+        # Row RES_BOT-1 (row 21) = dedicated progress bar row
+        # Row RES_BOT   (row 22) = status line
+        TERM_TOP  = RES_TOP        # row 14 — top of scrolling area
+        TERM_BOT  = RES_BOT - 2   # row 20 — bottom of scrolling area
+        BAR_ROW   = RES_BOT - 1   # row 21 — progress bar (fixed)
+        STAT_ROW  = RES_BOT        # row 22 — status
+
+        TERM_H = TERM_BOT - TERM_TOP + 1   # 7 lines
+
+        term_buf = []   # list of (text, colour) tuples
+
+        def _redraw_terminal():
+            """Redraw the visible terminal lines from the buffer."""
+            shown = term_buf[-TERM_H:]
+            for i in range(TERM_H):
+                row = TERM_TOP + i
+                move(row, 1); _out(ERASE_LINE)
+                if i < len(shown):
+                    txt, col = shown[i]
+                    _out(f"  {col}{txt}{RST}")
+
+        def log(text, colour=DG, delay=0.4):
+            """Append a line to the scrolling terminal and redraw."""
+            term_buf.append((text, colour))
+            _redraw_terminal()
+            if delay:
+                time.sleep(delay)
+
+        def bar(label_text, duration, colour=C, width=22):
+            """Run a progress bar on BAR_ROW (doesn't scroll)."""
+            progress_bar(BAR_ROW, 3, f"{label_text:<20}", width=width,
+                         duration=duration, colour=colour)
+
+        # ── Draw chrome ──────────────────────────────────────────────
         clear_screen()
         draw_art("hq")
         draw_divider(DIV_1)
@@ -951,60 +991,54 @@ def _produce_upload_sequence(label, dkey, rng):
         write_at(MENU_TOP + 1, 1, f"  {DG}{location}{RST}")
         draw_divider(DIV_3)
 
-        log_row = RES_TOP
+        # Clear bar and status rows
+        move(BAR_ROW,  1); _out(ERASE_LINE)
+        move(STAT_ROW, 1); _out(ERASE_LINE)
 
-        def log(text, colour=DG, delay=0.0):
-            write_at(log_row, 1, f"  {colour}{text}{RST}")
-            if delay:
-                time.sleep(delay)
-
-        # Modem init and dial
+        # ── Modem init ───────────────────────────────────────────────
         log("ATZ", W, 0.3)
-        log("OK", G, 0.2)
+        log("OK", G, 0.4)
 
-        # Dial with digits typed out one by one
-        move(log_row, 1); _out(ERASE_LINE)
+        # Dial with digits typed out one by one — directly on terminal bottom
+        term_buf.append((f"ATDT {phone}", W))
+        _redraw_terminal()
+        # Now overwrite the last terminal line with the animated dial
+        last_row = TERM_TOP + min(len(term_buf) - 1, TERM_H - 1)
+        move(last_row, 1); _out(ERASE_LINE)
         _out(f"  {W}ATDT {phone}  {DG}")
         for digit in phone.replace("+","").replace("-",""):
             _out(digit)
-            time.sleep(0.07)
+            time.sleep(0.09)
         _out(RST)
-        time.sleep(0.7)
+        time.sleep(0.8)
 
-        log("RINGING...", DG, 0.9)
-        log(f"{connect}", G, 0.4)
-        log(f"Connected to {board_name}", C, 0.4)
-        time.sleep(0.2)
-        log("Logging in...", DG, 0.5)
-        log("Upload area.", DG, 0.3)
+        log("RINGING...", DG, 1.0)
+        log(f"{connect}", G, 0.5)
+        log(f"Connected to {board_name}", C, 0.6)
+        log("Logging in...", DG, 0.6)
+        log("Upload area. Ready.", DG, 0.5)
 
-        # Virus scan before upload
+        # ── Virus scan ───────────────────────────────────────────────
         log(f"Running {av_name}...", DG, 0.3)
-        progress_bar(log_row, 3, f"{av_name[:18]:<18}", width=20,
-                     duration=1.2, colour=Y)
-        log(f"{av_result}", G, 0.4)
+        bar(av_name[:20], duration=2.0, colour=Y)
+        log(f"{av_result}", G, 0.5)
 
-        # file_id.diz check
-        log(f"Checking FILE_ID.DIZ...", DG, 0.4)
-        log(f"FILE_ID.DIZ found:", DG, 0.2)
+        # ── FILE_ID.DIZ ──────────────────────────────────────────────
+        log("Checking FILE_ID.DIZ...", DG, 0.5)
+        log("FILE_ID.DIZ found:", DG, 0.3)
         for diz in diz_lines:
-            log(f"  {diz}", W, 0.2)
-        time.sleep(0.2)
+            log(f"  {diz}", W, 0.3)
 
-        # Upload
-        log(f"Sending {filename} ({kb}kb)...", W, 0.2)
-        progress_bar(log_row, 3, f"Uploading {filename[:14]:<14}", width=22,
-                     duration=max(1.5, kb * 0.012), colour=C)
-        log(f"Transfer complete. {kb}kb. CRC OK.", G, 0.4)
-        time.sleep(0.2)
+        # ── Upload ───────────────────────────────────────────────────
+        log(f"Sending {filename} ({kb}kb)...", W, 0.3)
+        bar(f"Uploading {filename[:14]}", duration=max(2.0, kb * 0.018), colour=C)
+        log(f"Transfer OK. {kb}kb. CRC verified.", G, 0.5)
 
         if is_home:
-            # Sysop response only on home board
-            log(f'Sysop: "{sysop_reply}"', Y, 0.4)
+            log(f'Sysop: "{sysop_reply}"', Y, 0.6)
 
-        time.sleep(0.2)
-        log("NO CARRIER", R, 0.3)
-        time.sleep(0.5)
+        log("NO CARRIER", R, 0.4)
+        time.sleep(0.6)
 
     # Dial both boards
     for i, (bname, bphone, bloc) in enumerate(boards_to_dial):
