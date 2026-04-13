@@ -702,7 +702,8 @@ def screen_produce(player, detail_lines=None, prompt=None):
                             "mod_music": 150},                          600, 20),
     ]
 
-    # MENU zone — your current resources (row 10), column headers (row 11), divider (row 12)
+    # MENU zone — resources (row 10), column headers (row 11)
+    # Overwrite DIV_3 (row 13) with the list header divider so there's only one
     move(MENU_TOP, 1); _out(ERASE_LINE)
     _out(f"  {DG}src:{RST}{W}{player.source_code:>5}{RST}  "
          f"{DG}art:{RST}{W}{player.artwork:>5}{RST}  "
@@ -710,8 +711,10 @@ def screen_produce(player, detail_lines=None, prompt=None):
          f"{DG}turns: 3  rep:{RST}{C}{player.reputation:>5}{RST}")
     move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     _out(f"  {DG}{'#':<4}{'TYPE':<13}{'COST':<28}{'REP':>5}  {'FAIL%':>5}{RST}")
+    # Use MENU_TOP+2 (row 12) as divider and clear DIV_3 (row 13) to remove double line
     move(MENU_TOP + 2, 1)
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+    move(DIV_3, 1); _out(ERASE_LINE)
 
     # RES zone — demo list (rows 14-18)
     for i, (key, label, costs, rep, fail_pct) in enumerate(demos):
