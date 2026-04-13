@@ -689,22 +689,97 @@ PROD_DETAIL    = RES_TOP + 6    # rows 20-21: confirmation detail
 PROD_PROMPT    = RES_BOT        # row 22: [1-5]/[Y/Q] prompt
 
 
-def screen_produce_animation(label, dkey, gained, failed, rival_name=None):
+def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=None):
     """
-    Full-screen production animation sequence.
-    Called after player confirms production — replaces the produce list screen.
-    Shows compile/link/pack progress bars then the result.
+    Full-screen production animation.
+    Steps overwrite each other on a single row to save space.
+    Random humorous interruptions can occur between steps.
     """
-    # Step durations vary by demo complexity
-    durations = {
-        "cracktro" : (0.4, 0.3, 0.2),
-        "4k"       : (0.7, 0.4, 0.3),
-        "64k"      : (1.2, 0.7, 0.5),
-        "musicdisk": (0.6, 0.8, 0.4),
-        "demo"     : (1.8, 1.2, 0.8),
-    }
-    d_compile, d_link, d_pack = durations.get(dkey, (0.8, 0.5, 0.4))
+    import random as _rnd
+    if rng is None:
+        rng = _rnd.Random()
 
+    # Steps per demo type — each is (label, bar_colour, duration)
+    # More complex demos have more steps and longer durations
+    STEPS = {
+        "cracktro" : [
+            ("Firing up TASM    ", G,  1.2),
+            ("Compiling         ", G,  1.5),
+            ("Linking           ", G,  1.0),
+            ("Crunching         ", C,  1.2),
+        ],
+        "4k"       : [
+            ("Loading editor    ", G,  1.0),
+            ("Compiling         ", G,  2.0),
+            ("Linking           ", G,  1.5),
+            ("Crunching to 4096b", C,  2.5),
+            ("Size check        ", Y,  1.0),
+        ],
+        "64k"      : [
+            ("Booting MSDOS     ", G,  1.0),
+            ("Compiling         ", G,  2.5),
+            ("Linking           ", G,  2.0),
+            ("Running effects   ", G,  1.5),
+            ("Crunching to 64kb ", C,  2.5),
+            ("Size check        ", Y,  1.0),
+        ],
+        "musicdisk" : [
+            ("Loading tracker   ", G,  1.0),
+            ("Rendering MODs    ", G,  3.0),
+            ("Encoding          ", G,  2.0),
+            ("Building player   ", C,  1.5),
+            ("Packing           ", C,  1.5),
+        ],
+        "demo"     : [
+            ("Booting machine   ", G,  1.0),
+            ("Compiling effects ", G,  3.5),
+            ("Compiling music   ", G,  2.5),
+            ("Linking           ", G,  2.0),
+            ("Running test      ", Y,  2.0),
+            ("Fixing last bug   ", R,  2.5),
+            ("Crunching         ", C,  2.0),
+            ("Final size check  ", Y,  1.0),
+        ],
+    }
+
+    # Humorous interruptions — shown randomly between steps
+    INTERRUPTIONS = [
+        (f"{Y}Going for a 5K run first...{RST}",          2.5),
+        (f"{C}Quickly checking mIRC...{RST}",             2.0),
+        (f'{DG}LOAD "$",8,1{RST}',                      2.5),
+        (f"{Y}Swapping floppy disk 3 of 7...{RST}",       2.0),
+        (f"{DG}Waiting for 28.8k modem to connect...{RST}", 3.0),
+        (f"{R}Out of beer. BRB.{RST}",                    2.5),
+        (f"{C}Rebooting into DOS mode...{RST}",           2.0),
+        (f"{DG}Pizza arrived. One moment.{RST}",          2.5),
+        (f"{Y}Checking if Gates of Asgard is online...{RST}", 2.0),
+        (f"{DG}FORMAT C: /Q ... just kidding.{RST}",      2.5),
+        (f"{C}Defragging drive C...{RST}",                2.0),
+        (f"{R}Segmentation fault (core dumped){RST}",     1.5),
+        (f"{DG}Running SCANDISK first, just to be safe...{RST}", 2.5),
+        (f"{Y}Arguing about tabs vs spaces on Usenet...{RST}", 2.0),
+        (f"{C}IRQ conflict. Rearranging jumpers.{RST}",   2.5),
+    ]
+
+    steps = STEPS.get(dkey, STEPS["4k"])
+    BAR_ROW   = RES_TOP + 2   # single row for all progress bars
+    LOG_START = RES_TOP + 4   # scrolling log below the bar
+    LOG_LINES = 4             # how many log lines to show
+    log_buf   = []
+
+    def add_log(text):
+        """Add a line to the scrolling log area."""
+        log_buf.append(text)
+        shown = log_buf[-LOG_LINES:]
+        for i in range(LOG_LINES):
+            row = LOG_START + i
+            if row >= RES_BOT - 1:
+                break
+            move(row, 1); _out(ERASE_LINE)
+            if i < len(shown):
+                _out(f"  {DG}>{RST} {shown[i]}")
+
+    # Draw static chrome
     clear_screen()
     draw_art("hq")
     draw_divider(DIV_1)
@@ -712,32 +787,249 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None):
     draw_divider(STATUS_DIV)
 
     write_at(MENU_TOP,     1, f"  {C}PRODUCING:{RST} {W}{label}{RST}")
-    write_at(MENU_TOP + 1, 1, f"  {DG}Resources deducted. Compilation started.{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}Firing up the toolchain. Do not disturb.{RST}")
     draw_divider(DIV_3)
 
-    # Three progress bars in RES zone
-    progress_bar(RES_TOP + 1, 3, "Compiling ", width=30, duration=d_compile, colour=G)
-    progress_bar(RES_TOP + 2, 3, "Linking   ", width=30, duration=d_link,    colour=G)
-    progress_bar(RES_TOP + 3, 3, "Packing   ", width=30, duration=d_pack,    colour=C)
+    # Column header for the progress area
+    write_at(RES_TOP, 1, f"  {DG}STEP                    PROGRESS{RST}")
+    write_at(RES_TOP + 1, 1); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
 
-    time.sleep(0.3)
+    # Run steps — each overwrites the same BAR_ROW
+    for step_idx, (step_label, step_col, step_dur) in enumerate(steps):
+        # Random interruption — ~25% chance, not on first or last step
+        if 0 < step_idx < len(steps) - 1 and rng.random() < 0.25:
+            msg, delay = rng.choice(INTERRUPTIONS)
+            add_log(msg)
+            time.sleep(delay)
 
-    # Result
+        progress_bar(BAR_ROW, 3, step_label, width=28, duration=step_dur, colour=step_col)
+        add_log(f"{step_col}{step_label.strip()}{RST} {DG}... done.{RST}")
+        time.sleep(0.15)
+
+    time.sleep(0.4)
+
+    # Result — written below the log
+    result_row = LOG_START + LOG_LINES + 1
+    if result_row > RES_BOT - 1:
+        result_row = RES_BOT - 1
+
+    move(result_row - 1, 1); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
+
     if failed:
-        write_at(RES_TOP + 5, 1, f"  {R}*** PRODUCTION FAILED ***{RST}")
-        typewriter(RES_TOP + 6, 3,
-            "Compiler errors. The release is broken. Resources lost.", colour=R, delay=0.03)
+        write_at(result_row, 1, f"  {R}*** PRODUCTION FAILED ***{RST}")
+        typewriter(result_row + 1 if result_row + 1 <= RES_BOT else result_row,
+                   3, "Compiler errors. Resources wasted. The scene saw nothing.",
+                   colour=R, delay=0.03)
     else:
-        write_at(RES_TOP + 5, 1, f"  {Y}*** {label.upper()} RELEASED! ***{RST}")
-        typewriter(RES_TOP + 6, 3,
-            f"The scene notices. +{gained} reputation earned.", colour=G, delay=0.03)
-        if rival_name:
+        write_at(result_row, 1, f"  {Y}*** {label.upper()} RELEASED! ***{RST}")
+        typewriter(result_row + 1 if result_row + 1 <= RES_BOT else result_row,
+                   3, f"The scene notices. +{gained} reputation earned.",
+                   colour=G, delay=0.03)
+        if rival_name and result_row + 2 <= RES_BOT:
             time.sleep(0.4)
-            write_at(RES_TOP + 7, 1,
-                f"  {DG}{rival_name} noticed your release.{RST}")
+            write_at(result_row + 2, 1,
+                f"  {DG}{rival_name} clocks your release. Respect.{RST}")
 
     time.sleep(0.5)
+
+    if not failed:
+        # Upload sequence — dial a release board and upload
+        _produce_upload_sequence(label, dkey, rng)
+    else:
+        write_at(RES_BOT, 1, f"  {DG}Press any key to continue...{RST}")
+        show_cursor()
+        io = _sio.get_io()
+        if io:
+            io.getkey()
+        hide_cursor()
+
+
+# Release boards to dial into — mix of real and fictional BBS names
+# Cellfi.sh BBS is always the home board — always dialled first
+_HOME_BOARD = ("Cellfi.sh BBS", "+47-32-75-42-50", "Drammen, NO")
+
+_RELEASE_BOARDS = [
+    ("The Humble Origins",   "+1-312-555-0142",  "Chicago, US"),
+    ("Gates of Asgard",      "+47-22-555-0187",  "Oslo, NO"),
+    ("Speed of Light",       "+49-30-555-0193",  "Berlin, DE"),
+    ("Apocalypse Now",       "+1-415-555-0167",  "San Francisco, US"),
+    ("Metal ANet",           "+44-171-555-0134", "London, UK"),
+    ("The Underground",      "+1-212-555-0178",  "New York, US"),
+    ("Point of No Return",   "+358-9-555-0156",  "Helsinki, FI"),
+    ("XTC Systems",          "+46-8-555-0145",   "Stockholm, SE"),
+    ("Cloud Nine Elite",     "+1-213-555-0189",  "Los Angeles, US"),
+    ("Southern Comfort",     "+61-2-555-0123",   "Sydney, AU"),
+    ("The Void",             "+31-20-555-0167",  "Amsterdam, NL"),
+    ("Violent Playground",   "+1-416-555-0134",  "Toronto, CA"),
+]
+
+# Modem connect strings
+_CONNECT_STRINGS = [
+    "CONNECT 2400",
+    "CONNECT 9600",
+    "CONNECT 14400",
+    "CONNECT 28800",
+    "CONNECT 33600",
+]
+
+# Virus scanner results — always clean (it's your release after all)
+_VIRUS_SCANNERS = [
+    ("McAfee VirusScan 2.x",   "Scanning...  No viruses found."),
+    ("F-PROT 2.24",            "No infection found."),
+    ("TBAV 6.xx",              "No viruses or trojans detected."),
+    ("NAV 3.0",                "Norton AntiVirus: Item is clean."),
+    ("SCAN 115",               "No viruses detected."),
+]
+
+# Sysop reactions — normal, enthusiastic, and l33tsp34k variants
+_SYSOP_REACTIONS = [
+    # Normal
+    "Listed. Nice work.",
+    "File received. Added to incoming.",
+    "Got it. Will be in the next NFO.",
+    "Cheers. Board will spread it tonight.",
+    "Received. The scene will know by morning.",
+    "Clean transfer. You are on the board.",
+    "Verified. +ratio credited.",
+    "Good stuff. Spreading to affiliates now.",
+    "Uploaded. Sysop verified. You are legit.",
+    # Enthusiastic
+    "HOLY COW this is good. Listed immediately.",
+    "Best release this week. Bar none.",
+    "Already getting requests for this one.",
+    "This one is going everywhere. Well done.",
+    # L33tsp34k
+    "n1c3 r3l34s3 d00d!! 4dd3d 2 th3 b04rd!!",
+    "0mg th1s 1s s1ck!! l1st3d 4s 3l1t3!!",
+    "ph34r th3 cr3w!! r4t10 +50 cr3d1t3d!!",
+    "w00t!! f1l3_1d.d1z ch3ck3d 0ut!! l33t!!",
+    "r3sp3ct d00d. spr34d1ng 2 4ll 4ff1l14t3z.",
+]
+
+
+def _produce_upload_sequence(label, dkey, rng):
+    """
+    Post-production upload sequence.
+    Always dials Cellfi.sh BBS first (home board), then one random affiliate.
+    Includes virus scan and file_id.diz verification steps.
+    """
+    # Home board is always first, then a random affiliate
+    boards_to_dial = [_HOME_BOARD, rng.choice(_RELEASE_BOARDS)]
+    sysop_reply  = rng.choice(_SYSOP_REACTIONS)
+    av_name, av_result = rng.choice(_VIRUS_SCANNERS)
+    connect      = rng.choice(_CONNECT_STRINGS)
+
+    # File size and name by type
+    sizes = {
+        "cracktro" : rng.randint(2,   12),
+        "4k"       : 4,
+        "64k"      : 64,
+        "musicdisk": rng.randint(120, 400),
+        "demo"     : rng.randint(400, 1200),
+    }
+    kb       = sizes.get(dkey, rng.randint(10, 100))
+    ext      = rng.choice([".zip", ".lha", ".arj"])
+    filename = (label.lower().replace(" ", "")[:12]) + ext
+
+    # DIZ line — what shows in the file listing
+    diz_lines = [
+        f"{label} by Cellfish",
+        f"Released {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][rng.randint(0,11)]} 199{rng.randint(2,9)}",
+        "Spread it.",
+    ]
+
+    def _dial_board(board_name, phone, location, is_home):
+        """Dial one board, upload, get sysop response."""
+        clear_screen()
+        draw_art("hq")
+        draw_divider(DIV_1)
+        clear_zone(MENU_TOP, RES_BOT)
+        draw_divider(STATUS_DIV)
+
+        tag = "HOME BOARD" if is_home else "AFFILIATE"
+        write_at(MENU_TOP,     1, f"  {C}UPLOADING TO {tag}:{RST} {W}{board_name}{RST}")
+        write_at(MENU_TOP + 1, 1, f"  {DG}{location}{RST}")
+        draw_divider(DIV_3)
+
+        log_row = RES_TOP
+
+        def log(text, colour=DG, delay=0.0):
+            write_at(log_row, 1, f"  {colour}{text}{RST}")
+            if delay:
+                time.sleep(delay)
+
+        # Modem init and dial
+        log("ATZ", W, 0.3)
+        log("OK", G, 0.2)
+
+        # Dial with digits typed out one by one
+        move(log_row, 1); _out(ERASE_LINE)
+        _out(f"  {W}ATDT {phone}  {DG}")
+        for digit in phone.replace("+","").replace("-",""):
+            _out(digit)
+            time.sleep(0.07)
+        _out(RST)
+        time.sleep(0.7)
+
+        log("RINGING...", DG, 0.9)
+        log(f"{connect}", G, 0.4)
+        log(f"Connected to {board_name}", C, 0.4)
+        time.sleep(0.2)
+        log("Logging in...", DG, 0.5)
+        log("Upload area.", DG, 0.3)
+
+        # Virus scan before upload
+        log(f"Running {av_name}...", DG, 0.3)
+        progress_bar(log_row, 3, f"{av_name[:18]:<18}", width=20,
+                     duration=1.2, colour=Y)
+        log(f"{av_result}", G, 0.4)
+
+        # file_id.diz check
+        log(f"Checking FILE_ID.DIZ...", DG, 0.4)
+        log(f"FILE_ID.DIZ found:", DG, 0.2)
+        for diz in diz_lines:
+            log(f"  {diz}", W, 0.2)
+        time.sleep(0.2)
+
+        # Upload
+        log(f"Sending {filename} ({kb}kb)...", W, 0.2)
+        progress_bar(log_row, 3, f"Uploading {filename[:14]:<14}", width=22,
+                     duration=max(1.5, kb * 0.012), colour=C)
+        log(f"Transfer complete. {kb}kb. CRC OK.", G, 0.4)
+        time.sleep(0.2)
+
+        if is_home:
+            # Sysop response only on home board
+            log(f'Sysop: "{sysop_reply}"', Y, 0.4)
+
+        time.sleep(0.2)
+        log("NO CARRIER", R, 0.3)
+        time.sleep(0.5)
+
+    # Dial both boards
+    for i, (bname, bphone, bloc) in enumerate(boards_to_dial):
+        _dial_board(bname, bphone, bloc, is_home=(i == 0))
+        if i < len(boards_to_dial) - 1:
+            write_at(RES_BOT, 1, f"  {DG}Dialling next board...{RST}")
+            time.sleep(1.0)
+
+    # Final summary screen
+    clear_screen()
+    draw_art("hq")
+    draw_divider(DIV_1)
+    clear_zone(MENU_TOP, RES_BOT)
+    draw_divider(STATUS_DIV)
+
+    write_at(MENU_TOP, 1, f"  {Y}RELEASE COMPLETE{RST}")
+    draw_divider(DIV_3)
+    write_at(RES_TOP,     1, f"  {W}{label}{RST}")
+    write_at(RES_TOP + 1, 1, f"  {DG}File:     {RST}{C}{filename}{RST}  {DG}({kb}kb){RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Listed on:{RST} {G}{boards_to_dial[0][0]}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Spread to:{RST} {G}{boards_to_dial[1][0]}{RST}")
+    write_at(RES_TOP + 5, 1, f"  {Y}{sysop_reply}{RST}")
+    move(RES_BOT - 1, 1); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
     write_at(RES_BOT, 1, f"  {DG}Press any key to continue...{RST}")
+
     show_cursor()
     io = _sio.get_io()
     if io:
