@@ -689,6 +689,62 @@ PROD_DETAIL    = RES_TOP + 6    # rows 20-21: confirmation detail
 PROD_PROMPT    = RES_BOT        # row 22: [1-5]/[Y/Q] prompt
 
 
+def screen_produce_animation(label, dkey, gained, failed, rival_name=None):
+    """
+    Full-screen production animation sequence.
+    Called after player confirms production — replaces the produce list screen.
+    Shows compile/link/pack progress bars then the result.
+    """
+    # Step durations vary by demo complexity
+    durations = {
+        "cracktro" : (0.4, 0.3, 0.2),
+        "4k"       : (0.7, 0.4, 0.3),
+        "64k"      : (1.2, 0.7, 0.5),
+        "musicdisk": (0.6, 0.8, 0.4),
+        "demo"     : (1.8, 1.2, 0.8),
+    }
+    d_compile, d_link, d_pack = durations.get(dkey, (0.8, 0.5, 0.4))
+
+    clear_screen()
+    draw_art("hq")
+    draw_divider(DIV_1)
+    clear_zone(MENU_TOP, RES_BOT)
+    draw_divider(STATUS_DIV)
+
+    write_at(MENU_TOP,     1, f"  {C}PRODUCING:{RST} {W}{label}{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}Resources deducted. Compilation started.{RST}")
+    draw_divider(DIV_3)
+
+    # Three progress bars in RES zone
+    progress_bar(RES_TOP + 1, 3, "Compiling ", width=30, duration=d_compile, colour=G)
+    progress_bar(RES_TOP + 2, 3, "Linking   ", width=30, duration=d_link,    colour=G)
+    progress_bar(RES_TOP + 3, 3, "Packing   ", width=30, duration=d_pack,    colour=C)
+
+    time.sleep(0.3)
+
+    # Result
+    if failed:
+        write_at(RES_TOP + 5, 1, f"  {R}*** PRODUCTION FAILED ***{RST}")
+        typewriter(RES_TOP + 6, 3,
+            "Compiler errors. The release is broken. Resources lost.", colour=R, delay=0.03)
+    else:
+        write_at(RES_TOP + 5, 1, f"  {Y}*** {label.upper()} RELEASED! ***{RST}")
+        typewriter(RES_TOP + 6, 3,
+            f"The scene notices. +{gained} reputation earned.", colour=G, delay=0.03)
+        if rival_name:
+            time.sleep(0.4)
+            write_at(RES_TOP + 7, 1,
+                f"  {DG}{rival_name} noticed your release.{RST}")
+
+    time.sleep(0.5)
+    write_at(RES_BOT, 1, f"  {DG}Press any key to continue...{RST}")
+    show_cursor()
+    io = _sio.get_io()
+    if io:
+        io.getkey()
+    hide_cursor()
+
+
 def screen_produce(player, detail_lines=None, prompt=None):
     """Demo production screen — resources top, list middle, detail+prompt bottom."""
     screen_base("produce", player, player.bbs_name)

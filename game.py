@@ -267,35 +267,23 @@ def action_produce(player, world, cfg, rng):
 
         player.use_turns(3)
         player.spend(costs)
-        ansi.result(f"{ansi.DG}> Starting {label} production...{ansi.RST}")
-    ansi.progress_bar(ansi.RES_TOP + 1, 3, "Compiling", width=24, duration=0.8, colour=ansi.G)
-    ansi.progress_bar(ansi.RES_TOP + 2, 3, "Linking  ", width=24, duration=0.5, colour=ansi.G)
-    ansi.progress_bar(ansi.RES_TOP + 3, 3, "Packing  ", width=24, duration=0.4, colour=ansi.C)
 
-    luck   = rng.uniform(0.8, 1.2)
+        luck        = rng.uniform(0.8, 1.2)
+        fail_chance = {"cracktro":0.05,"4k":0.10,"64k":0.15,"musicdisk":0.10,"demo":0.20}
+        failed      = rng.random() < fail_chance.get(dkey, 0.10)
+        gained      = 0 if failed else int(base_rep * luck)
+        rival_name  = None
 
-    # Production can fail — more complex demos have higher failure chance
-    fail_chance = {
-        "cracktro" : 0.05,
-        "4k"       : 0.10,
-        "64k"      : 0.15,
-        "musicdisk": 0.10,
-        "demo"     : 0.20,
-    }
-    if rng.random() < fail_chance.get(dkey, 0.10):
-        ansi.result(f"{ansi.R}> Production failed. Compiler errors. Resources lost.{ansi.RST}")
+        if not failed:
+            player.adjust_resource("reputation", gained)
+            player.demos_produced += 1
+            if rng.random() < 0.4 and world.npc_crews:
+                rival_name = rng.choice(world.npc_crews).name
+
+        # Full-screen animation — replaces produce list, waits for keypress
+        ansi.screen_produce_animation(label, dkey, gained, failed, rival_name)
         ansi.draw_status(player, player.bbs_name)
         return
-
-    gained = int(base_rep * luck)
-    player.adjust_resource("reputation", gained)
-    player.demos_produced += 1
-
-    ansi.result(f"{ansi.Y}> {label} released! +{gained} reputation.{ansi.RST}")
-    if rng.random() < 0.4 and world.npc_crews:
-        rival = rng.choice(world.npc_crews)
-        ansi.result(f"  {ansi.DG}{rival.name} noticed your release.{ansi.RST}")
-    ansi.draw_status(player, player.bbs_name)
 
 # ---------------------------------------------------------------------------
 # Action: Raid
