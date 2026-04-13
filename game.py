@@ -230,37 +230,37 @@ def action_produce(player, world, cfg, rng):
 
         dkey, label, costs, base_rep = demo_defs[idx]
 
-        # Show confirmation — what it costs, what you get, Y/N
         from player import RESOURCE_NAMES
         cost_parts = [f"{v} {RESOURCE_NAMES.get(k, k)}" for k, v in costs.items()]
         cost_str   = "  +  ".join(cost_parts)
         fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20}.get(dkey,10)
 
-        ansi.write_at(ansi.RES_BOT - 3, 1,
-            f"  {ansi.C}{label}{ansi.RST}  —  costs: {ansi.Y}{cost_str}{ansi.RST}")
-        ansi.write_at(ansi.RES_BOT - 2, 1,
-            f"  Gain: {ansi.G}~{base_rep} rep{ansi.RST}  "
-            f"Fail chance: {ansi.R}{fail_pct}%{ansi.RST}  "
-            f"Turns: {ansi.Y}3{ansi.RST}")
+        detail1 = (f"  {ansi.C}{label}{ansi.RST}  —  "
+                   f"costs: {ansi.Y}{cost_str}{ansi.RST}")
+        detail2 = (f"  Gain: {ansi.G}~{base_rep} rep{ansi.RST}  "
+                   f"Fail: {ansi.R}{fail_pct}%{ansi.RST}  "
+                   f"Turns: {ansi.Y}3{ansi.RST}")
 
         if not player.can_afford(costs):
-            ansi.write_at(ansi.RES_BOT - 1, 1,
-                f"  {ansi.R}Not enough resources to produce {label}.{ansi.RST}")
-            ansi.write_at(ansi.RES_BOT, 1,
-                f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+            ansi.screen_produce(player,
+                detail_lines=[detail1,
+                    f"  {ansi.R}Not enough resources.{ansi.RST}"],
+                prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
             ansi.get_key()
             continue
 
         if player.turns_remaining < 3:
-            ansi.write_at(ansi.RES_BOT - 1, 1,
-                f"  {ansi.R}Not enough turns — production costs 3.{ansi.RST}")
-            ansi.write_at(ansi.RES_BOT, 1,
-                f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+            ansi.screen_produce(player,
+                detail_lines=[detail1,
+                    f"  {ansi.R}Not enough turns — costs 3.{ansi.RST}"],
+                prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
             ansi.get_key()
             continue
 
-        ansi.write_at(ansi.RES_BOT, 1,
-            f"  {ansi.C}[Y]{ansi.RST} Produce  {ansi.C}[Q]{ansi.RST} Cancel: ")
+        ansi.screen_produce(player,
+            detail_lines=[detail1, detail2],
+            prompt=(f"  {ansi.C}[Y]{ansi.RST} Produce  "
+                    f"{ansi.C}[Q]{ansi.RST} Cancel: "))
         confirm = ansi.get_key(valid_keys="YQyq").upper()
         if confirm == "Q":
             continue

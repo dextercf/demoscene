@@ -682,10 +682,16 @@ def screen_trade(player, node):
              f"  {Y}{yours:>6}{RST}")
 
 
-def screen_produce(player):
-    """Demo production screen — list in RES zone with affordability and fail chance."""
-    screen_base("produce", player, player.bbs_name,
-                cmd_hint="[1-5] Select  [Q] Back")
+# Row constants for produce screen — used by both ansi.py and game.py
+PROD_LIST_TOP  = RES_TOP        # rows 14-18: the 5 demo options
+PROD_DIVIDER   = RES_TOP + 5    # row 19: divider between list and detail
+PROD_DETAIL    = RES_TOP + 6    # rows 20-21: confirmation detail
+PROD_PROMPT    = RES_BOT        # row 22: [1-5]/[Y/Q] prompt
+
+
+def screen_produce(player, detail_lines=None, prompt=None):
+    """Demo production screen — resources top, list middle, detail+prompt bottom."""
+    screen_base("produce", player, player.bbs_name)
 
     demos = [
         ("1", "Cracktro",  {"source_code": 50,  "artwork": 20},         40,  5),
@@ -696,22 +702,20 @@ def screen_produce(player):
                             "mod_music": 150},                          600, 20),
     ]
 
-    # Header in MENU zone
+    # MENU zone — your current resources (row 10), column headers (row 11), divider (row 12)
     move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {DG}{'#':<4}{'TYPE':<13}{'COST':<28}{'REP':>5}  {'FAIL%':>5}{RST}")
-    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     _out(f"  {DG}src:{RST}{W}{player.source_code:>5}{RST}  "
          f"{DG}art:{RST}{W}{player.artwork:>5}{RST}  "
          f"{DG}mod:{RST}{W}{player.mod_music:>5}{RST}  "
          f"{DG}turns: 3  rep:{RST}{C}{player.reputation:>5}{RST}")
+    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
+    _out(f"  {DG}{'#':<4}{'TYPE':<13}{'COST':<28}{'REP':>5}  {'FAIL%':>5}{RST}")
     move(MENU_TOP + 2, 1)
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
 
-    # Demo list in RES zone
+    # RES zone — demo list (rows 14-18)
     for i, (key, label, costs, rep, fail_pct) in enumerate(demos):
-        row = RES_TOP + i
-        if row > RES_BOT:
-            break
+        row = PROD_LIST_TOP + i
         can      = player.can_afford(costs)
         col      = W if can else DG
         key_col  = C if can else DG
@@ -722,6 +726,24 @@ def screen_produce(player):
              f"  {DG}{cost_str:<26}{RST}"
              f"  {Y if can else DG}+{rep:<4}{RST}"
              f"  {R if fail_pct >= 15 else DG}{fail_pct:>4}%{RST}")
+
+    # Divider below list (row 19)
+    move(PROD_DIVIDER, 1)
+    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+
+    # Detail area (rows 20-21) — filled by game.py after selection, blank by default
+    for row in range(PROD_DETAIL, PROD_PROMPT):
+        move(row, 1); _out(ERASE_LINE)
+    if detail_lines:
+        for i, line in enumerate(detail_lines[:2]):
+            move(PROD_DETAIL + i, 1); _out(ERASE_LINE); _out(line)
+
+    # Prompt row (row 22)
+    move(PROD_PROMPT, 1); _out(ERASE_LINE)
+    if prompt:
+        _out(prompt)
+    else:
+        _out(f"  {DG}Select [1-5]  {C}[Q]{RST} {W}Back{RST}")
 
 
 def screen_raid(player, npc_crew):
