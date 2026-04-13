@@ -58,6 +58,15 @@ production animation and upload sequence.
   Pressing a number silently spent resources. Fixed with confirmation step
   showing cost/rep/fail% and [Y]/[Q] prompt.
 
+**Produce screen layout reorganised**
+  Resources moved to MENU_TOP (always visible), column headers below,
+  demo list in RES zone, confirmation detail and prompt at bottom.
+  Makes the screen readable at a glance without scrolling.
+
+**Git hygiene — pycache and saves removed from tracking**
+  __pycache__/, saves/, *.pyc, DOOR.SYS added to .gitignore.
+  Removed from git history with git rm --cached.
+
 **Double divider on produce screen**
   Fixed: screen_produce clears DIV_3 after drawing its own divider.
 
