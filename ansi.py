@@ -792,7 +792,7 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
 
     # Column header for the progress area
     write_at(RES_TOP, 1, f"  {DG}STEP                    PROGRESS{RST}")
-    write_at(RES_TOP + 1, 1); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
+    move(RES_TOP + 1, 1); _out(ERASE_LINE); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
 
     # Run steps — each overwrites the same BAR_ROW
     for step_idx, (step_label, step_col, step_dur) in enumerate(steps):
