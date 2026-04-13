@@ -76,6 +76,9 @@ def action_explore(player, world, cfg, rng):
                     ansi.animate_explore_line(ansi.EXP_INFO + 1,
                         "*** LEGENDARY NODE! +50 reputation ***")
                     player.adjust_resource("reputation", 50)
+                # Save world immediately so discovered flag persists
+                # even if player disconnects before end of day
+                world.save(player.handle)
             else:
                 ansi.animate_explore_line(ansi.EXP_INFO,
                     "Nothing found on this frequency.")
