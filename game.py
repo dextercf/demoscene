@@ -218,26 +218,56 @@ def action_produce(player, world, cfg, rng):
          {"source_code": 400, "artwork": 200, "mod_music": 150}, 600),
     ]
 
-    ansi.screen_produce(player)
-    key = ansi.get_key(valid_keys="12345Qq").upper()
-    if key == "Q":
-        return
+    while True:
+        ansi.screen_produce(player)
+        key = ansi.get_key(valid_keys="12345Qq").upper()
+        if key == "Q":
+            return
 
-    idx = int(key) - 1
-    if idx < 0 or idx >= len(demo_defs):
-        return
+        idx = int(key) - 1
+        if idx < 0 or idx >= len(demo_defs):
+            continue
 
-    dkey, label, costs, base_rep = demo_defs[idx]
+        dkey, label, costs, base_rep = demo_defs[idx]
 
-    if not player.can_afford(costs):
-        ansi.result(f"{ansi.R}> Not enough resources to produce {label}.{ansi.RST}")
-        return
-    if not player.use_turns(3):
-        ansi.result(f"{ansi.R}> Not enough turns (costs 3).{ansi.RST}")
-        return
+        # Show confirmation — what it costs, what you get, Y/N
+        from player import RESOURCE_NAMES
+        cost_parts = [f"{v} {RESOURCE_NAMES.get(k, k)}" for k, v in costs.items()]
+        cost_str   = "  +  ".join(cost_parts)
+        fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20}.get(dkey,10)
 
-    player.spend(costs)
-    ansi.result(f"{ansi.DG}> Starting {label} production...{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT - 3, 1,
+            f"  {ansi.C}{label}{ansi.RST}  —  costs: {ansi.Y}{cost_str}{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT - 2, 1,
+            f"  Gain: {ansi.G}~{base_rep} rep{ansi.RST}  "
+            f"Fail chance: {ansi.R}{fail_pct}%{ansi.RST}  "
+            f"Turns: {ansi.Y}3{ansi.RST}")
+
+        if not player.can_afford(costs):
+            ansi.write_at(ansi.RES_BOT - 1, 1,
+                f"  {ansi.R}Not enough resources to produce {label}.{ansi.RST}")
+            ansi.write_at(ansi.RES_BOT, 1,
+                f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+            ansi.get_key()
+            continue
+
+        if player.turns_remaining < 3:
+            ansi.write_at(ansi.RES_BOT - 1, 1,
+                f"  {ansi.R}Not enough turns — production costs 3.{ansi.RST}")
+            ansi.write_at(ansi.RES_BOT, 1,
+                f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+            ansi.get_key()
+            continue
+
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.C}[Y]{ansi.RST} Produce  {ansi.C}[Q]{ansi.RST} Cancel: ")
+        confirm = ansi.get_key(valid_keys="YQyq").upper()
+        if confirm == "Q":
+            continue
+
+        player.use_turns(3)
+        player.spend(costs)
+        ansi.result(f"{ansi.DG}> Starting {label} production...{ansi.RST}")
     ansi.progress_bar(ansi.RES_TOP + 1, 3, "Compiling", width=24, duration=0.8, colour=ansi.G)
     ansi.progress_bar(ansi.RES_TOP + 2, 3, "Linking  ", width=24, duration=0.5, colour=ansi.G)
     ansi.progress_bar(ansi.RES_TOP + 3, 3, "Packing  ", width=24, duration=0.4, colour=ansi.C)
