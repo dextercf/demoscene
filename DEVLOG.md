@@ -17,6 +17,83 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-13  —  BBS Testing & Polish Session
+
+### Goal
+Live BBS testing via SyncTerm. Fix disconnects, improve screens, add
+production animation and upload sequence.
+
+### Files changed
+- `ansi.py` — courier screen prompt fix, explore scan clear, screen_trade/produce/raid
+  layout fixes, production animation, upload sequence with scrolling terminal
+- `game.py` — trade ModuleNotFoundError fix, produce confirmation flow,
+  explore world save fix, produce animation wiring
+
+### Bugs fixed
+
+**Courier screen disconnect**
+  Root cause: long strings in screen_courier_board and screen_crew writing
+  past col 79, triggering terminal scroll and Mystic disconnect.
+  Fix: all strings truncated to safe lengths before output.
+
+**Crew screen [Q] disconnect**
+  Same root cause — col 80 overflow on projected score line.
+
+**Trade screen [1] disconnect**
+  Root cause 1: get_key(prompt=...) wrote prompt at unknown cursor position.
+  Fix: prompt written at fixed RES_BOT rows.
+  Root cause 2: from playermod import — playermod is an alias, not a module.
+  Fix: changed to from player import RESOURCE_NAMES in all 3 locations.
+
+**Explore duplicate nodes**
+  world.save() not called after explore — disconnect lost discovered flag.
+  Fix: world.save() called immediately after every successful discovery.
+
+**screen_trade/produce/raid layout**
+  All three bounded by MENU_BOT showing only 2-3 items. Fixed to use full
+  RES zone. Trade shows speciality resource (star). Produce shows fail%.
+  Raid shows loot preview and enemy stats.
+
+**Produce screen — no confirmation or feedback**
+  Pressing a number silently spent resources. Fixed with confirmation step
+  showing cost/rep/fail% and [Y]/[Q] prompt.
+
+**Double divider on produce screen**
+  Fixed: screen_produce clears DIV_3 after drawing its own divider.
+
+**Explore scan Node/Info not clearing between scans**
+  Fixed: EXP_NODE and EXP_INFO reset at start of each animate_scan_bar().
+
+**Production animation TypeError**
+  write_at() called without text argument. Fixed: move()+_out() pattern.
+
+### New features
+
+**Production animation (screen_produce_animation)**
+  Each demo type has its own step list (4-8 steps). Steps overwrite the
+  same progress bar row. Scrolling log shows completed steps.
+  ~25% chance of humorous interruption between steps: 15 variants including
+  "Going for a 5K run...", "LOAD \"$\",8,1", "Out of beer. BRB.",
+  "FORMAT C: /Q ... just kidding."
+
+**Release board upload sequence (_produce_upload_sequence)**
+  After successful production dials two boards:
+  1. Cellfi.sh BBS (+47-32-75-42-50, Drammen, NO) — always first
+  2. One random affiliate from 12 international boards
+  Each session: modem init, digits typed out, RINGING, CONNECT, virus scan
+  (5 scanners with progress bar), FILE_ID.DIZ check (shows DIZ content),
+  upload progress bar (scales to file size), sysop response (18 variants
+  including l33tsp34k), NO CARRIER.
+  Terminal area rows 14-20 is a 7-line scrolling window. Row 21 fixed
+  progress bar. Ends with release summary screen.
+
+### Resume here next session
+Priority 1: Continue BBS testing — raid, defend, parties.
+Priority 2: Courier mission end-to-end test.
+Priority 3: Message board sender handle improvements.
+
+---
+
 ## 2026-04-12  —  BBS Skill Upgrade Pass (session 3)
 
 ### Goal
