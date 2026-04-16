@@ -141,38 +141,39 @@ def action_travel(player, world, cfg, rng):
                     ansi.move(TERM_TOP + i, 1)
                     ansi._out(ansi.ERASE_LINE)
                     if i < len(shown_lines):
-                        ansi._out(f"    {ansi.DG}{shown_lines[i]}{ansi.RST}")
+                        ansi._out(f"    {shown_lines[i]}{ansi.RST}")
 
             def _log(text, delay=0.4):
                 term_buf.append(text)
                 _redraw_term()
                 if delay: time.sleep(delay)
 
-            import random as _rnd
             connect_strings = ["CONNECT 2400", "CONNECT 9600", "CONNECT 14400", "CONNECT 28800", "CONNECT 33600"]
             connect = rng.choice(connect_strings)
             phone   = f"+{rng.randint(1,99)}-{rng.randint(100,999)}-{rng.randint(1000,9999)}"
 
-            _log("ATZ", 0.3)
-            _log("OK", 0.4)
+            _log(f"{ansi.G}ATZ{ansi.RST}", 0.3)
+            _log(f"{ansi.G}OK{ansi.RST}", 0.4)
 
             # Type phone number digit by digit
-            term_buf.append(f"ATDT {phone}")
+            term_buf.append(f"{ansi.G}ATDT {phone}{ansi.RST}")
             _redraw_term()
             last_row = TERM_TOP + min(len(term_buf) - 1, TERM_H - 1)
             ansi.move(last_row, 1); ansi._out(ansi.ERASE_LINE)
-            ansi._out(f"    {ansi.DG}ATDT {ansi.RST}")
+            ansi._out(f"    {ansi.G}ATDT {ansi.RST}")
             for digit in phone:
-                ansi._out(ansi.DG + digit + ansi.RST)
+                ansi._out(ansi.G + digit + ansi.RST)
                 time.sleep(0.08)
             time.sleep(0.6)
 
-            _log("RINGING...", 1.0)
-            _log(connect, 0.5)
-            _log(f"Connected to {node.name}", 0.5)
+            _log(f"{ansi.G}RINGING...{ansi.RST}", 1.0)
+            _log(f"{ansi.W}{connect}{ansi.RST}", 0.5)
+            _log(f"{ansi.G}Connected to {ansi.RST}{ansi.W}{node.name}{ansi.RST}", 0.5)
+            _log(f"{ansi.G}Board type: {ansi.RST}{ansi.G}{node.label}{ansi.RST}", 0.4)
+            _log(f"{ansi.G}{node.description}{ansi.RST}", 0.4)
 
             if node.crew:
-                _log(f"*** {node.crew} is present here ***", 0.6)
+                _log(f"{ansi.Y}*** {ansi.W}{node.crew}{ansi.Y} is present here ***{ansi.RST}", 0.6)
 
             ansi.write_at(ansi.RES_BOT, 1,
                 f"    {ansi.DG}Press any key to continue...{ansi.RST}")
