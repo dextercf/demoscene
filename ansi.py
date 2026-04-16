@@ -1204,6 +1204,7 @@ def screen_hof(entries, player_handle, player=None):
     move(MENU_TOP + 1, 1)
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
     clear_line(MENU_TOP + 2)
+    clear_line(DIV_3)
 
     # Entries in RES zone — up to 9 rows
     for i, e in enumerate(entries[:9]):
