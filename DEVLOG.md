@@ -18,9 +18,36 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-16  —  UI polish session 2
+
+### Changes
+- Hall of Fame: removed header line, single divider, score table moved up,
+  handle in bright green, crew/bbs in dark green, styled [Q] Quit prompt
+- Hall of Fame: fixed leaderboard save crash (em dash not CP437 encodable)
+- Hall of Fame: score now submitted on [Q] quit as well as game end
+- Travel screen: current node shown as dimmed with (current) tag, pressing
+  its number does nothing
+- Travel prompt: "BBS to connect to:" wording, "-" separators between options
+- Quit prompt: clear_results() on [N], styled [Y]/[N] brackets
+- Raid screen: fixed write_at for target list to prevent disconnect
+- Raid screen: removed undefined colour names causing silent crash on [R]
+
+### Resume here next session
+Priority 1: Commit all changes to GitHub
+Priority 2: Starting tools = 0 makes early combat unwinnable — add starting bonus
+Priority 3: Node-specific events (warez vs music vs art boards)
+Priority 4: NPC personalities visible in more places (messages, events)
+
+---
+
 ## 2026-04-16  —  Art, UI polish, NPC personalities
 
 ### Changes
+- Score submitted on [Q] quit as well as game end — HoF now populates during testing
+- Travel screen: 5 nodes/page, 4-char left padding, full dial-up sequence
+  with green modem animation, bright white node name, keypress to continue
+- Travel prompt: styled brackets, "Press node number to travel to:" wording
+- ansi.py screen_map: fixed indentation error introduced during manual edit
 - Fixed silent crash on [R] Raid and [Q] Quit caused by undefined colour
   names (BK, BW, BBLK, BWHT) — replaced with correct names (DG, C, W)
 - Quit prompt: clear_results() on [N] so result zone doesn't stay dirty
