@@ -303,7 +303,7 @@ def screen_map(player, world, page=0, page_size=7):
 def screen_explore(player):
     """
     Explore screen layout — strictly 24 rows:
-      Rows  1-14  Art zone (header.ans or map.ans fallback)
+      Rows  1-14  Art zone (explore.ans or map.ans fallback)
       Row  15     Divider
       Row  16     [S] Scan network   [Q] Back to HQ
       Row  17     Divider
@@ -319,7 +319,7 @@ def screen_explore(player):
 
     # Art zone rows 1-14
     move(1, 1)
-    if not load_art("header"):
+    if not load_art("explore"):
         draw_art("map")
     # Pad/clear rows 9-14 in case art is shorter than 14 rows
     for row in range(9, 15):
