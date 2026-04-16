@@ -1196,7 +1196,7 @@ def screen_messages(messages, player=None):
 
 def screen_hof(entries, player_handle, player=None):
     """Hall of Fame screen — uses full RES zone for up to 9 entries."""
-    screen_base("hof", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
+    screen_base("hof", player, player.bbs_name if player else "")
 
     # Header in MENU zone
     move(MENU_TOP, 1); _out(ERASE_LINE)
@@ -1212,7 +1212,7 @@ def screen_hof(entries, player_handle, player=None):
         if row > RES_BOT:
             break
         is_player = e["handle"].upper() == player_handle.upper()
-        name_col  = G if is_player else W
+        name_col  = G if is_player else G
         rank_col  = Y if i == 0 else (C if i == 1 else (W if i < 5 else DG))
         move(row, 1); _out(ERASE_LINE)
         _out(f"  {rank_col}{str(i+1)+'.':<4}{RST}"
@@ -1221,6 +1221,20 @@ def screen_hof(entries, player_handle, player=None):
              f"{DG}{e['bbs'][:15]:<16}{RST}"
              f"{Y}{e['score']:>8}{RST}"
              f"{DG}{str(e.get('day','?')):>6}{RST}")
+
+    # Prompt
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+
+    draw_divider(STATUS_DIV)
+    if player: draw_status(player, player.bbs_name)
+
+    # Prompt
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+
+    draw_divider(STATUS_DIV)
+    if player: draw_status(player, player.bbs_name)
 
 
 def screen_crew(player):
