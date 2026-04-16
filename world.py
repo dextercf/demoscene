@@ -74,21 +74,140 @@ RARE_NODE_NAMES = [
 # ---------------------------------------------------------------------------
 # NPC crew definitions
 # Real and fictional demoscene / warez crews
+#
+# behaviour keys:
+#   raider   — hunts aggressively, higher counter-raid chance, hits harder
+#   trader   — accumulates resources fast, weaker in direct combat
+#   party    — attends every demoparty, earns bonus rep from compos
+#   producer — floods the scene with releases, hard to loot source_code
+#   artist   — deep artwork/music stockpile, low combat strength
+#
+# taunt     — shown on the raid target selection screen
+# backstory — used in message board flavour and random events
+# home_bbs  — name of their home board (used in messages and map)
 # ---------------------------------------------------------------------------
 
 NPC_CREWS = [
-    {"name": "Future Crew",  "style": "demo",    "aggression": 1, "rep": 900},
-    {"name": "ACiD",         "style": "art",     "aggression": 2, "rep": 820},
-    {"name": "iCE",          "style": "art",     "aggression": 2, "rep": 780},
-    {"name": "Razor 1911",   "style": "warez",   "aggression": 3, "rep": 850},
-    {"name": "Skid Row",     "style": "warez",   "aggression": 3, "rep": 800},
-    {"name": "Fairlight",    "style": "warez",   "aggression": 2, "rep": 760},
-    {"name": "Phenomena",    "style": "demo",    "aggression": 1, "rep": 720},
-    {"name": "The Silents",  "style": "demo",    "aggression": 1, "rep": 700},
-    {"name": "Byterapers",   "style": "demo",    "aggression": 2, "rep": 650},
-    {"name": "THG",          "style": "warez",   "aggression": 3, "rep": 680},
-    {"name": "Paranoimia",   "style": "demo",    "aggression": 1, "rep": 600},
-    {"name": "Triton",       "style": "coding",  "aggression": 1, "rep": 580},
+    {
+        "name"      : "Future Crew",
+        "style"     : "demo",
+        "aggression": 1,
+        "rep"       : 900,
+        "behaviour" : "producer",
+        "home_bbs"  : "The Future Vision BBS",
+        "taunt"     : "They set the bar. Can you clear it?",
+        "backstory" : "Legendary Finnish demo crew. Second Reality still gives people chills.",
+    },
+    {
+        "name"      : "ACiD",
+        "style"     : "art",
+        "aggression": 2,
+        "rep"       : 820,
+        "behaviour" : "artist",
+        "home_bbs"  : "The ACiD Drop BBS",
+        "taunt"     : "The art pack kings. Their ANSI is flawless.",
+        "backstory" : "Dominant ANSI art group. Their art packs ship monthly like clockwork.",
+    },
+    {
+        "name"      : "iCE",
+        "style"     : "art",
+        "aggression": 2,
+        "rep"       : 780,
+        "behaviour" : "artist",
+        "home_bbs"  : "Frozen Assets BBS",
+        "taunt"     : "ACiD's biggest rivals. Perpetual art war.",
+        "backstory" : "iCE Advertisements — the only crew that makes ACiD nervous.",
+    },
+    {
+        "name"      : "Razor 1911",
+        "style"     : "warez",
+        "aggression": 3,
+        "rep"       : 850,
+        "behaviour" : "raider",
+        "home_bbs"  : "The Cutting Edge BBS",
+        "taunt"     : "0-day or nothing. They will come for your tools.",
+        "backstory" : "The most feared warez crew in the scene. They raid first, ask never.",
+    },
+    {
+        "name"      : "Skid Row",
+        "style"     : "warez",
+        "aggression": 3,
+        "rep"       : 800,
+        "behaviour" : "raider",
+        "home_bbs"  : "Skid Row BBS",
+        "taunt"     : "They smell weakness. Do not look weak.",
+        "backstory" : "Ruthless crackers. They have informants on half the boards in the network.",
+    },
+    {
+        "name"      : "Fairlight",
+        "style"     : "warez",
+        "aggression": 2,
+        "rep"       : 760,
+        "behaviour" : "trader",
+        "home_bbs"  : "Fairlight HQ",
+        "taunt"     : "Smooth operators. Watch your credits.",
+        "backstory" : "Swedish warez legends. More interested in profit than violence.",
+    },
+    {
+        "name"      : "Phenomena",
+        "style"     : "demo",
+        "aggression": 1,
+        "rep"       : 720,
+        "behaviour" : "party",
+        "home_bbs"  : "The Phenomena Pad",
+        "taunt"     : "Party regulars. They collect trophies.",
+        "backstory" : "Never miss a demoparty. Their compo entries are always polished.",
+    },
+    {
+        "name"      : "The Silents",
+        "style"     : "demo",
+        "aggression": 1,
+        "rep"       : 700,
+        "behaviour" : "producer",
+        "home_bbs"  : "Silent Running BBS",
+        "taunt"     : "Quietly releasing. Quietly winning.",
+        "backstory" : "Danish demo veterans. Low profile, high output. Underestimate them at your peril.",
+    },
+    {
+        "name"      : "Byterapers",
+        "style"     : "demo",
+        "aggression": 2,
+        "rep"       : 650,
+        "behaviour" : "raider",
+        "home_bbs"  : "The Byterapers Bunker",
+        "taunt"     : "They code dirty and raid dirty.",
+        "backstory" : "Finnish crew with a mean streak. Known to raid competitors right before parties.",
+    },
+    {
+        "name"      : "THG",
+        "style"     : "warez",
+        "aggression": 3,
+        "rep"       : 680,
+        "behaviour" : "raider",
+        "home_bbs"  : "The Humble Guys HQ",
+        "taunt"     : "Nothing humble about them when they raid.",
+        "backstory" : "One of the oldest warez crews still active. Grudges run deep with these guys.",
+    },
+    {
+        "name"      : "Paranoimia",
+        "style"     : "demo",
+        "aggression": 1,
+        "rep"       : 600,
+        "behaviour" : "party",
+        "home_bbs"  : "Paranoid Android BBS",
+        "taunt"     : "Party crew through and through. Check the compo board.",
+        "backstory" : "More at home at a demoparty than a keyboard. Great to share a beer with.",
+    },
+    {
+        "name"      : "Triton",
+        "style"     : "coding",
+        "aggression": 1,
+        "rep"       : 580,
+        "behaviour" : "producer",
+        "home_bbs"  : "Triton Labs BBS",
+        "taunt"     : "These guys write the tools everyone else uses.",
+        "backstory" : "Coders first, competitors second. Their tracker software runs on half the scene.",
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -269,6 +388,14 @@ class Node:
 # NPC Crew class
 # ---------------------------------------------------------------------------
 
+def _npc_def(name):
+    """Look up the static personality definition for a crew by name."""
+    for d in NPC_CREWS:
+        if d["name"] == name:
+            return d
+    return {}
+
+
 class NpcCrew:
     def __init__(self, name, style, aggression, rep):
         self.name        = name
@@ -276,17 +403,87 @@ class NpcCrew:
         self.aggression  = aggression  # 1-3
         self.rep         = rep         # starting reputation
         self.home_node   = None        # index of their home node
-        self.resources   = {
-            "phone_credits": random.randint(100, 400),
-            "floppy_disks" : random.randint(50,  300),
-            "source_code"  : random.randint(50,  250),
-            "artwork"      : random.randint(30,  200),
-            "mod_music"    : random.randint(20,  150),
-            "tools"        : random.randint(10,  100),
-            "hardware"     : random.randint(10,  80),
+
+        # Personality — loaded from NPC_CREWS table, not saved (static)
+        _def = _npc_def(name)
+        self.behaviour   = _def.get("behaviour", "producer")   # raider/trader/party/producer/artist
+        self.home_bbs    = _def.get("home_bbs",  name + " HQ")
+        self.taunt       = _def.get("taunt",     "A rival crew.")
+        self.backstory   = _def.get("backstory", "")
+
+        # Starting resources shaped by behaviour
+        if self.behaviour == "raider":
+            self.resources = {
+                "phone_credits": random.randint(150, 450),
+                "floppy_disks" : random.randint(80,  300),
+                "source_code"  : random.randint(30,  150),
+                "artwork"      : random.randint(10,  80),
+                "mod_music"    : random.randint(10,  60),
+                "tools"        : random.randint(60,  180),   # raiders hoard tools
+                "hardware"     : random.randint(40,  120),
+            }
+            self.strength  = random.randint(55, 90)
+            self.defense   = random.randint(30, 65)
+        elif self.behaviour == "trader":
+            self.resources = {
+                "phone_credits": random.randint(300, 700),   # traders are rich
+                "floppy_disks" : random.randint(150, 500),
+                "source_code"  : random.randint(40,  180),
+                "artwork"      : random.randint(20,  100),
+                "mod_music"    : random.randint(20,  100),
+                "tools"        : random.randint(20,  80),
+                "hardware"     : random.randint(30,  120),
+            }
+            self.strength  = random.randint(25, 55)
+            self.defense   = random.randint(30, 60)
+        elif self.behaviour == "artist":
+            self.resources = {
+                "phone_credits": random.randint(80,  300),
+                "floppy_disks" : random.randint(50,  200),
+                "source_code"  : random.randint(30,  150),
+                "artwork"      : random.randint(150, 500),   # artists hoard art
+                "mod_music"    : random.randint(100, 350),   # and music
+                "tools"        : random.randint(10,  60),
+                "hardware"     : random.randint(10,  60),
+            }
+            self.strength  = random.randint(20, 50)
+            self.defense   = random.randint(25, 55)
+        elif self.behaviour == "party":
+            self.resources = {
+                "phone_credits": random.randint(100, 350),
+                "floppy_disks" : random.randint(50,  250),
+                "source_code"  : random.randint(50,  200),
+                "artwork"      : random.randint(60,  220),
+                "mod_music"    : random.randint(60,  220),
+                "tools"        : random.randint(15,  70),
+                "hardware"     : random.randint(15,  70),
+            }
+            self.strength  = random.randint(25, 55)
+            self.defense   = random.randint(30, 65)
+        else:  # producer
+            self.resources = {
+                "phone_credits": random.randint(100, 400),
+                "floppy_disks" : random.randint(50,  300),
+                "source_code"  : random.randint(150, 450),   # producers hoard source
+                "artwork"      : random.randint(50,  200),
+                "mod_music"    : random.randint(50,  200),
+                "tools"        : random.randint(30,  120),
+                "hardware"     : random.randint(20,  80),
+            }
+            self.strength  = random.randint(30, 65)
+            self.defense   = random.randint(30, 65)
+
+    @property
+    def personality_tag(self):
+        """Short display tag for the raid screen."""
+        tags = {
+            "raider"  : "AGGRESSOR",
+            "trader"  : "TRADER",
+            "artist"  : "ARTIST",
+            "party"   : "PARTYCREW",
+            "producer": "PRODUCER",
         }
-        self.strength    = random.randint(30, 80)
-        self.defense     = random.randint(20, 70)
+        return tags.get(self.behaviour, "UNKNOWN")
 
     def to_dict(self):
         res = "|".join(f"{k}:{v}" for k, v in self.resources.items())
@@ -299,6 +496,7 @@ class NpcCrew:
             "strength"  : self.strength,
             "defense"   : self.defense,
             "resources" : res,
+            # behaviour/home_bbs/taunt/backstory are static — not saved
         }
 
     @classmethod

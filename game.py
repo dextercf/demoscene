@@ -310,11 +310,13 @@ def action_raid(player, world, cfg, rng):
     for i, (crew, node) in enumerate(targets):
         agg = "!!!" if crew.aggression == 3 else ("!!" if crew.aggression == 2 else "!")
         col = ansi.R if crew.aggression == 3 else (ansi.Y if crew.aggression == 2 else ansi.W)
+        tag = getattr(crew, 'personality_tag', crew.style.upper())
         ansi.move(ansi.MENU_TOP + 1 + i, 1)
         ansi.writeln(
             f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
-            f"  at {ansi.B}{node.name:<24}{ansi.RST}"
-            f"  {ansi.DG}aggression: {agg}{ansi.RST}")
+            f"  {ansi.BK}{tag:<10}{ansi.RST}"
+            f"  at {ansi.B}{node.name:<20}{ansi.RST}"
+            f"  {ansi.DG}{agg}{ansi.RST}")
 
     ansi.draw_divider(ansi.DIV_3)
     ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
@@ -339,6 +341,10 @@ def action_raid(player, world, cfg, rng):
         return
 
     ansi.screen_raid(player, target_crew)
+    # Show taunt on result line before player picks tactic
+    taunt = getattr(target_crew, 'taunt', '')
+    if taunt:
+        ansi.result(f"{ansi.BK}> {taunt}{ansi.RST}")
     key = ansi.get_key(valid_keys="ASHQashq").upper()
 
     if key == "Q":
@@ -897,6 +903,24 @@ def _random_event(player, world, rng):
     ansi.draw_status(player, player.bbs_name)
 
 
+def _crew_backstory(world, rng):
+    """Return 'CrewName|backstory' for a random crew that has a backstory."""
+    crews = [c for c in world.npc_crews if getattr(c, 'backstory', '')]
+    if not crews:
+        return "__skip__"
+    c = rng.choice(crews)
+    return f"{c.name}|{c.backstory}"
+
+
+def _crew_home_info(world, rng):
+    """Return 'CrewName|home_bbs' for a random crew that has a home_bbs."""
+    crews = [c for c in world.npc_crews if getattr(c, 'home_bbs', '')]
+    if not crews:
+        return "__skip__"
+    c = rng.choice(crews)
+    return f"{c.name}|{c.home_bbs}"
+
+
 _MSG_TEMPLATES = [
     # --- Always available ---
     ("{crew} thinks your crew is a bunch of lamers. Prove them wrong.",
@@ -921,6 +945,11 @@ _MSG_TEMPLATES = [
      lambda p, w, r: None, "Scene News"),
     ("Your crew's name was mentioned in a trade channel. People are watching.",
      lambda p, w, r: None, "Intel"),
+    # --- Backstory-driven messages (personality flavour) ---
+    ("{crew}: {backstory}",
+     lambda p, w, r: _crew_backstory(w, r), "Profile"),
+    ("Word on the wire: {crew} is operating out of {home_bbs}.",
+     lambda p, w, r: _crew_home_info(w, r), "Intel"),
     # --- Early game only (day <= 15) ---
     ("Welcome to the scene. Don't screw it up.",
      lambda p, w, r: None if p.day <= 15 else "__skip__", "Welcome"),
@@ -954,6 +983,11 @@ def _generate_messages(player, world, current_day, count=7):
         if crew_val == "__skip__":
             continue
 
+        # Handle pipe-separated 'crew|extra' values from backstory/home_bbs helpers
+        extra_val = ""
+        if crew_val and "|" in str(crew_val):
+            crew_val, extra_val = str(crew_val).split("|", 1)
+
         sender = "ANONYMOUS"
         if world.npc_crews:
             sc = rng.choice(world.npc_crews)
@@ -962,11 +996,13 @@ def _generate_messages(player, world, current_day, count=7):
 
         try:
             text = template.format(
-                crew  = crew_val or (world.npc_crews[0].name if world.npc_crews else "Unknown"),
-                node  = (rng.choice(world.discovered_nodes()).name
-                         if world.discovered_nodes() else "Unknown Node"),
-                party = "the next party",
-                days  = crew_val if subject == "Countdown" else "?",
+                crew      = crew_val or (world.npc_crews[0].name if world.npc_crews else "Unknown"),
+                node      = (rng.choice(world.discovered_nodes()).name
+                             if world.discovered_nodes() else "Unknown Node"),
+                party     = "the next party",
+                days      = crew_val if subject == "Countdown" else "?",
+                backstory = extra_val,
+                home_bbs  = extra_val,
             )
         except (KeyError, IndexError):
             text = template

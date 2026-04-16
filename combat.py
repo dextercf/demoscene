@@ -128,8 +128,21 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
     player_luck   = rng.uniform(LUCK_MIN, LUCK_MAX)
     result.player_power = int(base_player * tactic["atk_mult"] * player_luck)
 
-    # --- Enemy combat power ---
-    base_enemy = npc_crew.strength + (npc_crew.defense * 0.5)
+    # --- Enemy combat power — modified by behaviour ---
+    base_enemy = npc_crew.strength + (npc_crew.defence * 0.5) \
+        if hasattr(npc_crew, 'defence') else npc_crew.strength + (npc_crew.defense * 0.5)
+
+    behaviour = getattr(npc_crew, 'behaviour', 'producer')
+    if behaviour == 'raider':
+        base_enemy *= 1.20    # raiders hit harder
+    elif behaviour == 'trader':
+        base_enemy *= 0.80    # traders are weak fighters
+    elif behaviour == 'artist':
+        base_enemy *= 0.75    # artists are even weaker fighters
+    elif behaviour == 'party':
+        base_enemy *= 0.85    # party crews are mediocre fighters
+    # producer is baseline (1.0x)
+
     enemy_luck = rng.uniform(LUCK_MIN, LUCK_MAX)
     result.enemy_power = int(base_enemy * enemy_luck)
 
@@ -138,16 +151,23 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
         result.victory = True
         result.rep_change = REP_WIN
 
-        # Calculate loot
+        # Calculate loot — producers protect source_code, artists protect artwork/music
         loot_keys = ["phone_credits", "floppy_disks", "source_code",
                      "artwork", "mod_music", "hardware", "tools"]
         for key in loot_keys:
             available = npc_crew.resources.get(key, 0)
             if available > 0:
-                taken = int(available * LOOT_FRACTION * tactic["loot_mult"])
+                # Behaviour-specific loot protection
+                protection = 1.0
+                if behaviour == 'producer' and key == 'source_code':
+                    protection = 0.5   # producers hide their source
+                elif behaviour == 'artist' and key in ('artwork', 'mod_music'):
+                    protection = 0.5   # artists hide their art
+                elif behaviour == 'raider' and key == 'tools':
+                    protection = 0.7   # raiders guard their tools
+                taken = int(available * LOOT_FRACTION * tactic["loot_mult"] * protection)
                 taken = max(0, min(taken, available))
                 if taken > 0:
-                    # Add some randomness to loot amounts
                     taken = int(taken * rng.uniform(0.7, 1.0))
                     result.loot[key] = taken
 
@@ -157,9 +177,13 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
                 0, npc_crew.resources.get(key, 0) - amount
             )
 
-        # Counter-raid risk — aggressive crews hit back
+        # Counter-raid risk — aggressive crews hit back; raiders always more likely
         counter_chance = 0.15 + (npc_crew.aggression * 0.10)
         counter_chance += tactic.get("detect_mod", 0)
+        if behaviour == 'raider':
+            counter_chance += 0.15   # raiders are vindictive
+        elif behaviour == 'trader':
+            counter_chance -= 0.10   # traders prefer to cut losses
         result.counter_risk = rng.random() < counter_chance
 
         result.message = _victory_message(npc_crew.name, result.loot, rng)
