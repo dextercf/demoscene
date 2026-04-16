@@ -687,11 +687,14 @@ def hq_loop(player, world, cfg, rng):
             action_hof(player, cfg)
             ansi.screen_hq(player)
         elif key == "Q":
-            player.save()
-            world.save(player.handle)
-            ansi.result(f"{ansi.DG}> Game saved. Returning to BBS...{ansi.RST}")
-            time.sleep(1.0)
-            return False
+            ansi.result(f"{ansi.Y}> Save and quit? [Y] Yes  [N] No{ansi.RST}")
+            confirm = ansi.get_key(valid_keys="YyNn").upper()
+            if confirm == "Y":
+                player.save()
+                world.save(player.handle)
+                ansi.result(f"{ansi.DG}> Game saved. Returning to BBS...{ansi.RST}")
+                time.sleep(1.0)
+                return False
 
         if player.turns_remaining <= 0:
             # Expire undelivered missions at day end

@@ -18,6 +18,27 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-16  —  Art, UI polish, NPC personalities
+
+### Changes
+- All placeholder .ans files replaced with hand-made ANSI art
+- header.ans renamed to explore.ans — all art files now named after their screen
+- screen_explore(): removed post-load row clear loop (rows 9-14) that was
+  erasing the bottom half of explore.ans art
+- screen_title(): removed hard-coded menu lines — menu is now drawn in title.ans
+  giving the art the full canvas (rows 1-22)
+- hq_loop() [Q] Quit: added Y/N confirmation before saving and exiting
+- NPC personalities: behaviour, backstory, taunt, home_bbs added to all 12 crews
+  Combat modifiers applied per behaviour (raider/trader/artist/party/producer)
+  Taunt shown on raid screen. Backstory surfaces in message board templates.
+
+### Resume here next session
+Priority 1: BBS test — title screen, explore screen, raid screen, quit confirm
+Priority 2: Starting tools = 0 makes early combat unwinnable — add starting bonus
+Priority 3: Node-specific events (warez vs music vs art boards feel different)
+
+---
+
 ## 2026-04-16  —  Art placeholder session
 
 ### Goal
