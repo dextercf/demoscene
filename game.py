@@ -688,8 +688,8 @@ def hq_loop(player, world, cfg, rng):
         elif key == "Q":
             ansi.result(
                 f"{ansi.DG}> Save and quit? "
-                f"{ansi.BK}[{ansi.RST}{ansi.BW}Y{ansi.RST}{ansi.BK}]{ansi.RST} Yes  "
-                f"{ansi.BK}[{ansi.RST}{ansi.BW}N{ansi.RST}{ansi.BK}]{ansi.RST} No"
+                f"{ansi.BBLK}[{ansi.RST}{ansi.BWHT}Y{ansi.RST}{ansi.BBLK}]{ansi.RST} Yes  "
+                f"{ansi.BBLK}[{ansi.RST}{ansi.BWHT}N{ansi.RST}{ansi.BBLK}]{ansi.RST} No"
                 f"{ansi.RST}")
             confirm = ansi.get_key(valid_keys="YyNn").upper()
             if confirm == "Y":
