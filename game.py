@@ -311,12 +311,11 @@ def action_raid(player, world, cfg, rng):
         agg = "!!!" if crew.aggression == 3 else ("!!" if crew.aggression == 2 else "!")
         col = ansi.R if crew.aggression == 3 else (ansi.Y if crew.aggression == 2 else ansi.W)
         tag = getattr(crew, 'personality_tag', crew.style.upper())
-        ansi.move(ansi.MENU_TOP + 1 + i, 1)
-        ansi.writeln(
-            f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
-            f"  {ansi.BK}{tag:<10}{ansi.RST}"
-            f"  at {ansi.B}{node.name:<20}{ansi.RST}"
-            f"  {ansi.DG}{agg}{ansi.RST}")
+        line = (f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
+                f"  {ansi.BK}{tag:<10}{ansi.RST}"
+                f"  at {ansi.B}{node.name:<20}{ansi.RST}"
+                f"  {ansi.DG}{agg}{ansi.RST}")
+        ansi.write_at(ansi.MENU_TOP + 1 + i, 1, line)
 
     ansi.draw_divider(ansi.DIV_3)
     ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
