@@ -292,11 +292,16 @@ def screen_map(player, world, page=0, page_size=7):
             f"{crew_tag}")
 
     # Prompt on RES_BOT (row 22) — safe from status bar
-    write_at(RES_BOT, 1,
-        f"  {DG}Travel [1-{len(shown)}]"
-        + (f"  [N]ext" if page < pg_cnt - 1 else "")
-        + (f"  [P]rev" if page > 0 else "")
-        + f"  [Q]uit: {RST}")
+    def _k(key, label):
+        return f"{C}[{RST}{W}{key}{RST}{C}]{RST} {DG}{label}{RST}"
+
+    nav_hint = (
+        f"  {DG}Travel {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
+        + (f"  {_k('N','Next')}" if page < pg_cnt - 1 else "")
+        + (f"  {_k('P','Prev')}" if page > 0 else "")
+        + f"  {_k('Q','Quit')}"
+    )
+    write_at(RES_BOT, 1, nav_hint)
 
 def screen_explore(player):
     """
