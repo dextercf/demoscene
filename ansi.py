@@ -269,19 +269,12 @@ def screen_map(player, world, page=0, page_size=7):
     shown = disc[page*page_size : (page+1)*page_size]
 
     # Header row in MENU zone
-    write_at(MENU_TOP, 1,
+write_at(MENU_TOP, 1,
         f"  {DG}NETWORK MAP{RST}  "
         f"{C}Page {page+1}/{pg_cnt}{RST}  "
         f"{DG}({total} nodes discovered){RST}")
 
-    # Nav hints on MENU_TOP+1
-    nav = []
-    if page > 0:           nav.append(f"{C}[P]{RST} Prev")
-    if page < pg_cnt - 1:  nav.append(f"{C}[N]{RST} Next")
-    nav.append(f"{C}[Q]{RST} Back")
-    write_at(MENU_TOP + 1, 1, "  " + "   ".join(nav))
-
-    draw_divider(DIV_3)
+    clear_line(MENU_TOP + 1)
 
     # Node list in RES zone — up to 7 rows (RES_TOP..RES_TOP+6)
     for idx, node in enumerate(shown, 1):
@@ -291,15 +284,17 @@ def screen_map(player, world, page=0, page_size=7):
             f"{DG}{node.label:<18}{RST}"
             f"{crew_tag}")
 
-    # Prompt on RES_BOT (row 22) — safe from status bar
-    def _k(key, label):
-        return f"{C}[{RST}{W}{key}{RST}{C}]{RST} {DG}{label}{RST}"
-
-    nav_hint = (
+    # Prompt on RES_BOT — styled key hints
+    prompt = (
         f"  {DG}Travel {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
-        + (f"  {_k('N','Next')}" if page < pg_cnt - 1 else "")
-        + (f"  {_k('P','Prev')}" if page > 0 else "")
-        + f"  {_k('Q','Quit')}"
+        + (f"  {C}[{RST}{W}N{RST}{C}]{RST} {DG}Next{RST}" if page < pg_cnt - 1 else "")
+        + (f"  {C}[{RST}{W}P{RST}{C}]{RST} {DG}Prev{RST}" if page > 0 else "")
+        + f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Quit{RST}"
+    )
+    write_at(RES_BOT, 1, prompt)
+
+    draw_divider(STATUS_DIV)
+    draw_status(player, player.bbs_name)
     )
     write_at(RES_BOT, 1, nav_hint)
 
