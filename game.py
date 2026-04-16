@@ -113,6 +113,8 @@ def action_travel(player, world, cfg, rng):
             continue
         if key.isdigit() and 0 < int(key) <= len(shown):
             node = shown[int(key) - 1]
+            if node.name.lower() == player.current_node.lower():
+                continue
             if not player.use_turns(1):
                 ansi.result(f"{ansi.R}> Not enough turns to travel.{ansi.RST}")
                 return

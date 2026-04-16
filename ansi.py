@@ -276,22 +276,26 @@ def screen_map(player, world, page=0, page_size=5):
 
     clear_zone(MENU_TOP + 1, RES_TOP - 1)
 
-    # Node list — starts at RES_TOP, 2 extra cols padding from left
+# Node list — starts at RES_TOP, 2 extra cols padding from left
     for idx, node in enumerate(shown, 1):
         crew_tag = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
+        is_current = node.name.lower() == player.current_node.lower()
+        num_col  = DG if is_current else C
+        name_col = DG if is_current else W
+        cur_tag  = f"  {DG}(current){RST}" if is_current else ""
         write_at(RES_TOP + idx - 1, 1,
-            f"    {C}[{RST}{W}{idx}{RST}{C}]{RST} {W}{node.name:<24}{RST} "
+            f"    {num_col}[{RST}{name_col}{idx}{RST}{num_col}]{RST} {name_col}{node.name:<24}{RST} "
             f"{DG}{node.label:<18}{RST}"
-            f"{crew_tag}")
+            f"{crew_tag}{cur_tag}")
 
     # Prompt on RES_BOT — styled key hints
     has_next = page < pg_cnt - 1
     has_prev = page > 0
     prompt = (
-        f"    {DG}Press node number to travel to: {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
-        + (f"  {DG}or{RST}  {C}[{RST}{W}N{RST}{C}]{RST} {DG}Next{RST}" if has_next else "")
-        + (f"  {DG}or{RST}  {C}[{RST}{W}P{RST}{C}]{RST} {DG}Prev{RST}" if has_prev else "")
-        + f"  {DG}or{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Quit{RST}"
+        f"    {DG}BBS to connect to: {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
+        + (f"  {DG}-{RST}  {C}[{RST}{W}N{RST}{C}]{RST} {DG}Next{RST}" if has_next else "")
+        + (f"  {DG}-{RST}  {C}[{RST}{W}P{RST}{C}]{RST} {DG}Prev{RST}" if has_prev else "")
+        + f"  {DG}-{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Quit{RST}"
     )
     write_at(RES_BOT, 1, prompt)
 
