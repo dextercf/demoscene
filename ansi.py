@@ -237,9 +237,7 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1, cmd_hint=""):
     clear_results()
 
 def screen_title():
-    clear_screen(); draw_art("title"); draw_divider(DIV_1)
-    move(MENU_TOP, 1); _out(f"  {C}[N]{RST} New game  {C}[C]{RST} Continue  {C}[S]{RST} Scores  {C}[Q]{RST} Quit")
-    draw_divider(DIV_3); clear_line(STATUS); hide_cursor()
+    clear_screen(); draw_art("title"); hide_cursor()
 
 def screen_hq(player):
     clear_screen(); draw_art("hq"); draw_divider(DIV_1)
@@ -321,9 +319,6 @@ def screen_explore(player):
     move(1, 1)
     if not load_art("explore"):
         draw_art("map")
-    # Pad/clear rows 9-14 in case art is shorter than 14 rows
-    for row in range(9, 15):
-        move(row, 1); _out(ERASE_LINE)
 
     draw_divider(15)                        # divider above menu
 
