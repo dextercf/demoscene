@@ -269,7 +269,7 @@ def screen_map(player, world, page=0, page_size=7):
     shown = disc[page*page_size : (page+1)*page_size]
 
     # Header row in MENU zone
-write_at(MENU_TOP, 1,
+    write_at(MENU_TOP, 1,
         f"  {DG}NETWORK MAP{RST}  "
         f"{C}Page {page+1}/{pg_cnt}{RST}  "
         f"{DG}({total} nodes discovered){RST}")
@@ -295,8 +295,6 @@ write_at(MENU_TOP, 1,
 
     draw_divider(STATUS_DIV)
     draw_status(player, player.bbs_name)
-    )
-    write_at(RES_BOT, 1, nav_hint)
 
 def screen_explore(player):
     """
