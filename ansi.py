@@ -1200,11 +1200,10 @@ def screen_hof(entries, player_handle, player=None):
 
     # Header in MENU zone
     move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {Y}HALL OF FAME{RST}  {DG}{len(entries)} entr{'ies' if len(entries) != 1 else 'y'}{RST}")
-    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     _out(f"  {DG}{'#':<4}{'HANDLE':<14}{'CREW':<20}{'BBS':<16}{'SCORE':>8}{'  DAY':>6}{RST}")
-    move(MENU_TOP + 2, 1)
+    move(MENU_TOP + 1, 1)
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+    clear_line(MENU_TOP + 2)
 
     # Entries in RES zone — up to 9 rows
     for i, e in enumerate(entries[:9]):
@@ -1224,7 +1223,7 @@ def screen_hof(entries, player_handle, player=None):
 
     # Prompt
     write_at(RES_BOT, 1,
-        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Quit{RST}")
 
     draw_divider(STATUS_DIV)
     if player: draw_status(player, player.bbs_name)
