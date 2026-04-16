@@ -21,6 +21,10 @@ Raw file links (paste directly into Claude chat to fetch):
 ## 2026-04-16  —  Art, UI polish, NPC personalities
 
 ### Changes
+- Fixed silent crash on [R] Raid and [Q] Quit caused by undefined colour
+  names (BK, BW, BBLK, BWHT) — replaced with correct names (DG, C, W)
+- Quit prompt: clear_results() on [N] so result zone doesn't stay dirty
+- Raid target list: switched writeln() to write_at() to prevent disconnect
 - All placeholder .ans files replaced with hand-made ANSI art
 - header.ans renamed to explore.ans — all art files now named after their screen
 - screen_explore(): removed post-load row clear loop (rows 9-14) that was
