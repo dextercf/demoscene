@@ -312,7 +312,7 @@ def action_raid(player, world, cfg, rng):
         col = ansi.R if crew.aggression == 3 else (ansi.Y if crew.aggression == 2 else ansi.W)
         tag = getattr(crew, 'personality_tag', crew.style.upper())
         line = (f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
-                f"  {ansi.BK}{tag:<10}{ansi.RST}"
+                f"  {ansi.DG}{tag:<10}{ansi.RST}"
                 f"  at {ansi.B}{node.name:<20}{ansi.RST}"
                 f"  {ansi.DG}{agg}{ansi.RST}")
         ansi.write_at(ansi.MENU_TOP + 1 + i, 1, line)
@@ -343,7 +343,7 @@ def action_raid(player, world, cfg, rng):
     # Show taunt on result line before player picks tactic
     taunt = getattr(target_crew, 'taunt', '')
     if taunt:
-        ansi.result(f"{ansi.BK}> {taunt}{ansi.RST}")
+        ansi.result(f"{ansi.DG}> {taunt}{ansi.RST}")
     key = ansi.get_key(valid_keys="ASHQashq").upper()
 
     if key == "Q":
@@ -688,8 +688,8 @@ def hq_loop(player, world, cfg, rng):
         elif key == "Q":
             ansi.result(
                 f"{ansi.DG}> Save and quit? "
-                f"{ansi.BBLK}[{ansi.RST}{ansi.BWHT}Y{ansi.RST}{ansi.BBLK}]{ansi.RST} Yes  "
-                f"{ansi.BBLK}[{ansi.RST}{ansi.BWHT}N{ansi.RST}{ansi.BBLK}]{ansi.RST} No"
+                f"{ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}]{ansi.RST} Yes  "
+                f"{ansi.C}[{ansi.RST}{ansi.W}N{ansi.RST}{ansi.C}]{ansi.RST} No"
                 f"{ansi.RST}")
             confirm = ansi.get_key(valid_keys="YyNn").upper()
             if confirm == "Y":
