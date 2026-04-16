@@ -413,7 +413,7 @@ def save_leaderboard(entries):
     entries = entries[:LEADERBOARD_MAX]
     try:
         with open(LEADERBOARD_PATH, "w", encoding="cp437") as f:
-            f.write("; Demoscene: The Exploration of Art — Hall of Fame\n")
+            f.write("; Demoscene: The Exploration of Art - Hall of Fame\n")
             f.write("; handle|crew|bbs|score|day|date\n")
             for e in entries:
                 f.write(
