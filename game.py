@@ -126,11 +126,11 @@ def action_travel(player, world, cfg, rng):
             ansi.draw_divider(ansi.STATUS_DIV)
             ansi.draw_status(player, player.bbs_name)
 
-            ansi.write_at(ansi.MENU_TOP,     1, f"    {ansi.C}CONNECTING TO:{ansi.RST} {ansi.W}{node.name}{ansi.RST}")
-            ansi.write_at(ansi.MENU_TOP + 1, 1, f"    {ansi.DG}{node.label}  ·  {node.description}{ansi.RST}")
+            ansi.write_at(ansi.DIV_1 + 1,   1, f"    {ansi.C}CONNECTING TO:{ansi.RST} {ansi.W}{node.name}{ansi.RST}")
+            ansi.write_at(ansi.DIV_1 + 2,   1, f"    {ansi.DG}{node.label}  ·  {node.description}{ansi.RST}")
 
-            # Scrolling terminal log in RES zone
-            TERM_TOP = ansi.RES_TOP
+            # Scrolling terminal log starts one row earlier
+            TERM_TOP = ansi.DIV_3
             TERM_BOT = ansi.RES_BOT - 1
             TERM_H   = TERM_BOT - TERM_TOP + 1
             term_buf = []
