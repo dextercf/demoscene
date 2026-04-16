@@ -1206,9 +1206,9 @@ def screen_hof(entries, player_handle, player=None):
     clear_line(MENU_TOP + 2)
     clear_line(DIV_3)
 
-    # Entries in RES zone — up to 9 rows
+    # Entries start at MENU_TOP + 2 — directly under the divider
     for i, e in enumerate(entries[:9]):
-        row = RES_TOP + i
+        row = MENU_TOP + 2 + i
         if row > RES_BOT:
             break
         is_player = e["handle"].upper() == player_handle.upper()
