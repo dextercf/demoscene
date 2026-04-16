@@ -95,7 +95,7 @@ def action_explore(player, world, cfg, rng):
 # ---------------------------------------------------------------------------
 
 def action_travel(player, world, cfg, rng):
-    page, pg_sz = 0, 7
+    page, pg_sz = 0, 5
     while True:
         disc = world.discovered_nodes()
         pg_cnt = max(1, (len(disc) + pg_sz - 1) // pg_sz)
@@ -117,12 +117,71 @@ def action_travel(player, world, cfg, rng):
                 ansi.result(f"{ansi.R}> Not enough turns to travel.{ansi.RST}")
                 return
             player.current_node = node.name
-            ansi.dial(ansi.RES_TOP + 1, 3, node.name)
-            ansi.result(f"{ansi.C}> Connected: {ansi.W}{node.name}{ansi.RST}  {ansi.DG}{node.description}{ansi.RST}")
-            if node.crew:
-                ansi.result(f"  {ansi.R}{node.crew} is present here.{ansi.RST}")
+
+            # Full-screen dial-up sequence
+            ansi.clear_screen()
+            ansi.draw_art("map")
+            ansi.draw_divider(ansi.DIV_1)
+            ansi.clear_zone(ansi.MENU_TOP, ansi.RES_BOT)
+            ansi.draw_divider(ansi.STATUS_DIV)
             ansi.draw_status(player, player.bbs_name)
-            time.sleep(1.0)
+
+            ansi.write_at(ansi.MENU_TOP,     1, f"    {ansi.C}CONNECTING TO:{ansi.RST} {ansi.W}{node.name}{ansi.RST}")
+            ansi.write_at(ansi.MENU_TOP + 1, 1, f"    {ansi.DG}{node.label}  ·  {node.description}{ansi.RST}")
+
+            # Scrolling terminal log in RES zone
+            TERM_TOP = ansi.RES_TOP
+            TERM_BOT = ansi.RES_BOT - 1
+            TERM_H   = TERM_BOT - TERM_TOP + 1
+            term_buf = []
+
+            def _redraw_term():
+                shown_lines = term_buf[-TERM_H:]
+                for i in range(TERM_H):
+                    ansi.move(TERM_TOP + i, 1)
+                    ansi._out(ansi.ERASE_LINE)
+                    if i < len(shown_lines):
+                        ansi._out(f"    {ansi.DG}{shown_lines[i]}{ansi.RST}")
+
+            def _log(text, delay=0.4):
+                term_buf.append(text)
+                _redraw_term()
+                if delay: time.sleep(delay)
+
+            import random as _rnd
+            connect_strings = ["CONNECT 2400", "CONNECT 9600", "CONNECT 14400", "CONNECT 28800", "CONNECT 33600"]
+            connect = rng.choice(connect_strings)
+            phone   = f"+{rng.randint(1,99)}-{rng.randint(100,999)}-{rng.randint(1000,9999)}"
+
+            _log("ATZ", 0.3)
+            _log("OK", 0.4)
+
+            # Type phone number digit by digit
+            term_buf.append(f"ATDT {phone}")
+            _redraw_term()
+            last_row = TERM_TOP + min(len(term_buf) - 1, TERM_H - 1)
+            ansi.move(last_row, 1); ansi._out(ansi.ERASE_LINE)
+            ansi._out(f"    {ansi.DG}ATDT {ansi.RST}")
+            for digit in phone:
+                ansi._out(ansi.DG + digit + ansi.RST)
+                time.sleep(0.08)
+            time.sleep(0.6)
+
+            _log("RINGING...", 1.0)
+            _log(connect, 0.5)
+            _log(f"Connected to {node.name}", 0.5)
+
+            if node.crew:
+                _log(f"*** {node.crew} is present here ***", 0.6)
+
+            ansi.write_at(ansi.RES_BOT, 1,
+                f"    {ansi.DG}Press any key to continue...{ansi.RST}")
+            ansi.show_cursor()
+            io = socketio.get_io()
+            if io: io.getkey()
+            ansi.hide_cursor()
+            ansi.clear_screen()
+            ansi.draw_status(player, player.bbs_name)
             return
 
 # ---------------------------------------------------------------------------

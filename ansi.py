@@ -261,7 +261,7 @@ def screen_hq(player):
     clear_zone(RES_TOP, RES_BOT)
     draw_divider(STATUS_DIV); draw_status(player, player.bbs_name)
 
-def screen_map(player, world, page=0, page_size=7):
+def screen_map(player, world, page=0, page_size=5):
     clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()
     total = len(disc)
@@ -270,23 +270,23 @@ def screen_map(player, world, page=0, page_size=7):
 
     # Header row in MENU zone
     write_at(MENU_TOP, 1,
-        f"  {DG}NETWORK MAP{RST}  "
+        f"    {DG}NETWORK MAP{RST}  "
         f"{C}Page {page+1}/{pg_cnt}{RST}  "
         f"{DG}({total} nodes discovered){RST}")
 
-    clear_line(MENU_TOP + 1)
+    clear_zone(MENU_TOP + 1, RES_TOP - 1)
 
-    # Node list in RES zone — up to 7 rows (RES_TOP..RES_TOP+6)
+    # Node list — starts at RES_TOP, 2 extra cols padding from left
     for idx, node in enumerate(shown, 1):
         crew_tag = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
         write_at(RES_TOP + idx - 1, 1,
-            f"  {C}[{idx}]{RST} {W}{node.name:<24}{RST} "
+            f"    {C}[{idx}]{RST} {W}{node.name:<24}{RST} "
             f"{DG}{node.label:<18}{RST}"
             f"{crew_tag}")
 
     # Prompt on RES_BOT — styled key hints
     prompt = (
-        f"  {DG}Travel {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
+        f"    {DG}Travel {C}[{RST}{W}1-{len(shown)}{RST}{C}]{RST}"
         + (f"  {C}[{RST}{W}N{RST}{C}]{RST} {DG}Next{RST}" if page < pg_cnt - 1 else "")
         + (f"  {C}[{RST}{W}P{RST}{C}]{RST} {DG}Prev{RST}" if page > 0 else "")
         + f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Quit{RST}"
