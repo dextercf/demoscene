@@ -753,6 +753,8 @@ def hq_loop(player, world, cfg, rng):
                 f"{ansi.RST}")
             confirm = ansi.get_key(valid_keys="YyNn").upper()
             if confirm == "Y":
+                player.calculate_score()
+                playermod.submit_score(player)
                 player.save()
                 world.save(player.handle)
                 ansi.result(f"{ansi.DG}> Game saved. Returning to BBS...{ansi.RST}")
