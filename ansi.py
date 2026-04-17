@@ -186,12 +186,11 @@ def draw_status(player, bbs_name="", node=1):
     """
     move(STATUS, 1)
     _out(ERASE_LINE)
-    _out(f" {DG}HANDLE:{RST} {G}{player.handle}{RST}"
-         f"       {DG}CREW:{RST} {W}{player.crew_name}{RST}"
-         f"          "
-         f"{DG}TURNS{RST} {Y}{player.turns_remaining}{DG}/10{RST}"
-         f" {DG}.{RST} {DG}DAY{RST} {W}{player.day}{RST}"
-         f" {DG}.{RST} {DG}NODE{RST} {W}{node}{RST}")
+    _out(f" {G}{player.handle}{DG}/{player.crew_name}{RST}"
+         f"{'':>20}"
+         f"{DG}Node: {RST}{W}{bbs_name}{RST}"
+         f"{'':>16}"
+         f"{DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
     move(1, 1)  # park cursor at top-left — never leave it on the last row
 
 def dial(row, col, node_name, colour=C):
@@ -644,20 +643,17 @@ def screen_courier_active(player, mission):
 
 
 def screen_trade(player, node):
-    """Trade post screen — 7 items in RES zone."""
+    """Trade post screen — 7 items directly under column headers."""
     from player import RESOURCE_NAMES
-    screen_base("trade", player, player.bbs_name,
-                cmd_hint="[1-7] Select  [B] Buy  [S] Sell  [Q] Back")
+    screen_base("trade", player, player.bbs_name)
 
-    # Header in MENU zone (rows 10-11; row 12 left empty; DIV_3 at 13)
-    node_name = node.name[:24]
+    # Column headers in MENU zone (row 10); rows 11-13 cleared
     move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {DG}NODE {RST}{B}{node_name:<24}{RST}"
-         f"  {DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
-    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
-    _out(f"  {DG}{'#':<3} {'ITEM':<15} {'BUY':>7}  {'SELL':>6}  {'YOURS':>6}{RST}")
+    _out(f"      {DG}{'#':<3} {'ITEM':<15} {'BUY':>7}  {'SELL':>6}  {'YOURS':>6}{RST}")
+    for r in (MENU_TOP + 1, MENU_TOP + 2, DIV_3):
+        move(r, 1); _out(ERASE_LINE)
 
-    # Item list in RES zone — all 7 fit in rows 14-20
+    # Item list starts at RES_TOP (row 14) — directly under column headers
     trade_keys = ["floppy_disks", "source_code", "artwork",
                   "mod_music", "hardware", "tools", "beer"]
     for i, key in enumerate(trade_keys):
@@ -673,7 +669,7 @@ def screen_trade(player, node):
         col = Y if is_spec else W
         spec_tag = f"{Y}★{RST}" if is_spec else " "
         move(row, 1); _out(ERASE_LINE)
-        _out(f"  {C}[{i+1}]{RST}{spec_tag}{col}{name:<15}{RST}"
+        _out(f"      {C}[{i+1}]{RST}{spec_tag}{col}{name:<15}{RST}"
              f"  {G}{buy:>6}c{RST}"
              f"  {R}{sell:>5}c{RST}"
              f"  {Y}{yours:>6}{RST}")
@@ -683,8 +679,10 @@ def screen_trade(player, node):
 
     # Default prompt on last row above status
     write_at(RES_BOT, 1,
-        f"  {C}[{RST}{W}1-7{RST}{C}]{RST} {DG}Select{RST}  "
-        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+        f"      {C}[{RST}{W}1-7{RST}{C}]{RST} {DG}Select {RST}"
+        f" {C}[{RST}{W}B{RST}{C}]{RST} {DG}Buy {RST}"
+        f" {C}[{RST}{W}S{RST}{C}]{RST} {DG}Sell {RST}"
+        f" {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 # Row constants for produce screen — used by both ansi.py and game.py
