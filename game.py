@@ -739,22 +739,22 @@ def hq_loop(player, world, cfg, rng):
             action_hof(player, cfg)
             ansi.screen_hq(player)
         elif key == "Q":
-            ansi.result(
-                f"{ansi.DG}> Save and quit? "
-                f"{ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}]{ansi.RST} Yes  "
-                f"{ansi.C}[{ansi.RST}{ansi.W}N{ansi.RST}{ansi.C}]{ansi.RST} No"
-                f"{ansi.RST}")
+            ansi.write_at(ansi.RES_BOT, 1,
+                f"  {ansi.DG}Save and quit? "
+                f"{ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Yes  "
+                f"{ansi.C}[{ansi.RST}{ansi.W}N{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}No{ansi.RST}")
             confirm = ansi.get_key(valid_keys="YyNn").upper()
             if confirm == "Y":
                 player.calculate_score()
                 playermod.submit_score(player)
                 player.save()
                 world.save(player.handle)
-                ansi.result(f"{ansi.DG}> Game saved. Returning to BBS...{ansi.RST}")
+                ansi.write_at(ansi.RES_BOT, 1,
+                    f"  {ansi.DG}Game saved. Returning to BBS...{ansi.RST}")
                 time.sleep(1.0)
                 return False
             else:
-                ansi.clear_results()
+                ansi.write_at(ansi.RES_BOT, 1, "")
 
         if player.turns_remaining <= 0:
             # Expire undelivered missions at day end
