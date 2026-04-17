@@ -589,33 +589,25 @@ def animate_combat_bars(row, player_power, enemy_power):
 def screen_courier_board(player, mission):
     """Courier mission board screen."""
     screen_base("courier", player, player.bbs_name)
-    move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {C}COURIER MISSION BOARD{RST}  {DG}Day {player.day}{RST}")
 
-    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
-    _out(f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
+    write_at(MENU_TOP,     1, f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
+    clear_line(DIV_3)
 
-    # Prompt on DIV_3 — drawn here, not via screen_base, to avoid being overwritten
-    move(DIV_3, 1); _out(ERASE_LINE)
-    _out(f" {DG}{'─' * 38}{RST}  "
-         f"{C}[A]{RST} {W}Accept{RST}   "
-         f"{C}[Q]{RST} {W}Decline{RST}  "
-         f"{DG}{'─' * 14}{RST}")
-
-    desc    = mission.desc[:70]
-    origin  = mission.origin[:24]
-    dest    = mission.dest[:24]
-    cargo   = mission.cargo_key.replace("_", " ")
-    reward  = mission.reward_summary()[:40]
+    desc   = mission.desc[:70]
+    cargo  = mission.cargo_key.replace("_", " ")
+    reward = mission.reward_summary()[:40]
     write_at(RES_TOP,     1, f"  {W}{desc}{RST}")
-    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{origin}{RST}")
-    write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{dest}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{mission.origin[:24]}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{mission.dest[:24]}{RST}")
     write_at(RES_TOP + 4, 1, f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} {cargo}{RST}")
     write_at(RES_TOP + 5, 1, f"  {DG}Reward:{RST}  {G}{reward}{RST}")
     write_at(RES_TOP + 6, 1, f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
     write_at(RES_TOP + 7, 1, f"  {DG}Need {mission.cargo_amt} {cargo} in inventory to accept.{RST}")
-    write_at(RES_BOT,     1, f"  {C}[A]{RST} {W}Accept mission{RST}   {C}[Q]{RST} {W}Decline{RST}")
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}A{RST}{C}]{RST} {DG}Accept{RST}  "
+        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Decline{RST}")
 
 
 def screen_courier_active(player, mission):
