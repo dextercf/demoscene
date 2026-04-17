@@ -649,22 +649,20 @@ def screen_trade(player, node):
     screen_base("trade", player, player.bbs_name,
                 cmd_hint="[1-7] Select  [B] Buy  [S] Sell  [Q] Back")
 
-    # Header in MENU zone
+    # Header in MENU zone (rows 10-11; row 12 left empty; DIV_3 at 13)
     node_name = node.name[:24]
     move(MENU_TOP, 1); _out(ERASE_LINE)
     _out(f"  {DG}NODE {RST}{B}{node_name:<24}{RST}"
          f"  {DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
     move(MENU_TOP + 1, 1); _out(ERASE_LINE)
     _out(f"  {DG}{'#':<3} {'ITEM':<15} {'BUY':>7}  {'SELL':>6}  {'YOURS':>6}{RST}")
-    move(MENU_TOP + 2, 1)
-    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
 
-    # Item list in RES zone — all 7 fit in 7 rows
+    # Item list in RES zone — all 7 fit in rows 14-20
     trade_keys = ["floppy_disks", "source_code", "artwork",
                   "mod_music", "hardware", "tools", "beer"]
     for i, key in enumerate(trade_keys):
         row = RES_TOP + i
-        if row > RES_BOT:
+        if row > RES_BOT - 2:
             break
         name  = RESOURCE_NAMES.get(key, key)
         buy   = node.prices.get(key, 0)
@@ -679,6 +677,14 @@ def screen_trade(player, node):
              f"  {G}{buy:>6}c{RST}"
              f"  {R}{sell:>5}c{RST}"
              f"  {Y}{yours:>6}{RST}")
+
+    # Divider between item list and prompt area
+    draw_divider(RES_BOT - 1)
+
+    # Default prompt on last row above status
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}1-7{RST}{C}]{RST} {DG}Select{RST}  "
+        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 # Row constants for produce screen — used by both ansi.py and game.py

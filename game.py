@@ -220,21 +220,21 @@ def action_trade(player, world, cfg, rng):
         buy  = node.prices.get(res, 0)
         sell = node.sell_price(res)
 
-        # Write item info and B/S/Q prompt at fixed safe rows in RES zone
-        ansi.write_at(ansi.RES_BOT - 1, 1,
-            f"  {ansi.W}{name:<16}{ansi.RST}  "
-            f"{ansi.G}Buy: {buy}c{ansi.RST}   "
-            f"{ansi.R}Sell: {sell}c{ansi.RST}")
+        # Item detail + action prompt on RES_BOT (single row, below divider)
         ansi.write_at(ansi.RES_BOT, 1,
-            f"  {ansi.C}[B]{ansi.RST} Buy  "
-            f"{ansi.C}[S]{ansi.RST} Sell  "
-            f"{ansi.C}[Q]{ansi.RST} Cancel: ")
+            f"  {ansi.W}{name:<15}{ansi.RST}  "
+            f"{ansi.G}Buy:{buy}c{ansi.RST}  "
+            f"{ansi.R}Sell:{sell}c{ansi.RST}  "
+            f"  {ansi.C}[{ansi.RST}{ansi.W}B{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Buy{ansi.RST}  "
+            f"{ansi.C}[{ansi.RST}{ansi.W}S{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Sell{ansi.RST}  "
+            f"{ansi.C}[{ansi.RST}{ansi.W}Q{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Cancel{ansi.RST}")
 
         action = ansi.get_key(valid_keys="BSQbsq").upper()
 
         if action == "Q":
             continue
 
+        ansi.write_at(ansi.RES_BOT, 1, "")  # clear prompt row for quantity input
         qty_str = ansi.get_input("  Quantity: ")
         try:
             qty = max(1, int(qty_str))
