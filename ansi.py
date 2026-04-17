@@ -244,23 +244,8 @@ def screen_title():
 
 def screen_hq(player):
     clear_screen(); draw_art("hq"); draw_divider(DIV_1)
-    # Menu at rows MENU_TOP (10-12) — safely above the result zone (14-22)
-    # so result() calls never wipe the menu
     clear_zone(MENU_TOP, MENU_BOT)
-    rows = [
-        [("[E]", "Explore"),  ("[T]", "Travel"),  ("[P]", "Produce")],
-        [("[R]", "Raid"),     ("[D]", "Defend"),   ("[B]", "Trade")],
-        [("[C]", "Courier"),  ("[M]", "Messages"), ("[W]", "Crew")],
-    ]
-    col_starts = [3, 30, 57]
-    for r_idx, items in enumerate(rows):
-        row = MENU_TOP + r_idx
-        for col, (hk, lbl) in zip(col_starts, items):
-            move(row, col); _out(f"{C}{hk}{RST} {W}{lbl}{RST}")
-    # Show [Q] Quit on the DIV_3 line
-    move(DIV_3, 1)
-    _out(ERASE_LINE)
-    _out(f" {DG}{'─' * 48}{RST}  {C}[S]{RST} {W}Scores{RST}  {C}[Q]{RST} {W}Quit/Save{RST}")
+    draw_divider(DIV_3)
     clear_zone(RES_TOP, RES_BOT)
     draw_divider(STATUS_DIV); draw_status(player, player.bbs_name)
 
