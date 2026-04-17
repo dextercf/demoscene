@@ -1198,29 +1198,27 @@ def screen_raid(player, npc_crew, taunt=""):
 
 
 def screen_messages(messages, player=None):
-    """Message board screen — uses full RES zone for up to 7 messages."""
-    screen_base("messages", player, player.bbs_name if player else "", cmd_hint="[Q] Back")
+    """Message board screen — 7 messages in RES zone, prompt at RES_BOT."""
+    screen_base("messages", player, player.bbs_name if player else "")
 
-    # Header in MENU zone
-    move(MENU_TOP, 1); _out(ERASE_LINE)
-    _out(f"  {C}MESSAGE BOARD{RST}  {DG}{len(messages)} message{'s' if len(messages) != 1 else ''}{RST}")
-    move(MENU_TOP + 1, 1); _out(ERASE_LINE)
-    _out(f"  {DG}{'':3}{'FROM':<18}{'SUBJECT':<36}{'DAY'}{RST}")
-    move(MENU_TOP + 2, 1)
-    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
+    write_at(MENU_TOP, 1,
+        f"  {C}MESSAGE BOARD{RST}  "
+        f"{DG}{len(messages)} message{'s' if len(messages) != 1 else ''}{RST}")
+    write_at(MENU_TOP + 1, 1,
+        f"  {DG}{'':4}{'FROM':<18}{'SUBJECT':<36}DAY{RST}")
 
-    # Messages in RES zone — up to 7 rows (RES_BOT - RES_TOP + 1 = 9, leave 2 for spacing)
     shown = messages[:7]
     for i, msg in enumerate(shown):
-        row = RES_TOP + i
-        if row > RES_BOT:
-            break
         new_tag = f"{C}NEW{RST}" if msg.get("new") else f"{DG}   {RST}"
-        move(row, 1); _out(ERASE_LINE)
-        _out(f"  {new_tag} "
-             f"{B}{msg.get('from', '???'):<18}{RST}"
-             f"{W}{msg.get('subject', ''):<36}{RST}"
-             f"{DG}D{msg.get('day', '?')}{RST}")
+        write_at(RES_TOP + i, 1,
+            f"  {new_tag} "
+            f"{B}{msg.get('from', '???'):<18}{RST}"
+            f"{W}{msg.get('subject', ''):<36}{RST}"
+            f"{DG}D{msg.get('day', '?')}{RST}")
+
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_hof(entries, player_handle, player=None):
