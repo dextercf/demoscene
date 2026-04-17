@@ -252,7 +252,7 @@ def action_trade(player, world, cfg, rng):
                 player.adjust_resource("phone_credits", -total)
                 player.adjust_resource(res, qty)
                 ansi.result(f"{ansi.G}> Bought {qty} {name} for {total}c.{ansi.RST}")
-                ansi.draw_status(player, player.bbs_name)
+                ansi.draw_status(player, player.bbs_name, show_credits=True)
         elif action == "S":
             have = player.get_resource(res)
             qty  = min(qty, have)
@@ -263,7 +263,7 @@ def action_trade(player, world, cfg, rng):
                 player.adjust_resource(res, -qty)
                 player.adjust_resource("phone_credits", total)
                 ansi.result(f"{ansi.G}> Sold {qty} {name} for {total}c.{ansi.RST}")
-                ansi.draw_status(player, player.bbs_name)
+                ansi.draw_status(player, player.bbs_name, show_credits=True)
 
 # ---------------------------------------------------------------------------
 # Action: Produce

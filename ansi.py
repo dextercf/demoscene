@@ -178,22 +178,23 @@ def draw_divider(row, char=None, colour=DG):
         _out(char * (SCREEN_W - 1))
     _out(RST)
 
-def draw_status(player, bbs_name="", node=1):
+def draw_status(player, bbs_name="", node=1, show_credits=False):
     """
     Draw the status bar on the last row (STATUS=24).
-    Format matches the explore screen bar — identical across all screens.
+    show_credits=True: right column shows phone credits (trade screen).
+    show_credits=False (default): right column shows turns remaining.
     Stops at col 79 to prevent terminal scroll. Parks cursor at (1,1).
     """
     move(STATUS, 1)
     _out(ERASE_LINE)
     handle_crew = f"{player.handle}/{player.crew_name}"
-    node_str     = f"Node: {bbs_name}"
-    credits_str  = f"Credits: {player.phone_credits}"
-    # Fixed columns: handle/crew left-padded to col 1, node centred at col 29, credits right at col 71
+    if show_credits:
+        right_label, right_val, right_col = "Credits: ", player.phone_credits, Y
+    else:
+        right_label, right_val, right_col = "Turns: ", player.turns_remaining, C
     line = (f" {G}{handle_crew:<27}{RST}"
             f"{DG}Node: {RST}{W}{bbs_name:<22}{RST}"
-            f"{DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
-    # Truncate to 79 visible chars to prevent line wrap
+            f"{DG}{right_label}{RST}{right_col}{right_val}{RST}")
     _out(line)
     move(1, 1)  # park cursor at top-left — never leave it on the last row
 
@@ -710,6 +711,7 @@ def screen_trade(player, node):
     """Trade post screen — 7 items directly under column headers."""
     from player import RESOURCE_NAMES
     screen_base("trade", player, player.bbs_name)
+    draw_status(player, player.bbs_name, show_credits=True)
 
     # Column headers in MENU zone (row 10); rows 11-13 cleared
     move(MENU_TOP, 1); _out(ERASE_LINE)
