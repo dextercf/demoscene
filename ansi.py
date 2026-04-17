@@ -1198,15 +1198,14 @@ def screen_raid(player, npc_crew, taunt=""):
 
 
 def screen_oneliners(entries, player=None):
-    """Oneliner wall — newest 7 entries in RES zone, prompt at RES_BOT."""
+    """Oneliner wall — entries start immediately after DIV_1, prompt at RES_BOT."""
     screen_base("messages", player, player.bbs_name if player else "")
 
-    write_at(MENU_TOP, 1, f"  {C}ONELINER WALL{RST}")
-    write_at(MENU_TOP + 1, 1, f"  {DG}{'HANDLE':<16}MESSAGE{RST}")
-
-    shown = entries[:7]
+    # Fill from MENU_TOP through RES zone — 11 rows available (10-20)
+    all_rows = list(range(MENU_TOP, RES_BOT - 1))
+    shown = entries[:len(all_rows)]
     for i, e in enumerate(shown):
-        write_at(RES_TOP + i, 1,
+        write_at(all_rows[i], 1,
             f"  {C}{e['handle']:<16}{RST}"
             f"{W}{e['text'][:58]}{RST}")
 
