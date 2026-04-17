@@ -461,9 +461,10 @@ def action_courier(player, world, cfg, rng, daily_mission):
         return
 
     if daily_mission.delivered:
-        ansi.screen_courier_active(player, daily_mission)
+        ansi.result(f"{ansi.G}> Mission complete. Delivered to {ansi.C}{daily_mission.dest}{ansi.G}.{ansi.RST}")
+        ansi.result(f"{ansi.DG}> A new mission will be available tomorrow.{ansi.RST}")
         ansi.write_at(ansi.RES_BOT, 1,
-            f"  {ansi.G}> Mission complete. Delivered to {ansi.C}{daily_mission.dest}{ansi.G}.{ansi.RST}")
+            f"  {ansi.C}[{ansi.RST}{ansi.W}Q{ansi.RST}{ansi.C}]{ansi.RST}{ansi.DG} Back{ansi.RST}")
         ansi.get_key(valid_keys="Qq")
         return
 
@@ -726,9 +727,9 @@ def hq_loop(player, world, cfg, rng):
                     and player.current_node == daily_mission.dest):
                 ok = couriermod.deliver_mission(player, daily_mission)
                 if ok:
-                    ansi.write_at(ansi.RES_BOT, 1,
-                        f"  {ansi.G}> Delivered to {ansi.C}{daily_mission.dest}"
+                    ansi.result(f"{ansi.G}> Delivered to {ansi.C}{daily_mission.dest}"
                         f"{ansi.G}! Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                    ansi.result(f"{ansi.DG}> A new mission will be available tomorrow.{ansi.RST}")
                     ansi.draw_status(player, player.bbs_name)
                     time.sleep(2.0)
         elif key == "P":
