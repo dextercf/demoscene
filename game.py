@@ -896,14 +896,6 @@ def main():
 
 def _exit_cleanly(io):
     ansi.show_cursor()
-    ansi.clear_screen()
-    time.sleep(2.0)
-    try:
-        sock = getattr(io, 'sock', None)
-        if sock:
-            sock.setblocking(True)
-    except Exception:
-        pass
     if io:
         io.close()
 

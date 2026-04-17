@@ -103,7 +103,7 @@ class SocketIO:
 
     def close(self):
         try:
-            self.sock.detach()
+            self.sock.close()
         except Exception:
             pass
 
@@ -167,8 +167,8 @@ class DebugIO:
 def init(socket_handle=None):
     if socket_handle is not None:
         try:
-            sock = _socket.fromfd(socket_handle, _socket.AF_INET, _socket.SOCK_STREAM)
-            # No negotiation here — keep it as raw as possible for Mystic compatibility
+            sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM, 0, socket_handle)
+            # Adopt handle directly — fromfd() dups it, leaving the original open at exit
             io = SocketIO(sock)
             set_io(io)
             return io
