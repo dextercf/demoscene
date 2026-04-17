@@ -586,28 +586,88 @@ def animate_combat_bars(row, player_power, enemy_power):
 # ---------------------------------------------------------------------------
 
 
-def screen_courier_board(player, mission):
+def screen_courier_board(player, mission, warn_turns=False):
     """Courier mission board screen."""
     screen_base("courier", player, player.bbs_name)
 
     diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
-    write_at(MENU_TOP,     1, f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
-    clear_line(DIV_3)
-
-    desc   = mission.desc[:70]
     cargo  = mission.cargo_key.replace("_", " ")
     reward = mission.reward_summary()[:40]
-    write_at(RES_TOP,     1, f"  {W}{desc}{RST}")
-    write_at(RES_TOP + 2, 1, f"  {DG}Pick up:{RST}  {C}{mission.origin[:24]}{RST}")
+    have   = player.get_resource(mission.cargo_key)
+
+    write_at(MENU_TOP,     1, f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}  {DG}costs {mission.turn_cost} turns{RST}")
+    clear_line(DIV_3)
+
+    write_at(RES_TOP,     1, f"  {W}{mission.desc[:70]}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Origin:{RST}   {C}{mission.origin[:24]}{RST}")
     write_at(RES_TOP + 3, 1, f"  {DG}Deliver:{RST}  {C}{mission.dest[:24]}{RST}")
-    write_at(RES_TOP + 4, 1, f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} {cargo}{RST}")
+    write_at(RES_TOP + 4, 1,
+        f"  {DG}Cargo:{RST}   {Y}{mission.cargo_amt} {cargo}{RST}"
+        f"  {DG}(you have {RST}{G if have >= mission.cargo_amt else R}{have}{RST}{DG}){RST}")
     write_at(RES_TOP + 5, 1, f"  {DG}Reward:{RST}  {G}{reward}{RST}")
-    write_at(RES_TOP + 6, 1, f"  {DG}Expires:{RST} {R}End of day {mission.expires_day}{RST}")
-    write_at(RES_TOP + 7, 1, f"  {DG}Need {mission.cargo_amt} {cargo} in inventory to accept.{RST}")
+    write_at(RES_TOP + 6, 1, f"  {DG}Expires:{RST} {R}end of day {mission.expires_day}{RST}")
+    if warn_turns:
+        write_at(RES_TOP + 7, 1,
+            f"  {R}Warning: only {player.turns_remaining} turn(s) left — may not complete today.{RST}")
+
     draw_divider(RES_BOT - 1)
     write_at(RES_BOT, 1,
         f"  {C}[{RST}{W}A{RST}{C}]{RST} {DG}Accept{RST}  "
+        f"{C}[{RST}{W}H{RST}{C}]{RST} {DG}Help{RST}  "
         f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Decline{RST}")
+
+
+def screen_courier_active(player, mission):
+    """Active mission status — full screen."""
+    screen_base("courier", player, player.bbs_name)
+
+    diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
+    cargo = mission.cargo_key.replace("_", " ")
+
+    write_at(MENU_TOP, 1,
+        f"  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}  {DG}ACTIVE{RST}")
+    clear_line(DIV_3)
+
+    write_at(RES_TOP,     1, f"  {W}{mission.desc[:70]}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Deliver to:{RST}  {C}{mission.dest}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Cargo:{RST}       {Y}{mission.cargo_amt} {cargo}{RST}")
+    write_at(RES_TOP + 4, 1, f"  {DG}Reward:{RST}      {G}{mission.reward_summary()}{RST}")
+    write_at(RES_TOP + 5, 1, f"  {DG}Expires:{RST}     {R}end of day {mission.expires_day}{RST}")
+    write_at(RES_TOP + 6, 1,
+        f"  {DG}You are at:{RST}  {W}{player.current_node}{RST}  "
+        f"{DG}— travel to {C}{mission.dest}{DG} to deliver{RST}")
+
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+
+
+def screen_courier_help(player):
+    """Courier help screen — explains the mechanic."""
+    screen_base("courier", player, player.bbs_name)
+    clear_line(DIV_3)
+
+    lines = [
+        f"  {C}How courier jobs work:{RST}",
+        "",
+        f"  {DG}Each day a new job is posted. You supply the cargo from your own{RST}",
+        f"  {DG}inventory and deliver it to the destination node for payment.{RST}",
+        "",
+        f"  {W}To accept:{RST} {DG}you need the listed cargo in your inventory.{RST}",
+        f"  {DG}Accepting deducts the cargo and costs 1 turn.{RST}",
+        "",
+        f"  {W}To deliver:{RST} {DG}travel to the destination node. Delivery is{RST}",
+        f"  {DG}automatic on arrival — no extra action needed.{RST}",
+        "",
+        f"  {R}Fail:{RST} {DG}if the day ends before delivery, cargo is returned{RST}",
+        f"  {DG}but you lose 10 reputation.{RST}",
+    ]
+    for i, line in enumerate(lines):
+        write_at(RES_TOP + i, 1, line)
+
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_courier_active(player, mission):

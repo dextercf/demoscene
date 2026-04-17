@@ -116,19 +116,21 @@ class Mission:
 # Mission generation
 # ---------------------------------------------------------------------------
 
-def get_daily_mission(player, world, rng):
+def get_daily_mission(player, world, rng=None):
     """
     Generate one courier mission for the current day.
-    Returns a Mission, or None if conditions aren't met
-    (not enough discovered nodes, etc).
+    Returns a Mission, or None if conditions aren't met.
 
+    Uses a deterministic RNG seeded from handle+day so the same
+    mission is offered each session on the same day (reload-proof).
     Difficulty scales with player day so early missions are easy.
     """
     disc = [n for n in world.discovered_nodes() if n.name != player.current_node]
     if len(disc) < 2:
         return None
 
-    # Pick difficulty based on game day
+    mission_rng = random.Random(hash(player.handle) ^ player.day)
+
     if player.day <= 10:
         max_diff = 1
     elif player.day <= 25:
@@ -137,17 +139,15 @@ def get_daily_mission(player, world, rng):
         max_diff = 3
 
     eligible = [t for t in _MISSION_TEMPLATES if t["difficulty"] <= max_diff]
-    template = rng.choice(eligible)
+    template = mission_rng.choice(eligible)
 
-    # Pick two distinct discovered nodes: origin and destination
-    rng.shuffle(disc)
+    mission_rng.shuffle(disc)
     origin = disc[0]
-    dest   = disc[1] if disc[1] != origin else disc[2] if len(disc) > 2 else disc[0]
+    dest   = disc[1] if len(disc) > 1 and disc[1] != origin else (disc[2] if len(disc) > 2 else None)
 
-    if origin == dest:
+    if not dest or origin == dest:
         return None
 
-    # Mission expires after today + 1 (player has tomorrow too)
     mission = Mission(template, origin, dest, player.day + 1)
     return mission
 

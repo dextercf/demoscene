@@ -449,53 +449,63 @@ def action_crew_screen(player):
 def action_courier(player, world, cfg, rng, daily_mission):
     """Show the mission board and let player accept/decline."""
     if daily_mission is None:
-        ansi.result(f"{ansi.DG}> No courier missions available today.{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.DG}> No courier missions available today.{ansi.RST}")
+        ansi.get_key(valid_keys="Qq")
         return
 
     if daily_mission.is_expired(player.day):
-        ansi.result(f"{ansi.R}> The courier posting has expired.{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.R}> The courier posting has expired.{ansi.RST}")
+        ansi.get_key(valid_keys="Qq")
         return
 
     if daily_mission.accepted:
-        # Already accepted — show delivery status
         if player.current_node == daily_mission.dest:
-            # Player is at destination — deliver
             ok = couriermod.deliver_mission(player, daily_mission)
             if ok:
-                ansi.result(f"{ansi.G}> Package delivered to {daily_mission.dest}!{ansi.RST}")
-                ansi.result(f"  {ansi.Y}Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                ansi.write_at(ansi.RES_BOT, 1,
+                    f"  {ansi.G}> Delivered to {daily_mission.dest}! "
+                    f"Reward: {daily_mission.reward_summary()}{ansi.RST}")
                 ansi.draw_status(player, player.bbs_name)
-            else:
-                ansi.result(f"{ansi.R}> Delivery failed.{ansi.RST}")
-        else:
-            ansi.screen_courier_active(player, daily_mission)
-            ansi.result(
-                f"{ansi.DG}> Travel to {ansi.C}{daily_mission.dest}{ansi.DG}"
-                f" to complete delivery.{ansi.RST}")
+                ansi.get_key(valid_keys="Qq")
+            return
+        ansi.screen_courier_active(player, daily_mission)
+        ansi.get_key(valid_keys="Qq")
         return
 
-    # Show the mission board
-    ansi.screen_courier_board(player, daily_mission)
-    key = ansi.get_key(valid_keys="AQaq").upper()
+    # Mission board — warn if turns are tight
+    warn = player.turns_remaining <= daily_mission.turn_cost
+    ansi.screen_courier_board(player, daily_mission, warn_turns=warn)
+    key = ansi.get_key(valid_keys="AHQahq").upper()
+
+    if key == "H":
+        ansi.screen_courier_help(player)
+        ansi.get_key(valid_keys="Qq")
+        return
+
     if key == "Q":
         return
 
     # Accept
     if not player.use_turns(1):
-        ansi.result(f"{ansi.R}> Not enough turns.{ansi.RST}")
+        ansi.write_at(ansi.RES_BOT, 1, f"  {ansi.R}> Not enough turns.{ansi.RST}")
+        ansi.get_key(valid_keys="Qq")
         return
 
     ok = couriermod.accept_mission(player, daily_mission)
     if not ok:
-        ansi.result(
-            f"{ansi.R}> Not enough {daily_mission.cargo_key.replace('_', ' ')} "
-            f"to accept this mission (need {daily_mission.cargo_amt}).{ansi.RST}")
-        player.turns_remaining += 1  # refund turn
+        cargo = daily_mission.cargo_key.replace('_', ' ')
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.R}> Need {daily_mission.cargo_amt} {cargo} in inventory.{ansi.RST}")
+        player.turns_remaining += 1
+        ansi.get_key(valid_keys="Qq")
     else:
-        ansi.result(
-            f"{ansi.G}> Mission accepted. Travel to "
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.G}> Accepted. Travel to "
             f"{ansi.C}{daily_mission.dest}{ansi.G} to deliver.{ansi.RST}")
         ansi.draw_status(player, player.bbs_name)
+        ansi.get_key(valid_keys="Qq")
 
 
 # ---------------------------------------------------------------------------
