@@ -460,13 +460,21 @@ def action_courier(player, world, cfg, rng, daily_mission):
         ansi.get_key(valid_keys="Qq")
         return
 
+    if daily_mission.delivered:
+        ansi.screen_courier_active(player, daily_mission)
+        ansi.write_at(ansi.RES_BOT, 1,
+            f"  {ansi.G}> Mission complete. Delivered to {ansi.C}{daily_mission.dest}{ansi.G}.{ansi.RST}")
+        ansi.get_key(valid_keys="Qq")
+        return
+
     if daily_mission.accepted:
         if player.current_node == daily_mission.dest:
             ok = couriermod.deliver_mission(player, daily_mission)
             if ok:
+                ansi.screen_courier_active(player, daily_mission)
                 ansi.write_at(ansi.RES_BOT, 1,
-                    f"  {ansi.G}> Delivered to {daily_mission.dest}! "
-                    f"Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                    f"  {ansi.G}> Delivered to {ansi.C}{daily_mission.dest}"
+                    f"{ansi.G}! Reward: {daily_mission.reward_summary()}{ansi.RST}")
                 ansi.draw_status(player, player.bbs_name)
                 ansi.get_key(valid_keys="Qq")
             return
@@ -712,18 +720,17 @@ def hq_loop(player, world, cfg, rng):
             ansi.screen_hq(player)
         elif key == "T":
             action_travel(player, world, cfg, rng)
-            # Auto-deliver courier mission if player arrived at destination
+            ansi.screen_hq(player)
             if (daily_mission and daily_mission.accepted
                     and not daily_mission.delivered
                     and player.current_node == daily_mission.dest):
                 ok = couriermod.deliver_mission(player, daily_mission)
                 if ok:
-                    ansi.result(
-                        f"{ansi.G}> Auto-delivery: package delivered to "
-                        f"{daily_mission.dest}! "
-                        f"Reward: {daily_mission.reward_summary()}{ansi.RST}")
+                    ansi.write_at(ansi.RES_BOT, 1,
+                        f"  {ansi.G}> Delivered to {ansi.C}{daily_mission.dest}"
+                        f"{ansi.G}! Reward: {daily_mission.reward_summary()}{ansi.RST}")
                     ansi.draw_status(player, player.bbs_name)
-            ansi.screen_hq(player)
+                    time.sleep(2.0)
         elif key == "P":
             action_produce(player, world, cfg, rng)
             ansi.screen_hq(player)
