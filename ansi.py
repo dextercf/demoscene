@@ -243,11 +243,12 @@ def screen_title():
     clear_screen(); draw_art("title"); hide_cursor()
 
 def screen_hq(player):
-    clear_screen(); draw_art("hq"); draw_divider(DIV_1)
-    clear_zone(MENU_TOP, MENU_BOT)
-    draw_divider(DIV_3)
-    clear_zone(RES_TOP, RES_BOT)
-    draw_divider(STATUS_DIV); draw_status(player, player.bbs_name)
+    global _result_buf
+    clear_screen()
+    draw_art("hq")
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
+    draw_divider(STATUS_DIV)
+    draw_status(player, player.bbs_name)
 
 def screen_map(player, world, page=0, page_size=5):
     clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
