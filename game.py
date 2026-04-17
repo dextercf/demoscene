@@ -363,64 +363,38 @@ def action_raid(player, world, cfg, rng):
         ansi.result(f"{ansi.DG}> No known rival crews to raid. Explore more.{ansi.RST}")
         return
 
-    ansi.clear_screen()
-    ansi.draw_art("raid")
-    ansi.draw_divider(ansi.DIV_1)
-    ansi.move(ansi.MENU_TOP, 1)
-    ansi.writeln(f"  {ansi.C}SELECT TARGET:{ansi.RST}")
-
-    for i, (crew, node) in enumerate(targets):
-        agg = "!!!" if crew.aggression == 3 else ("!!" if crew.aggression == 2 else "!")
-        col = ansi.R if crew.aggression == 3 else (ansi.Y if crew.aggression == 2 else ansi.W)
-        tag = getattr(crew, 'personality_tag', crew.style.upper())
-        line = (f"  [{i+1:02d}] {col}{crew.name:<16}{ansi.RST}"
-                f"  {ansi.DG}{tag:<10}{ansi.RST}"
-                f"  at {ansi.B}{node.name:<20}{ansi.RST}"
-                f"  {ansi.DG}{agg}{ansi.RST}")
-        ansi.write_at(ansi.MENU_TOP + 1 + i, 1, line)
-
-    ansi.draw_divider(ansi.DIV_3)
-    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
-    ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.DG}Enter number, or 00 to cancel{ansi.RST}")
-
-    num_str = ansi.get_input("  Enter number: ")
-    try:
-        num = int(num_str)
-    except ValueError:
+    # --- Target selection ---
+    ansi.screen_raid_targets(player, targets)
+    n = min(len(targets), 7)
+    valid = "".join(str(i + 1) for i in range(n)) + "Qq"
+    key = ansi.get_key(valid_keys=valid).upper()
+    if key == "Q":
         return
-    if num == 0:
-        return
-
-    idx = num - 1
-    if idx < 0 or idx >= len(targets):
-        return
-
-    target_crew, target_node = targets[idx]
+    target_crew, target_node = targets[int(key) - 1]
 
     if not player.use_turns(3):
         ansi.result(f"{ansi.R}> Not enough turns to raid (costs 3).{ansi.RST}")
         return
 
-    ansi.screen_raid(player, target_crew)
-    # Show taunt on result line before player picks tactic
+    # --- Tactic selection ---
     taunt = getattr(target_crew, 'taunt', '')
-    if taunt:
-        ansi.result(f"{ansi.DG}> {taunt}{ansi.RST}")
+    ansi.screen_raid(player, target_crew, taunt)
     key = ansi.get_key(valid_keys="ASHQashq").upper()
 
     if key == "Q":
         player.turns_remaining += 3
         return
 
+    # --- Combat ---
     result = combat.resolve_raid(player, target_crew, key, rng)
 
-    ansi.result(f"{ansi.DG}> Launching raid on {target_crew.name}...{ansi.RST}")
-    ansi.animate_combat_bars(ansi.RES_TOP + 1, result.player_power, result.enemy_power)
+    ansi.write_at(ansi.RES_TOP, 1,
+        f"  {ansi.DG}Launching raid on {ansi.R}{target_crew.name}{ansi.DG}...{ansi.RST}")
+    time.sleep(0.5)
+    ansi.animate_combat_bars(ansi.RES_TOP + 2, result.player_power, result.enemy_power)
     time.sleep(0.3)
 
     combat.apply_raid_result(player, result)
-
-    # Store counter_risk on player so end_day() can act on it
     player.pending_counter_raid = result.counter_risk and result.victory
 
     if result.victory:
@@ -442,6 +416,9 @@ def action_raid(player, world, cfg, rng):
 
     ansi.result(f"  {ansi.DG}{result.message}{ansi.RST}")
     ansi.draw_status(player, player.bbs_name)
+    ansi.write_at(ansi.RES_BOT, 1,
+        f"  {ansi.C}[{ansi.RST}{ansi.W}Q{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Back{ansi.RST}")
+    ansi.get_key(valid_keys="Qq")
 
 # ---------------------------------------------------------------------------
 # Action: Defend

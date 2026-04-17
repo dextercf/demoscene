@@ -1124,46 +1124,77 @@ def screen_produce(player, detail_lines=None, prompt=None):
         _out(f"  {DG}Select [1-5]  {C}[Q]{RST} {W}Back{RST}")
 
 
-def screen_raid(player, npc_crew):
-    """Raid / combat screen."""
-    screen_base("raid", player, player.bbs_name,
-                cmd_hint="[A] Assault  [S] Sneak  [H] Hit&run  [Q] Retreat")
+def screen_raid_targets(player, targets):
+    """Target selection screen — styled key list, prompt at RES_BOT."""
+    screen_base("raid", player, player.bbs_name)
+    write_at(MENU_TOP, 1,
+        f"  {R}RAID{RST}  {DG}Select a target — costs 3 turns{RST}")
+    write_at(MENU_TOP + 1, 1,
+        f"  {DG}     {'CREW':<17}{'TYPE':<11}{'LOCATION':<22}AGG{RST}")
 
-    move(MENU_TOP, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}RAIDING {RST}{R}{npc_crew.name}{RST}")
+    shown = targets[:7]
+    for i, (crew, node) in enumerate(shown):
+        agg_col = R if crew.aggression == 3 else (Y if crew.aggression == 2 else DG)
+        agg_str = "!!!" if crew.aggression == 3 else ("!!" if crew.aggression == 2 else "!")
+        name_col = R if crew.aggression == 3 else (Y if crew.aggression == 2 else W)
+        tag = getattr(crew, 'personality_tag', crew.style.upper())
+        write_at(RES_TOP + i, 1,
+            f"  {C}[{RST}{W}{i+1}{RST}{C}]{RST} "
+            f"{name_col}{crew.name:<16}{RST}"
+            f"{DG}{tag:<11}{RST}"
+            f"{B}{node.name:<22}{RST}"
+            f"{agg_col}{agg_str}{RST}")
+    if len(targets) > 7:
+        write_at(RES_TOP + 7, 1, f"  {DG}({len(targets) - 7} more targets not shown){RST}")
 
-    move(MENU_TOP + 1, 1)
-    _out(ERASE_LINE)
-    _out(f"  {DG}{'YOUR CREW':<38}{'ENEMY CREW'}{RST}")
+    draw_divider(RES_BOT - 1)
+    n = min(len(shown), 9)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}1-{n}{RST}{C}]{RST} {DG}Select{RST}  "
+        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
-    # Draw initial combat bars (will animate when combat starts)
-    combat_bar(MENU_TOP + 2, 2,  "Strength",
+
+def screen_raid(player, npc_crew, taunt=""):
+    """Raid / combat tactic screen."""
+    screen_base("raid", player, player.bbs_name)
+
+    agg_col = R if npc_crew.aggression == 3 else (Y if npc_crew.aggression == 2 else DG)
+    agg_str = "!!!" if npc_crew.aggression == 3 else ("!!" if npc_crew.aggression == 2 else "!")
+
+    write_at(MENU_TOP, 1,
+        f"  {DG}RAIDING {RST}{R}{npc_crew.name:<20}{RST}"
+        f"  {agg_col}{agg_str}{RST}"
+        f"  {DG}Str:{RST} {R}{npc_crew.strength}{RST}"
+        f"  {DG}Def:{RST} {B}{npc_crew.defense}{RST}")
+
+    # Strength and defense bars side by side in MENU zone rows 11-12
+    # Player at col 2 (cols 2-39), enemy at col 42 (cols 42-79)
+    combat_bar(MENU_TOP + 1, 2,  "Your Str ",
                player.tools * 2 + 20, 100, colour=G)
-    combat_bar(MENU_TOP + 2, 42, "Strength",
+    combat_bar(MENU_TOP + 1, 42, "Their Str",
                npc_crew.strength,     100, colour=R)
-    combat_bar(MENU_TOP + 3, 2,  "Defense",
+    combat_bar(MENU_TOP + 2, 2,  "Your Def ",
                player.defense,        100, colour=B)
-    combat_bar(MENU_TOP + 3, 42, "Defense",
+    combat_bar(MENU_TOP + 2, 42, "Their Def",
                npc_crew.defense,      100, colour=R)
 
     loot_c = npc_crew.resources.get("phone_credits", 0) // 3
     loot_d = npc_crew.resources.get("floppy_disks",  0) // 3
     loot_s = npc_crew.resources.get("source_code",   0) // 3
-    # Loot preview in RES zone — safe from divider collision
     write_at(RES_TOP, 1,
-        f"  {DG}Potential loot if successful:{RST}")
-    write_at(RES_TOP + 1, 1,
-        f"  {Y}~{loot_c} credits{RST}  "
+        f"  {DG}Potential loot: {RST}"
+        f"{Y}~{loot_c}c{RST}  "
         f"{W}~{loot_d} disks{RST}  "
         f"{C}~{loot_s} source{RST}")
-    write_at(RES_TOP + 3, 1,
-        f"  {DG}Enemy strength: {RST}{R}{npc_crew.strength}{RST}"
-        f"  {DG}Defense: {RST}{B}{npc_crew.defense}{RST}"
-        f"  {DG}Aggression: {RST}"
-        + (f"{R}!!!" if npc_crew.aggression == 3
-           else f"{Y}!!" if npc_crew.aggression == 2
-           else f"{DG}!") + RST)
+    if taunt:
+        write_at(RES_TOP + 2, 1, f"  {DG}\"{taunt}\"{RST}")
+
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}A{RST}{C}]{RST} {DG}Assault{RST}  "
+        f"{C}[{RST}{W}S{RST}{C}]{RST} {DG}Sneak{RST}  "
+        f"{C}[{RST}{W}H{RST}{C}]{RST} {DG}Hit&run{RST}  "
+        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Retreat{RST}")
 
 
 def screen_messages(messages, player=None):
