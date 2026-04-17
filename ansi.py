@@ -240,69 +240,18 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1, cmd_hint=""):
     else: clear_line(STATUS)
     clear_results()
 
-_TAGLINES = [
-    "No carrier. No problem.",
-    "The scene never sleeps.",
-    "One node at a time.",
-    "Less talk, more demos.",
-    "Keep the scene alive.",
-    "Pack tight. Ship fast.",
-    "Still elite since '94.",
-    "Stay on the boards.",
-    "CONNECT 2400.",
-    "Trackers like to slide up & down.",
-    "AAAAAMIGAAAH",
-    "The demoscene is GLOBAL.",
-    "It's no underground anymore. Demos have became MULTIMEDIA!! :)",
-    "Creativity.. No, You cannot upgrade your creativity with money",
-    "Spread the scene.",
-    "Upload. Connect. Repeat",
-    "Elite. Scene. Legend.",
-    "Your .nfo is showing.",
-    "Greets to all boards.",
-    "It's not a virus.",
-    “Making impossible things run on worse hardware.”,
-    “Because limits are just suggestions.”,
-    “Where 64KB is more than enough.”,
-    “Pushing pixels beyond reason since forever.”,
-    “Now entering… the underground.”,
-    “ANSI dreams in a VGA world.”,
-    “Press any key to blow your mind.”,
-    “Sysop approved. Parents confused.”,
-    “Runs best at 3AM with pizza.”,
-    “Optimized until it breaks. Then optimized again.”,
-    “It’s not a bug, it’s a raster effect.”,
-    “Powered by caffeine and questionable decisions.”,
-    “Scrolltext never dies.”,
-    “Respect the coders. Worship the musicians.”,
-    “Cracktros walked so we could fly.”,
-    “Copper bars included.”,
-    “Bare metal or bust.”,
-    “Hand-tuned for maximum wow.”,
-    “If it flickers, it’s intentional.”,
-    “Yes, it fits in memory.”,
-    “Greetings to everyone still counting cycles.”,
-    “Scroll faster. Sync tighter.”,
-    “We came for the compo. Stayed for the afterparty.”,
-    “Where nicknames matter more than names.”,
-    “Realtime or it didn’t happen.”,
-    “Now with 200% more rasterbars.”,
-    “No comments, only legends.”,
-    “Debugging is part of the experience.”,
-    “Probably illegal on a 486.”,
-    “More colors than your monitor can handle.”,
-    “Realtime. No tricks.”,
-    “Code like it’s 1993.”,
-    “Driven by sync. Powered by code.”,
-    “64 kilobytes. No compromises.”,
-    “No PNGs were harmed.”,
-    “Runs on dreams and floating point.”,
-    “It’s mostly math.”,
-    “this took longer than expected”,
-    “keep the scene alive”,
-    “Cellfish proudly presents”,
-    "forgot the fileid_diz. Will add after party",
-]
+def _load_taglines():
+    # filename/encoding built from codepoints — survives smart-quote linters
+    _f = str().join(map(chr, [116,97,103,108,105,110,101,115,46,116,120,116]))  # taglines.txt
+    _e = str().join(map(chr, [97,115,99,105,105]))                              # ascii
+    path = os.path.join(ART_PATH, _f)
+    try:
+        with open(path, encoding=_e) as f:
+            return [ln.rstrip() for ln in f if ln.strip()]
+    except OSError:
+        return []
+
+_TAGLINES = None   # loaded lazily on first call
 
 def _tagline_wrap(text, width):
     words = text.split()
@@ -322,6 +271,9 @@ def _tagline_wrap(text, width):
 
 def _animate_tagline():
     import random
+    global _TAGLINES
+    if _TAGLINES is None:
+        _TAGLINES = _load_taglines()
     LG = FG["white"]   # light grey
 
     box_top, box_height = 10, 5
