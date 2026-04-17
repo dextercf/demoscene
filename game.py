@@ -503,34 +503,20 @@ def action_courier(player, world, cfg, rng, daily_mission):
 # ---------------------------------------------------------------------------
 
 def action_messages(player, world, cfg):
-    msgs = _generate_messages(player, world, player.day)
-    read = set()
-    ansi.screen_messages(msgs, player, read)
-
-    n = min(len(msgs), 7)
-    valid = "".join(str(i + 1) for i in range(n)) + "Qq"
-
     while True:
-        key = ansi.get_key(valid_keys=valid).upper()
+        entries = playermod.load_oneliners()
+        ansi.screen_oneliners(entries, player)
+
+        key = ansi.get_key(valid_keys="WQwq").upper()
         if key == "Q":
             return
 
-        idx = int(key) - 1
-        msg = msgs[idx]
-        read.add(idx)
-
-        # Clear NEW tag on the selected row
-        ansi.write_at(ansi.RES_TOP + idx, 1,
-            f"  {ansi.DG}    {ansi.RST}"
-            f"{ansi.B}{msg.get('from', '???'):<18}{ansi.RST}"
-            f"{ansi.W}{msg.get('subject', ''):<36}{ansi.RST}"
-            f"{ansi.DG}D{msg.get('day', '?')}{ansi.RST}")
-
-        # Show full message on row 21 (replaces divider)
-        ansi.write_at(ansi.RES_BOT - 1, 1,
-            f"  {ansi.B}{msg.get('from', '???'):<18}{ansi.RST}"
-            f"  {ansi.DG}D{ansi.Y}{msg.get('day', '?'):<3}{ansi.RST}"
-            f"  {ansi.W}{msg.get('subject', '')}{ansi.RST}")
+        # Write a new oneliner
+        ansi.write_at(ansi.RES_BOT - 1, 1, "")
+        text = ansi.get_input("  Write: ", max_len=60)
+        if text.strip():
+            playermod.save_oneliner(
+                player.handle, player.bbs_name, player.day, text.strip())
 
 # ---------------------------------------------------------------------------
 # Action: Hall of Fame
@@ -971,123 +957,6 @@ def _random_event(player, world, rng):
     effect()
     ansi.draw_status(player, player.bbs_name)
 
-
-def _crew_backstory(world, rng):
-    """Return 'CrewName|backstory' for a random crew that has a backstory."""
-    crews = [c for c in world.npc_crews if getattr(c, 'backstory', '')]
-    if not crews:
-        return "__skip__"
-    c = rng.choice(crews)
-    return f"{c.name}|{c.backstory}"
-
-
-def _crew_home_info(world, rng):
-    """Return 'CrewName|home_bbs' for a random crew that has a home_bbs."""
-    crews = [c for c in world.npc_crews if getattr(c, 'home_bbs', '')]
-    if not crews:
-        return "__skip__"
-    c = rng.choice(crews)
-    return f"{c.name}|{c.home_bbs}"
-
-
-_MSG_TEMPLATES = [
-    # --- Always available ---
-    ("{crew} thinks your crew is a bunch of lamers. Prove them wrong.",
-     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Taunt"),
-    ("We heard {crew} is planning a raid on your home board. Watch out.",
-     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Warning"),
-    ("Rumour has it {crew} just dropped a killer 64K.",
-     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews else "Unknown", "Scene News"),
-    ("A new node was spotted deep in the network. Very deep.",
-     lambda p, w, r: None, "Intel"),
-    ("The phone lines are buzzing. Something big is about to drop.",
-     lambda p, w, r: None, "Rumour"),
-    ("h0ffman is rumoured to be DJing at the next party.",
-     lambda p, w, r: None, "Party Buzz"),
-    ("Gates of Asgard is said to be back online. Nobody can confirm it.",
-     lambda p, w, r: None, "Rumour"),
-    ("SysOp of The Dungeon got busted. Board is gone. Moment of silence.",
-     lambda p, w, r: None, "Scene News"),
-    ("Disk couriers wanted. Good pay. No questions asked.",
-     lambda p, w, r: None, "Opportunity"),
-    ("Someone's releasing a new art pack. ACiD vs iCE, round 467.",
-     lambda p, w, r: None, "Scene News"),
-    ("Your crew's name was mentioned in a trade channel. People are watching.",
-     lambda p, w, r: None, "Intel"),
-    # --- Backstory-driven messages (personality flavour) ---
-    ("{crew}: {backstory}",
-     lambda p, w, r: _crew_backstory(w, r), "Profile"),
-    ("Word on the wire: {crew} is operating out of {home_bbs}.",
-     lambda p, w, r: _crew_home_info(w, r), "Intel"),
-    # --- Early game only (day <= 15) ---
-    ("Welcome to the scene. Don't screw it up.",
-     lambda p, w, r: None if p.day <= 15 else "__skip__", "Welcome"),
-    ("A veteran scener offers advice: explore before you trade.",
-     lambda p, w, r: None if p.day <= 15 else "__skip__", "Tip"),
-    # --- Mid game only (day 15-35) ---
-    ("{crew} has been unusually quiet lately. Suspiciously quiet.",
-     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews and 15 <= p.day <= 35 else "__skip__", "Intel"),
-    ("The network is expanding. New nodes reported in the deep zones.",
-     lambda p, w, r: None if 15 <= p.day <= 35 else "__skip__", "Intel"),
-    # --- Late game only (day > 35) ---
-    ("Only {days} days left. The scene is watching. Make it count.",
-     lambda p, w, r: str(50 - p.day) if p.day > 35 else "__skip__", "Countdown"),
-    ("{crew} is pulling ahead on reputation. Time to act.",
-     lambda p, w, r: r.choice(w.npc_crews).name if w.npc_crews and p.day > 35 else "__skip__", "Warning"),
-]
-
-
-def _generate_messages(player, world, current_day, count=7):
-    msgs = []
-    rng  = random.Random(current_day + hash(player.handle))
-    pool = list(_MSG_TEMPLATES)
-    rng.shuffle(pool)
-
-    for template, crew_fn, subject in pool:
-        try:
-            crew_val = crew_fn(player, world, rng)
-        except Exception:
-            crew_val = None
-
-        if crew_val == "__skip__":
-            continue
-
-        # Handle pipe-separated 'crew|extra' values from backstory/home_bbs helpers
-        extra_val = ""
-        if crew_val and "|" in str(crew_val):
-            crew_val, extra_val = str(crew_val).split("|", 1)
-
-        sender = "ANONYMOUS"
-        if world.npc_crews:
-            sc = rng.choice(world.npc_crews)
-            sender = (f"{rng.choice(['DARK','ACID','FROST','BYTE','NEON'])}"
-                      f"/{sc.name[:8]}")
-
-        try:
-            text = template.format(
-                crew      = crew_val or (world.npc_crews[0].name if world.npc_crews else "Unknown"),
-                node      = (rng.choice(world.discovered_nodes()).name
-                             if world.discovered_nodes() else "Unknown Node"),
-                party     = "the next party",
-                days      = crew_val if subject == "Countdown" else "?",
-                backstory = extra_val,
-                home_bbs  = extra_val,
-            )
-        except (KeyError, IndexError):
-            text = template
-
-        day_offset = rng.randint(max(1, current_day - 4), current_day)
-        msgs.append({
-            "from":    sender,
-            "subject": text[:50],
-            "day":     day_offset,
-            "new":     day_offset >= current_day - 1,
-        })
-        if len(msgs) >= count:
-            break
-
-    msgs.sort(key=lambda m: m["day"], reverse=True)
-    return msgs
 
 
 if __name__ == "__main__":

@@ -1197,33 +1197,27 @@ def screen_raid(player, npc_crew, taunt=""):
         f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Retreat{RST}")
 
 
-def screen_messages(messages, player=None, read=None):
-    """Message board — 7 messages in RES zone, selectable, prompt at RES_BOT."""
-    if read is None:
-        read = set()
+def screen_oneliners(entries, player=None):
+    """Oneliner wall — newest 7 entries in RES zone, prompt at RES_BOT."""
     screen_base("messages", player, player.bbs_name if player else "")
 
     write_at(MENU_TOP, 1,
-        f"  {C}MESSAGE BOARD{RST}  "
-        f"{DG}{len(messages)} message{'s' if len(messages) != 1 else ''}{RST}")
+        f"  {C}ONELINER WALL{RST}  "
+        f"{DG}{len(entries)} entr{'y' if len(entries) == 1 else 'ies'}{RST}")
     write_at(MENU_TOP + 1, 1,
-        f"  {DG}     {'FROM':<18}{'SUBJECT':<36}DAY{RST}")
+        f"  {DG}{'HANDLE/BBS':<22}{'DAY':<6}MESSAGE{RST}")
 
-    shown = messages[:7]
-    for i, msg in enumerate(shown):
-        is_read = i in read
-        new_tag = f"{C}NEW{RST}" if msg.get("new") and not is_read else f"{DG}   {RST}"
+    shown = entries[:7]
+    for i, e in enumerate(shown):
+        tag = f"{e['handle']}/{e['bbs']}"
         write_at(RES_TOP + i, 1,
-            f"  {new_tag} "
-            f"{B}{msg.get('from', '???'):<18}{RST}"
-            f"{W}{msg.get('subject', ''):<36}{RST}"
-            f"{DG}D{msg.get('day', '?')}{RST}")
+            f"  {C}{tag:<22}{RST}"
+            f"{DG}D{str(e['day']):<5}{RST}"
+            f"{W}{e['text'][:46]}{RST}")
 
     draw_divider(RES_BOT - 1)
-    n = min(len(shown), 7)
-    key_hint = f"1-{n}" if n > 1 else "1"
     write_at(RES_BOT, 1,
-        f"  {C}[{RST}{W}{key_hint}{RST}{C}]{RST} {DG}Read{RST}  "
+        f"  {C}[{RST}{W}W{RST}{C}]{RST} {DG}Write{RST}  "
         f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 

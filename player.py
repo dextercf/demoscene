@@ -368,6 +368,57 @@ class Player:
 
 
 # ------------------------------------------------------------------
+# Oneliner wall — shared across all players on the BBS
+# ------------------------------------------------------------------
+
+ONELINER_PATH = os.path.join(SAVES_DIR, "oneliners.txt")
+ONELINER_MAX  = 50
+
+
+def load_oneliners():
+    """Load oneliners from disk. Returns list newest-first."""
+    entries = []
+    if not os.path.isfile(ONELINER_PATH):
+        return entries
+    try:
+        with open(ONELINER_PATH, "r", encoding="cp437") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith(";"):
+                    continue
+                parts = line.split("|", 3)
+                if len(parts) >= 4:
+                    entries.append({
+                        "handle": parts[0],
+                        "bbs":    parts[1],
+                        "day":    _safe_int(parts[2]),
+                        "text":   parts[3],
+                    })
+    except OSError:
+        pass
+    return list(reversed(entries))
+
+
+def save_oneliner(handle, bbs, day, text):
+    """Append a new oneliner, keeping at most ONELINER_MAX entries."""
+    _ensure_saves_dir()
+    entries = list(reversed(load_oneliners()))  # oldest-first for file order
+    text = text.replace("|", "/").strip()
+    if not text:
+        return
+    entries.append({"handle": handle, "bbs": bbs, "day": day, "text": text})
+    entries = entries[-ONELINER_MAX:]
+    try:
+        with open(ONELINER_PATH, "w", encoding="cp437") as f:
+            f.write("; Demoscene: The Exploration of Art - Oneliner Wall\n")
+            f.write("; handle|bbs|day|text\n")
+            for e in entries:
+                f.write(f"{e['handle']}|{e['bbs']}|{e['day']}|{e['text']}\n")
+    except OSError:
+        pass
+
+
+# ------------------------------------------------------------------
 # Leaderboard — shared across all players on the BBS
 # ------------------------------------------------------------------
 
