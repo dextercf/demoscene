@@ -725,13 +725,8 @@ def hq_loop(player, world, cfg, rng):
             if (daily_mission and daily_mission.accepted
                     and not daily_mission.delivered
                     and player.current_node == daily_mission.dest):
-                ok = couriermod.deliver_mission(player, daily_mission)
-                if ok:
-                    ansi.result(f"{ansi.G}> Delivered to {ansi.C}{daily_mission.dest}"
-                        f"{ansi.G}! Reward: {daily_mission.reward_summary()}{ansi.RST}")
-                    ansi.result(f"{ansi.DG}> A new mission will be available tomorrow.{ansi.RST}")
-                    ansi.draw_status(player, player.bbs_name)
-                    time.sleep(2.0)
+                action_courier(player, world, cfg, rng, daily_mission)
+                ansi.screen_hq(player)
         elif key == "P":
             action_produce(player, world, cfg, rng)
             ansi.screen_hq(player)
