@@ -94,13 +94,16 @@ def action_explore(player, world, cfg, rng):
 # Action: Travel
 # ---------------------------------------------------------------------------
 
-def action_travel(player, world, cfg, rng):
+def action_travel(player, world, cfg, rng, daily_mission=None):
     page, pg_sz = 0, 9
+    mission_dest = (daily_mission.dest
+                    if daily_mission and daily_mission.accepted and not daily_mission.delivered
+                    else None)
     while True:
         disc = world.discovered_nodes()
         pg_cnt = max(1, (len(disc) + pg_sz - 1) // pg_sz)
         shown = disc[page * pg_sz:(page + 1) * pg_sz]
-        ansi.screen_map(player, world, page, pg_sz)
+        ansi.screen_map(player, world, page, pg_sz, mission_dest)
         valid = "QNP" + "".join(str(i) for i in range(1, len(shown) + 1))
         key = ansi.get_key(valid_keys=valid).upper()
         if key == "Q":
@@ -720,7 +723,7 @@ def hq_loop(player, world, cfg, rng):
             action_explore(player, world, cfg, rng)
             ansi.screen_hq(player)
         elif key == "T":
-            action_travel(player, world, cfg, rng)
+            action_travel(player, world, cfg, rng, daily_mission)
             ansi.screen_hq(player)
             if (daily_mission and daily_mission.accepted
                     and not daily_mission.delivered

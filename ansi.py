@@ -250,7 +250,7 @@ def screen_hq(player):
     draw_divider(STATUS_DIV)
     draw_status(player, player.bbs_name)
 
-def screen_map(player, world, page=0, page_size=5):
+def screen_map(player, world, page=0, page_size=5, mission_dest=None):
     clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()
     total = len(disc)
@@ -264,15 +264,17 @@ def screen_map(player, world, page=0, page_size=5):
         f"{DG}({total} nodes discovered){RST}")
 
     for idx, node in enumerate(shown, 1):
-        crew_tag = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
+        crew_tag   = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
         is_current = node.name.lower() == player.current_node.lower()
+        is_dest    = mission_dest and node.name.lower() == mission_dest.lower()
         num_col  = DG if is_current else C
-        name_col = DG if is_current else W
+        name_col = DG if is_current else (Y if is_dest else W)
         cur_tag  = f"  {DG}(current){RST}" if is_current else ""
+        dest_tag = f"  {Y}» deliver{RST}" if is_dest else ""
         write_at(MENU_TOP + 1 + idx, 1,
             f"    {num_col}[{RST}{name_col}{idx}{RST}{num_col}]{RST} {name_col}{node.name:<24}{RST} "
             f"{DG}{node.label:<18}{RST}"
-            f"{crew_tag}{cur_tag}")
+            f"{crew_tag}{cur_tag}{dest_tag}")
 
     # Prompt on RES_BOT — styled key hints
     has_next = page < pg_cnt - 1
