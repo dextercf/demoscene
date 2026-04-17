@@ -1201,19 +1201,14 @@ def screen_oneliners(entries, player=None):
     """Oneliner wall — newest 7 entries in RES zone, prompt at RES_BOT."""
     screen_base("messages", player, player.bbs_name if player else "")
 
-    write_at(MENU_TOP, 1,
-        f"  {C}ONELINER WALL{RST}  "
-        f"{DG}{len(entries)} entr{'y' if len(entries) == 1 else 'ies'}{RST}")
-    write_at(MENU_TOP + 1, 1,
-        f"  {DG}{'HANDLE/BBS':<22}{'DAY':<6}MESSAGE{RST}")
+    write_at(MENU_TOP, 1, f"  {C}ONELINER WALL{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}{'HANDLE':<16}MESSAGE{RST}")
 
     shown = entries[:7]
     for i, e in enumerate(shown):
-        tag = f"{e['handle']}/{e['bbs']}"
         write_at(RES_TOP + i, 1,
-            f"  {C}{tag:<22}{RST}"
-            f"{DG}D{str(e['day']):<5}{RST}"
-            f"{W}{e['text'][:46]}{RST}")
+            f"  {C}{e['handle']:<16}{RST}"
+            f"{W}{e['text'][:58]}{RST}")
 
     draw_divider(RES_BOT - 1)
     write_at(RES_BOT, 1,
