@@ -186,11 +186,15 @@ def draw_status(player, bbs_name="", node=1):
     """
     move(STATUS, 1)
     _out(ERASE_LINE)
-    _out(f" {G}{player.handle}{DG}/{player.crew_name}{RST}"
-         f"{'':>20}"
-         f"{DG}Node: {RST}{W}{bbs_name}{RST}"
-         f"{'':>16}"
-         f"{DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
+    handle_crew = f"{player.handle}/{player.crew_name}"
+    node_str     = f"Node: {bbs_name}"
+    credits_str  = f"Credits: {player.phone_credits}"
+    # Fixed columns: handle/crew left-padded to col 1, node centred at col 29, credits right at col 71
+    line = (f" {G}{handle_crew:<27}{RST}"
+            f"{DG}Node: {RST}{W}{bbs_name:<22}{RST}"
+            f"{DG}Credits: {RST}{Y}{player.phone_credits}{RST}")
+    # Truncate to 79 visible chars to prevent line wrap
+    _out(line)
     move(1, 1)  # park cursor at top-left — never leave it on the last row
 
 def dial(row, col, node_name, colour=C):
@@ -653,11 +657,11 @@ def screen_trade(player, node):
     for r in (MENU_TOP + 1, MENU_TOP + 2, DIV_3):
         move(r, 1); _out(ERASE_LINE)
 
-    # Item list starts at RES_TOP (row 14) — directly under column headers
+    # Item list starts at MENU_TOP+1 (row 11) — directly under column headers
     trade_keys = ["floppy_disks", "source_code", "artwork",
                   "mod_music", "hardware", "tools", "beer"]
     for i, key in enumerate(trade_keys):
-        row = RES_TOP + i
+        row = MENU_TOP + 1 + i
         if row > RES_BOT - 2:
             break
         name  = RESOURCE_NAMES.get(key, key)
