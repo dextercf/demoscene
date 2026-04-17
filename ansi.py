@@ -240,8 +240,55 @@ def screen_base(art_name, status_player=None, bbs_name="", node=1, cmd_hint=""):
     else: clear_line(STATUS)
     clear_results()
 
+_TAGLINES = [
+    "No carrier. No problem.",
+    "The scene never sleeps.",
+    "One node at a time.",
+    "Less talk, more demos.",
+    "Keep the scene alive.",
+    "Pack tight. Ship fast.",
+    "Still elite since '94.",
+    "Stay on the boards.",
+    "CONNECT 2400.",
+    "Spread the scene.",
+    "Upload. Connect. Repeat",
+    "Elite. Scene. Legend.",
+    "Your .nfo is showing.",
+    "Greets to all boards.",
+    "It's not a virus.",
+]
+
+def _animate_tagline():
+    import random
+    LG = FG["white"]          # light grey — regular white (not bold)
+    text = random.choice(_TAGLINES)
+
+    # Box: rows 10-14, cols 3-25  →  width=23, center row=12
+    box_left  = 3
+    box_width = 23
+    row       = 12
+
+    text = text[:box_width]   # hard cap to box width
+    col  = box_left + (box_width - len(text)) // 2
+
+    for i in range(len(text)):
+        move(row, col)
+        rendered = ""
+        for j, ch in enumerate(text[: i + 1]):
+            if j == i:
+                rendered += W + ch
+            elif j == i - 1:
+                rendered += LG + ch
+            else:
+                rendered += DG + ch
+        rendered += RST
+        _out(rendered)
+        time.sleep(0.055)
+
+
 def screen_title():
     clear_screen(); draw_art("title"); hide_cursor()
+    _animate_tagline()
 
 def screen_hq(player):
     global _result_buf
