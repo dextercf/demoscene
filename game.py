@@ -740,9 +740,8 @@ def hq_loop(player, world, cfg, rng):
             ansi.screen_hq(player)
         elif key == "Q":
             ansi.write_at(ansi.RES_BOT, 1,
-                f"  {ansi.DG}Save and quit? "
-                f"{ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Yes  "
-                f"{ansi.C}[{ansi.RST}{ansi.W}N{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}No{ansi.RST}")
+                f"  {ansi.DG}Save & Quit? "
+                f"{ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}/{ansi.RST}{ansi.W}N{ansi.RST}{ansi.C}]{ansi.RST}{ansi.DG}:{ansi.RST}")
             confirm = ansi.get_key(valid_keys="YyNn").upper()
             if confirm == "Y":
                 player.calculate_score()
