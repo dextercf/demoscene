@@ -18,6 +18,47 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-17  —  Polish: status bar, title taglines, party notes
+
+### Changes
+
+**Status bar context switching (ansi.py, game.py)**
+  draw_status() gains show_credits param (default False = show turns).
+  Trade screen passes show_credits=True on initial draw and after every
+  buy/sell. All other screens show turns remaining.
+
+**Title screen animated taglines (ansi.py, art/taglines.txt)**
+  screen_title() calls _animate_tagline() after drawing art.
+  Random tagline picked from art/taglines.txt (53 lines, plain ASCII).
+  Text word-wrapped at 23 chars to fit box LN10-14 COL3-25.
+  Vertically and horizontally centered inside that box.
+  Typed character by character with W -> light-grey -> DG trailing fade:
+    - newest char: bright white
+    - previous char: light grey (FG white)
+    - all older chars: dark grey
+  Only 3 cursor moves per character step — efficient over slow links.
+  Taglines stored in art/taglines.txt to survive smart-quote linter
+  that converts ASCII quotes to Unicode curly quotes in .py files.
+  Filename built from chr() codepoints in _load_taglines() as workaround.
+
+**Party screen documented**
+  Party screen (screen_party / action_party) exists and is wired up but
+  untested — fires automatically at day end when turns hit 0 and a party
+  falls on that day (every ~12 days). Noted for future polish pass.
+
+### Known issue
+  VS Code (or a plugin) converts ASCII quotes to Unicode smart quotes on
+  save, breaking Python syntax. Workaround: string literals in ansi.py
+  that must survive linting use chr() codepoints or plain .txt files.
+  Long-term fix: disable smart-quotes in editor settings.
+
+### Resume here next session
+Priority 1: Test title tagline animation on BBS via SyncTerm
+Priority 2: Party screen polish and live test (debug: set party_frequency_days=2)
+Priority 3: Starting tools = 0 makes early combat unwinnable — add starting bonus
+
+---
+
 ## 2026-04-17  —  Courier system, UI consistency, BBS oneliner wall
 
 ### Changes
