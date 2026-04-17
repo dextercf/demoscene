@@ -644,6 +644,29 @@ def screen_courier_active(player, mission):
         f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
+def screen_courier_complete(player, mission):
+    """Mission completion screen — shown after successful delivery."""
+    screen_base("courier", player, player.bbs_name)
+
+    diff_stars = "*" * mission.difficulty + " " * (3 - mission.difficulty)
+    cargo = mission.cargo_key.replace("_", " ")
+
+    write_at(MENU_TOP, 1,
+        f"  {G}MISSION COMPLETE{RST}  {Y}{mission.label}{RST}  {R}[{diff_stars}]{RST}")
+    clear_line(DIV_3)
+
+    write_at(RES_TOP,     1, f"  {W}{mission.desc[:70]}{RST}")
+    write_at(RES_TOP + 2, 1, f"  {DG}Delivered to:{RST}  {C}{mission.dest}{RST}")
+    write_at(RES_TOP + 3, 1, f"  {DG}Cargo:{RST}         {Y}{mission.cargo_amt} {cargo}{RST}")
+    write_at(RES_TOP + 5, 1, f"  {DG}Reward:{RST}")
+    write_at(RES_TOP + 6, 1, f"  {G}{mission.reward_summary()}{RST}")
+    write_at(RES_TOP + 8, 1, f"  {DG}A new mission will be available tomorrow.{RST}")
+
+    draw_divider(RES_BOT - 1)
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+
+
 def screen_courier_help(player):
     """Courier help screen — explains the mechanic."""
     screen_base("courier", player, player.bbs_name)
