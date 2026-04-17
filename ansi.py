@@ -1197,19 +1197,22 @@ def screen_raid(player, npc_crew, taunt=""):
         f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Retreat{RST}")
 
 
-def screen_messages(messages, player=None):
-    """Message board screen — 7 messages in RES zone, prompt at RES_BOT."""
+def screen_messages(messages, player=None, read=None):
+    """Message board — 7 messages in RES zone, selectable, prompt at RES_BOT."""
+    if read is None:
+        read = set()
     screen_base("messages", player, player.bbs_name if player else "")
 
     write_at(MENU_TOP, 1,
         f"  {C}MESSAGE BOARD{RST}  "
         f"{DG}{len(messages)} message{'s' if len(messages) != 1 else ''}{RST}")
     write_at(MENU_TOP + 1, 1,
-        f"  {DG}{'':4}{'FROM':<18}{'SUBJECT':<36}DAY{RST}")
+        f"  {DG}     {'FROM':<18}{'SUBJECT':<36}DAY{RST}")
 
     shown = messages[:7]
     for i, msg in enumerate(shown):
-        new_tag = f"{C}NEW{RST}" if msg.get("new") else f"{DG}   {RST}"
+        is_read = i in read
+        new_tag = f"{C}NEW{RST}" if msg.get("new") and not is_read else f"{DG}   {RST}"
         write_at(RES_TOP + i, 1,
             f"  {new_tag} "
             f"{B}{msg.get('from', '???'):<18}{RST}"
@@ -1217,8 +1220,11 @@ def screen_messages(messages, player=None):
             f"{DG}D{msg.get('day', '?')}{RST}")
 
     draw_divider(RES_BOT - 1)
+    n = min(len(shown), 7)
+    key_hint = f"1-{n}" if n > 1 else "1"
     write_at(RES_BOT, 1,
-        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+        f"  {C}[{RST}{W}{key_hint}{RST}{C}]{RST} {DG}Read{RST}  "
+        f"{C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_hof(entries, player_handle, player=None):

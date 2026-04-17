@@ -504,8 +504,33 @@ def action_courier(player, world, cfg, rng, daily_mission):
 
 def action_messages(player, world, cfg):
     msgs = _generate_messages(player, world, player.day)
-    ansi.screen_messages(msgs, player)
-    ansi.get_key(valid_keys="Qq")
+    read = set()
+    ansi.screen_messages(msgs, player, read)
+
+    n = min(len(msgs), 7)
+    valid = "".join(str(i + 1) for i in range(n)) + "Qq"
+
+    while True:
+        key = ansi.get_key(valid_keys=valid).upper()
+        if key == "Q":
+            return
+
+        idx = int(key) - 1
+        msg = msgs[idx]
+        read.add(idx)
+
+        # Clear NEW tag on the selected row
+        ansi.write_at(ansi.RES_TOP + idx, 1,
+            f"  {ansi.DG}    {ansi.RST}"
+            f"{ansi.B}{msg.get('from', '???'):<18}{ansi.RST}"
+            f"{ansi.W}{msg.get('subject', ''):<36}{ansi.RST}"
+            f"{ansi.DG}D{msg.get('day', '?')}{ansi.RST}")
+
+        # Show full message on row 21 (replaces divider)
+        ansi.write_at(ansi.RES_BOT - 1, 1,
+            f"  {ansi.B}{msg.get('from', '???'):<18}{ansi.RST}"
+            f"  {ansi.DG}D{ansi.Y}{msg.get('day', '?'):<3}{ansi.RST}"
+            f"  {ansi.W}{msg.get('subject', '')}{ansi.RST}")
 
 # ---------------------------------------------------------------------------
 # Action: Hall of Fame
