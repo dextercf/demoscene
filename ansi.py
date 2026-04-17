@@ -263,16 +263,13 @@ def screen_map(player, world, page=0, page_size=5):
         f"{C}Page {page+1}/{pg_cnt}{RST}  "
         f"{DG}({total} nodes discovered){RST}")
 
-    clear_zone(MENU_TOP + 1, RES_TOP - 1)
-
-# Node list — starts at RES_TOP, 2 extra cols padding from left
     for idx, node in enumerate(shown, 1):
         crew_tag = f"  {R}{node.crew[:12]}{RST}" if node.crew else ""
         is_current = node.name.lower() == player.current_node.lower()
         num_col  = DG if is_current else C
         name_col = DG if is_current else W
         cur_tag  = f"  {DG}(current){RST}" if is_current else ""
-        write_at(RES_TOP + idx - 1, 1,
+        write_at(MENU_TOP + 1 + idx, 1,
             f"    {num_col}[{RST}{name_col}{idx}{RST}{num_col}]{RST} {name_col}{node.name:<24}{RST} "
             f"{DG}{node.label:<18}{RST}"
             f"{crew_tag}{cur_tag}")

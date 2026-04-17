@@ -95,7 +95,7 @@ def action_explore(player, world, cfg, rng):
 # ---------------------------------------------------------------------------
 
 def action_travel(player, world, cfg, rng):
-    page, pg_sz = 0, 5
+    page, pg_sz = 0, 9
     while True:
         disc = world.discovered_nodes()
         pg_cnt = max(1, (len(disc) + pg_sz - 1) // pg_sz)
