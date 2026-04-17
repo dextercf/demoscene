@@ -250,6 +250,11 @@ _TAGLINES = [
     "Still elite since '94.",
     "Stay on the boards.",
     "CONNECT 2400.",
+    "Trackers like to slide up & down.",
+    "AAAAAMIGAAAH",
+    "The demoscene is GLOBAL.",
+    "It's no underground anymore. Demos have became MULTIMEDIA!! :)",
+    "Creativity.. No, You cannot upgrade your creativity with money",
     "Spread the scene.",
     "Upload. Connect. Repeat",
     "Elite. Scene. Legend.",
@@ -258,31 +263,48 @@ _TAGLINES = [
     "It's not a virus.",
 ]
 
+def _tagline_wrap(text, width):
+    words = text.split()
+    lines, current = [], ""
+    for word in words:
+        if not current:
+            current = word
+        elif len(current) + 1 + len(word) <= width:
+            current += " " + word
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
 def _animate_tagline():
     import random
-    LG = FG["white"]          # light grey — regular white (not bold)
-    text = random.choice(_TAGLINES)
+    LG = FG["white"]   # light grey
 
-    # Box: rows 10-14, cols 3-25  →  width=23, center row=12
-    box_left  = 3
-    box_width = 23
-    row       = 12
+    box_top, box_height = 10, 5
+    box_left, box_width = 3, 23
 
-    text = text[:box_width]   # hard cap to box width
-    col  = box_left + (box_width - len(text)) // 2
+    lines = _tagline_wrap(random.choice(_TAGLINES), box_width)
+    lines = lines[:box_height]   # never overflow the box vertically
 
-    for i in range(len(text)):
-        move(row, col)
-        rendered = ""
-        for j, ch in enumerate(text[: i + 1]):
-            if j == i:
-                rendered += W + ch
-            elif j == i - 1:
-                rendered += LG + ch
-            else:
-                rendered += DG + ch
-        rendered += RST
-        _out(rendered)
+    # Pre-compute (row, col, char) for every character
+    start_row = box_top + (box_height - len(lines)) // 2
+    chars = []
+    for li, line in enumerate(lines):
+        row = start_row + li
+        col = box_left + (box_width - len(line)) // 2
+        for ci, ch in enumerate(line):
+            chars.append((row, col + ci, ch))
+
+    # Animate — only touch the 3 positions that change each step
+    for i, (row, col, ch) in enumerate(chars):
+        move(row, col);  _out(W  + ch  + RST)
+        if i > 0:
+            pr,  pc,  pch  = chars[i - 1]; move(pr,  pc);  _out(LG + pch  + RST)
+        if i > 1:
+            pr2, pc2, pch2 = chars[i - 2]; move(pr2, pc2); _out(DG + pch2 + RST)
         time.sleep(0.055)
 
 
