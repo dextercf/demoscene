@@ -695,7 +695,7 @@ def hq_loop(player, world, cfg, rng):
     daily_mission = couriermod.get_daily_mission(player, world, rng)
     ansi.screen_hq(player)
     while not player.is_game_over(game_len):
-        key = ansi.get_key(valid_keys="ETPRDBMSCWQetprdbmscwq").upper()
+        key = ansi.get_key(valid_keys="ETPRDBSCWOQetprdbscwoq").upper()
 
         if key == "E":
             action_explore(player, world, cfg, rng)
@@ -732,7 +732,7 @@ def hq_loop(player, world, cfg, rng):
         elif key == "W":
             action_crew_screen(player)
             ansi.screen_hq(player)
-        elif key == "M":
+        elif key == "O":
             action_messages(player, world, cfg)
             ansi.screen_hq(player)
         elif key == "S":

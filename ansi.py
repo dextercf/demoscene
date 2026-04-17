@@ -1199,7 +1199,8 @@ def screen_raid(player, npc_crew, taunt=""):
 
 def screen_oneliners(entries, player=None):
     """Oneliner wall — entries start immediately after DIV_1, prompt at RES_BOT."""
-    screen_base("messages", player, player.bbs_name if player else "")
+    screen_base("oneliners", player, player.bbs_name if player else "")
+    clear_line(DIV_3)  # remove the mid-screen divider screen_base draws
 
     # Fill from MENU_TOP through RES zone — 11 rows available (10-20)
     all_rows = list(range(MENU_TOP, RES_BOT - 1))
