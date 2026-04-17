@@ -18,6 +18,72 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-17  —  Courier system, UI consistency, BBS oneliner wall
+
+### Changes
+
+**Socket disconnect on quit fixed (socketio.py)**
+  Root cause: `socket.fromfd()` dups the handle, leaving orphaned handle that
+  sends TCP RST at process exit instead of clean FIN.
+  Fix: `socket.socket(AF_INET, SOCK_STREAM, 0, handle)` — adopts handle
+  without dup. `SocketIO.close()` simplified to `sock.close()`.
+
+**Screen layout consistency pass (ansi.py, game.py)**
+  All menus now share the same pattern:
+  - Single DIV_3 divider between art and content
+  - Divider at RES_BOT-1
+  - Styled `{C}[{W}KEY{C}]{RST} {DG}Label` prompt at RES_BOT
+  Screens updated: trade, raid (target list + combat), travel, courier.
+
+**HQ screen (game.py / ansi.py)**
+  Removed all generated menu lines — menu is drawn inside hq.ans.
+  screen_hq() only draws art + status bar. No result zone wipe.
+  Action feedback uses write_at(RES_BOT, ...) to preserve art above.
+  Defend: added 1.5 s sleep after result so player can read it.
+
+**Raid screen (ansi.py)**
+  screen_raid_targets(): new — styled [1-7] list with column headers.
+  screen_raid(): HP bars moved to MENU rows (not overwriting DIV_3).
+  Loot/taunt shown in RES zone. All output via write_at (no writeln).
+
+**Oneliner wall replaces message board (player.py, ansi.py, game.py)**
+  Shared file: saves/oneliners.txt — pipe-delimited handle|bbs|day|text.
+  load_oneliners() / save_oneliner() in player.py, max 50 entries.
+  screen_oneliners(): entries from MENU_TOP to RES_BOT-2 (11 visible).
+  clear_line(DIV_3) removes mid-screen divider that screen_base() draws.
+  HQ menu key changed M → O. Art file: oneliners.ans (messages.ans deleted).
+
+**Travel screen (ansi.py)**
+  Node list starts 2 rows higher (MENU_TOP+1) for 4 extra visible nodes.
+  Current node shown dimmed with (current) tag — pressing its number ignored.
+  Mission destination highlighted yellow with » deliver tag.
+
+**Quit prompt (game.py)**
+  write_at(RES_BOT, ...) — no screen wipe. Text: "Save & Quit? [Y/N]:".
+
+**Courier system rewrite (ansi.py, game.py, courier.py)**
+  Deterministic daily mission: seeded with hash(player.handle) ^ player.day.
+  screen_courier_board(): turn cost in header, cargo have/need comparison,
+    warn_turns highlight when turns are tight, [A] Accept [H] Help [Q] Decline.
+  screen_courier_active(): current node vs destination, [Q] Back.
+  screen_courier_complete(): NEW — "MISSION COMPLETE" header, description,
+    delivery details, reward on its own line, next-mission notice, [Q] Back.
+  screen_courier_help(): explains cargo-from-inventory, auto-deliver, penalty.
+  action_courier() state machine:
+    delivered → screen_courier_complete
+    accepted + at dest → deliver_mission() → screen_courier_complete
+    accepted elsewhere → screen_courier_active
+    no mission → screen_courier_board
+  hq_loop T-key: auto-opens action_courier() on arrival at mission dest,
+    then redraws screen_hq().
+
+### Resume here next session
+Priority 1: Starting tools = 0 makes early combat unwinnable — add starting bonus
+Priority 2: Node-specific events (warez vs music vs art boards feel different)
+Priority 3: NPC personalities visible in more places (events, courier flavour)
+
+---
+
 ## 2026-04-16  —  UI polish session 2
 
 ### Changes
