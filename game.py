@@ -450,6 +450,7 @@ def action_raid(player, world, cfg, rng):
 def action_defend(player, world, cfg, rng):
     if not player.use_turns(1):
         ansi.result(f"{ansi.R}> Not enough turns.{ansi.RST}")
+        time.sleep(1.5)
         return
     boost = rng.randint(5, 15)
     player.defense = min(100, player.defense + boost)
@@ -457,6 +458,7 @@ def action_defend(player, world, cfg, rng):
         f"{ansi.G}> Home board fortified. "
         f"Defense +{boost} (now {player.defense}).{ansi.RST}")
     ansi.draw_status(player, player.bbs_name)
+    time.sleep(1.5)
 
 # ---------------------------------------------------------------------------
 # Action: Courier missions
@@ -732,6 +734,7 @@ def hq_loop(player, world, cfg, rng):
             ansi.screen_hq(player)
         elif key == "D":
             action_defend(player, world, cfg, rng)
+            ansi.screen_hq(player)
         elif key == "B":
             action_trade(player, world, cfg, rng)
             ansi.screen_hq(player)
