@@ -18,6 +18,35 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-19  —  Trade/explore polish, key-hint convention, CP437 fix
+
+### Changes
+
+**Trade screen: Buy/Sell prompt deferred until item selected (game.py, ansi.py)**
+  Initial prompt shows only [1-7] Select [Q] Back.
+  [B] Buy [S] Sell only appear — and get_key only accepts them — after
+  a numbered item is chosen. Prevents spurious B/S keypresses on the
+  item-select step.
+
+**Trade screen: item numbers styled to match key-hint convention (ansi.py)**
+  Item rows now render [1] as cyan-bracket white-digit cyan-bracket,
+  consistent with all prompt key hints.
+
+**Explore screen: menu options styled to match key-hint convention (ansi.py)**
+  [S] Scan network and [Q] Back to HQ updated to cyan-bracket
+  white-key dark-grey-label style.
+
+**Trade screen: speciality marker CP437 fix (ansi.py)**
+  Unicode star (★) was arriving as ? over the socket — CP437 can't
+  encode it. Replaced with chr(4) (♦ in VGA CP437 font).
+
+### Resume here next session
+Priority 1: Test trade screen and explore screen on BBS via SyncTerm
+Priority 2: Party screen polish and live test (debug: set party_frequency_days=2)
+Priority 3: Starting tools = 0 makes early combat unwinnable — add starting bonus
+
+---
+
 ## 2026-04-19  —  Title screen polish, navigation flow, HQ art
 
 ### Changes
