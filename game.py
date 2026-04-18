@@ -398,7 +398,7 @@ def action_raid(player, world, cfg, rng):
     time.sleep(0.6)
     for i, event in enumerate(events):
         ansi.write_at(ansi.RES_TOP + 1 + i, 1, f"  {ansi.DG}{event}{ansi.RST}")
-        time.sleep(0.9)
+        time.sleep(1.8)
     time.sleep(0.3)
     ansi.animate_combat_bars(ansi.RES_TOP + 5, result.player_power, result.enemy_power)
     time.sleep(0.3)
