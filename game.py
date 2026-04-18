@@ -208,7 +208,7 @@ def action_trade(player, world, cfg, rng):
 
     while True:
         ansi.screen_trade(player, node)
-        key = ansi.get_key(valid_keys="1234567BSQbsq").upper()
+        key = ansi.get_key(valid_keys="1234567Qq").upper()
         if key == "Q":
             break
         if not key.isdigit():

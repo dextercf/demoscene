@@ -812,8 +812,6 @@ def screen_trade(player, node):
     # Default prompt on last row above status
     write_at(RES_BOT, 1,
         f"      {C}[{RST}{W}1-7{RST}{C}]{RST} {DG}Select {RST}"
-        f" {C}[{RST}{W}B{RST}{C}]{RST} {DG}Buy {RST}"
-        f" {C}[{RST}{W}S{RST}{C}]{RST} {DG}Sell {RST}"
         f" {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
