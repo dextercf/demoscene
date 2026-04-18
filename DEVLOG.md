@@ -18,6 +18,37 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-19  —  Raid: turn cost, narrative events, bar pacing, Q-retreat fix
+
+### Changes
+
+**Raid costs 5 turns (up from 3) (game.py, ansi.py)**
+  Raids are the highest-impact action — the increased cost makes them a
+  meaningful commitment rather than a throwaway move.
+
+**Tactic-specific narrative events during raid (combat.py, game.py)**
+  After committing to a tactic, 3 flavour beats play out one at a time
+  (1.8s each) before the combat bars animate. Each tactic (A/S/H) has
+  its own pool for each of 3 phases (approach, complication, close).
+  Events are picked randomly per raid via rng.
+
+**Combat bars slowed (ansi.py)**
+  Bar fill delay increased from 0.05s to 0.12s per step (~2.5s total).
+  Was too fast to read at the previous pace.
+
+**Turns deduct on tactic commit, not on target select (game.py)**
+  Previously turns were deducted before the tactic screen, then refunded
+  if Q was pressed. Now turns only deduct after A/S/H is chosen.
+  Q on the tactic screen retreats for free.
+
+### Resume here next session
+Priority 1: Test raid flow end-to-end on BBS via SyncTerm
+Priority 2: Test trade/explore screens on BBS
+Priority 3: Party screen polish and live test (debug: set party_frequency_days=2)
+Priority 4: Starting tools = 0 makes early combat unwinnable — add starting bonus
+
+---
+
 ## 2026-04-19  —  Trade/explore polish, key-hint convention, CP437 fix
 
 ### Changes
