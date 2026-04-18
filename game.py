@@ -759,7 +759,7 @@ def hq_loop(player, world, cfg, rng):
                 player.save()
                 world.save(player.handle)
                 ansi.write_at(ansi.RES_BOT, 1,
-                    f"  {ansi.DG}Game saved. Returning to BBS...{ansi.RST}")
+                    f"  {ansi.DG}Game saved. Returning to title screen...{ansi.RST}")
                 time.sleep(1.0)
                 return False
             else:
@@ -877,19 +877,21 @@ def main():
     rng = random.Random()
     rng.seed(hash(door_info.handle) ^ id(rng))
 
-    player, world = title_loop(door_info, cfg)
-    if player is None:
-        _exit_cleanly(io)
-        return
+    while True:
+        player, world = title_loop(door_info, cfg)
+        if player is None:
+            break
 
-    game_ended = hq_loop(player, world, cfg, rng)
+        game_ended = hq_loop(player, world, cfg, rng)
 
-    if game_ended:
-        player.calculate_score()
-        playermod.submit_score(player)
-        rank = playermod.get_player_rank(player.handle)
-        ansi.screen_game_over(player, rank)
-        ansi.get_key()
+        if game_ended:
+            player.calculate_score()
+            playermod.submit_score(player)
+            rank = playermod.get_player_rank(player.handle)
+            ansi.screen_game_over(player, rank)
+            ansi.get_key()
+            break
+        # user quit with Q → loop back to title screen
 
     _exit_cleanly(io)
 
