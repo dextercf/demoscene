@@ -801,7 +801,7 @@ def screen_trade(player, node):
         col = Y if is_spec else W
         spec_tag = f"{Y}★{RST}" if is_spec else " "
         move(row, 1); _out(ERASE_LINE)
-        _out(f"      {C}[{i+1}]{RST}{spec_tag}{col}{name:<15}{RST}"
+        _out(f"      {C}[{RST}{W}{i+1}{RST}{C}]{RST}{spec_tag}{col}{name:<15}{RST}"
              f"  {G}{buy:>6}c{RST}"
              f"  {R}{sell:>5}c{RST}"
              f"  {Y}{yours:>6}{RST}")
