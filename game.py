@@ -375,8 +375,8 @@ def action_raid(player, world, cfg, rng):
         return
     target_crew, target_node = targets[int(key) - 1]
 
-    if not player.use_turns(3):
-        ansi.result(f"{ansi.R}> Not enough turns to raid (costs 3).{ansi.RST}")
+    if not player.use_turns(5):
+        ansi.result(f"{ansi.R}> Not enough turns to raid (costs 5).{ansi.RST}")
         return
 
     # --- Tactic selection ---
@@ -385,16 +385,22 @@ def action_raid(player, world, cfg, rng):
     key = ansi.get_key(valid_keys="ASHQashq").upper()
 
     if key == "Q":
-        player.turns_remaining += 3
+        player.turns_remaining += 5
         return
 
     # --- Combat ---
     result = combat.resolve_raid(player, target_crew, key, rng)
+    events = combat.generate_raid_events(key, rng)
 
+    ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
     ansi.write_at(ansi.RES_TOP, 1,
         f"  {ansi.DG}Launching raid on {ansi.R}{target_crew.name}{ansi.DG}...{ansi.RST}")
-    time.sleep(0.5)
-    ansi.animate_combat_bars(ansi.RES_TOP + 2, result.player_power, result.enemy_power)
+    time.sleep(0.6)
+    for i, event in enumerate(events):
+        ansi.write_at(ansi.RES_TOP + 1 + i, 1, f"  {ansi.DG}{event}{ansi.RST}")
+        time.sleep(0.9)
+    time.sleep(0.3)
+    ansi.animate_combat_bars(ansi.RES_TOP + 5, result.player_power, result.enemy_power)
     time.sleep(0.3)
 
     combat.apply_raid_result(player, result)

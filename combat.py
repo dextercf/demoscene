@@ -355,6 +355,71 @@ _DEFEAT_LINES = [
 ]
 
 
+_RAID_EVENTS = {
+    "A": [
+        [
+            "Your crew floods the phone lines. No mercy, no subtlety.",
+            "Calling everyone in. Brute force is the plan.",
+            "You blow through the login screen like it isn't there.",
+        ],
+        [
+            "Their sysop gets an alert — too late to stop you.",
+            "Two couriers bounce off the firewall. The rest push through.",
+            "You hit three boards at once. Chaos everywhere.",
+            "Their ICE kicks back hard — you lose two tools but keep going.",
+            "Alarm bells. You silence them and keep moving.",
+        ],
+        [
+            "You're inside their directory. Grab everything.",
+            "It's a war of attrition now. Who blinks first?",
+            "Your whole crew is in. Time to take what's ours.",
+        ],
+    ],
+    "S": [
+        [
+            "Slow dialing. You mask your board ID.",
+            "Quiet. Low-traffic hour. Fewer eyes on the boards.",
+            "You forge a handle from their own memberlist.",
+        ],
+        [
+            "You spot a back door from a trade session last week.",
+            "Their logger misses you — you're mimicking legit traffic.",
+            "An insider tip: they changed the password. You already have it.",
+            "Their sysop posted the new access codes in a msg. Careless.",
+        ],
+        [
+            "You're in. Nobody knows yet. Work fast.",
+            "Files transfer in silence. No alarm bells.",
+            "Clean in, clean out. Just the way you like it.",
+        ],
+    ],
+    "H": [
+        [
+            "One fast hit. No lingering.",
+            "You've already got the exit route mapped.",
+            "In and out in 90 seconds — that's the plan.",
+        ],
+        [
+            "You grab the first directory listing you can reach.",
+            "Their sysop's away message is up. Perfect timing.",
+            "You yank the archive and cut the line before they respond.",
+            "You're in the file area. Take the top shelf and go.",
+        ],
+        [
+            "The signal cuts. You're already gone.",
+            "Drop the line before they trace it.",
+            "Three hops, two hangups. You're clean.",
+        ],
+    ],
+}
+
+
+def generate_raid_events(tactic_key, rng):
+    """Return 3 narrative event strings for a raid in progress."""
+    pools = _RAID_EVENTS.get(tactic_key.upper(), _RAID_EVENTS["S"])
+    return [rng.choice(phase) for phase in pools]
+
+
 def _victory_message(crew_name, loot, rng):
     line = rng.choice(_VICTORY_LINES).format(crew=crew_name)
     if loot:

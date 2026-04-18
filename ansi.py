@@ -1268,7 +1268,7 @@ def screen_raid_targets(player, targets):
     """Target selection screen — styled key list, prompt at RES_BOT."""
     screen_base("raid", player, player.bbs_name)
     write_at(MENU_TOP, 1,
-        f"  {R}RAID{RST}  {DG}Select a target — costs 3 turns{RST}")
+        f"  {R}RAID{RST}  {DG}Select a target — costs 5 turns{RST}")
     write_at(MENU_TOP + 1, 1,
         f"  {DG}     {'CREW':<17}{'TYPE':<11}{'LOCATION':<22}AGG{RST}")
 
