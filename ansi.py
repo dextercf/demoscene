@@ -1350,7 +1350,7 @@ def screen_oneliners(entries, player=None):
     for i, e in enumerate(shown):
         write_at(all_rows[i], 1,
             f"  {C}{e['handle']:<16}{RST}"
-            f"{W}{e['text'][:58]}{RST}")
+            f"{W}{e['text'][:60]}{RST}")
 
     draw_divider(RES_BOT - 1)
     write_at(RES_BOT, 1,
