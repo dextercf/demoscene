@@ -305,8 +305,8 @@ def screen_title(version=""):
     clear_screen(); draw_art("title"); hide_cursor()
     if version:
         label = f"copyright cellfish 2026 - demoscene v{version}"
-        col = (SCREEN_W - len(label)) // 2 + 1
-        write_at_no_clear(RES_BOT, col, label, DG)
+        col = SCREEN_W - len(label) + 1
+        write_at_no_clear(STATUS, col, label, DG)
     _animate_tagline()
 
 def screen_hq(player):
