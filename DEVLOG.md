@@ -18,6 +18,42 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-19  —  Title screen polish, navigation flow, HQ art
+
+### Changes
+
+**Navigation: HQ quit returns to title screen (game.py)**
+  Q from the HQ loop now lands back on the title screen instead of
+  exiting directly to BBS. BBS exit (socket close) is only reachable
+  from the title screen. Keeps the main loop clean and gives the
+  player a proper title screen before disconnect.
+
+**Title screen: build version display (game.py, ansi.py)**
+  Build version shown top-right in dark grey on title screen.
+  Copyright line iterated through several placements (row 1, row 24,
+  centered at bottom of art canvas) before landing at current position.
+
+**art/hq.ans updated; art/oneliners.ans added (ansi.py)**
+  HQ art revised. New oneliners.ans art file added for the oneliner
+  wall screen (8 rows x 80 cols, CP437 with SAUCE record).
+
+**Produce screen: prompt styling fix (ansi.py)**
+  Prompt text now matches the key-hint convention used elsewhere on
+  the produce screen (was inconsistently styled).
+
+### Known issues / working tree
+  art/party.ans has uncommitted modifications.
+  art/hq-bak.ans is an untracked backup — can be deleted once hq.ans
+  is confirmed good on BBS.
+
+### Resume here next session
+Priority 1: Test title screen (version, tagline, copyright) on BBS via SyncTerm
+Priority 2: Confirm art/hq.ans and art/oneliners.ans render correctly on BBS
+Priority 3: Party screen polish and live test (debug: set party_frequency_days=2)
+Priority 4: Starting tools = 0 makes early combat unwinnable — add starting bonus
+
+---
+
 ## 2026-04-17  —  Polish: status bar, title taglines, party notes
 
 ### Changes
