@@ -799,7 +799,7 @@ def screen_trade(player, node):
         # Highlight speciality resource at this node
         is_spec = (key == node.speciality)
         col = Y if is_spec else W
-        spec_tag = f"{Y}★{RST}" if is_spec else " "
+        spec_tag = f"{Y}{chr(4)}{RST}" if is_spec else " "
         move(row, 1); _out(ERASE_LINE)
         _out(f"      {C}[{RST}{W}{i+1}{RST}{C}]{RST}{spec_tag}{col}{name:<15}{RST}"
              f"  {G}{buy:>6}c{RST}"
