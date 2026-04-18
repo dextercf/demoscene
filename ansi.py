@@ -382,8 +382,8 @@ def screen_explore(player):
     draw_divider(15)                        # divider above menu
 
     move(16, 1); _out(ERASE_LINE)          # menu row
-    _out(f"  {C}[S]{RST} {W}Scan network{RST}"
-         f"     {C}[Q]{RST} {W}Back to HQ{RST}")
+    _out(f"  {C}[{RST}{W}S{RST}{C}]{RST} {DG}Scan network{RST}"
+         f"     {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back to HQ{RST}")
 
     draw_divider(17)                        # divider below menu
 
