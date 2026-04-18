@@ -301,8 +301,11 @@ def _animate_tagline():
         time.sleep(0.055)
 
 
-def screen_title():
+def screen_title(version=""):
     clear_screen(); draw_art("title"); hide_cursor()
+    if version:
+        label = f"v{version}"
+        write_at_no_clear(1, SCREEN_W - len(label) + 1, label, DG)
     _animate_tagline()
 
 def screen_hq(player):
