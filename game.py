@@ -375,17 +375,16 @@ def action_raid(player, world, cfg, rng):
         return
     target_crew, target_node = targets[int(key) - 1]
 
-    if not player.use_turns(5):
-        ansi.result(f"{ansi.R}> Not enough turns to raid (costs 5).{ansi.RST}")
-        return
-
     # --- Tactic selection ---
     taunt = getattr(target_crew, 'taunt', '')
     ansi.screen_raid(player, target_crew, taunt)
     key = ansi.get_key(valid_keys="ASHQashq").upper()
 
     if key == "Q":
-        player.turns_remaining += 5
+        return
+
+    if not player.use_turns(5):
+        ansi.result(f"{ansi.R}> Not enough turns to raid (costs 5).{ansi.RST}")
         return
 
     # --- Combat ---

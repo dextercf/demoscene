@@ -646,8 +646,8 @@ def animate_combat_bars(row, player_power, enemy_power):
         ep = int((i / steps) * enemy_power)
         combat_bar(row,     2, "Your crew",   pp, max_p, colour=G)
         combat_bar(row + 1, 2, "Enemy crew",  ep, max_p, colour=R)
-        time.sleep(0.05)
-    time.sleep(0.3)
+        time.sleep(0.12)
+    time.sleep(0.4)
 
 
 # ---------------------------------------------------------------------------
