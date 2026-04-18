@@ -1263,7 +1263,7 @@ def screen_produce(player, detail_lines=None, prompt=None):
     if prompt:
         _out(prompt)
     else:
-        _out(f"  {DG}Select [1-5]  {C}[Q]{RST} {W}Back{RST}")
+        _out(f"  {C}[{RST}{W}1-5{RST}{C}]{RST} {DG}Select{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_raid_targets(player, targets):
