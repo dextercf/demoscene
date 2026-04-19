@@ -775,8 +775,8 @@ def hq_loop(player, world, cfg, rng):
             if daily_mission and daily_mission.accepted and not daily_mission.delivered:
                 couriermod.fail_mission(player, daily_mission)
                 ansi.result(f"{ansi.R}> Courier mission expired. Cargo returned. -10 rep.{ansi.RST}")
-            ansi.result(f"{ansi.DG}> Day {player.day} is over. Get some sleep.{ansi.RST}")
-            time.sleep(0.8)
+                time.sleep(0.8)
+            ansi.screen_end_day(player, rng)
             end_day(player, world, cfg, rng)
             daily_mission = couriermod.get_daily_mission(player, world, rng)
             ansi.screen_hq(player)

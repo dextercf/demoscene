@@ -317,6 +317,175 @@ def screen_hq(player):
     draw_divider(STATUS_DIV)
     draw_status(player, player.bbs_name)
 
+_SLEEP_EVENTS = [
+    [
+        "3:47 AM. Your modem drops carrier as you slump over the keyboard.",
+        "The monitor hums. Tracker music fades on your headphones.",
+        "Tomorrow you will fix that raster bar bug. Tomorrow.",
+    ],
+    [
+        "You dream in pixels. Plasma waves scroll through a black void.",
+        "A rival scener drops a greet in your latest release.",
+        "It means nothing. It means everything.",
+    ],
+    [
+        "The BBS sysop left a message while you were deep in code.",
+        "You will read it in the morning. Probably a warning about ratios.",
+        "Sleep claims you before you can check.",
+    ],
+    [
+        "Your .mod file autosaves at 4 AM. A good omen.",
+        "The demo is 98% done. The last 2% will take another week.",
+        "You know this. You sleep anyway.",
+    ],
+    [
+        "Somewhere across the PSTN, a sysop restarts their BBS.",
+        "Your overnight download queue fails silently.",
+        "In the morning you will blame the phone line. You are not wrong.",
+    ],
+    [
+        "The room is dark except for the monitor glow.",
+        "A half-eaten bag of crisps sits next to your floppy drive.",
+        "Scene life.",
+    ],
+    [
+        "You fall asleep to the sound of a 28.8k handshake.",
+        "In your dream, every transfer completes at full speed.",
+        "You wake up smiling.",
+    ],
+    [
+        "IRC is quiet. Someone in #coders is releasing a 64k at sunrise.",
+        "You set your alarm. You will miss it anyway.",
+        "The scene moves without you. And waits.",
+    ],
+    [
+        "Your crew's latest demo sits at number seven on the charts.",
+        "Tomorrow it will be six. Or eleven. The scene is unpredictable.",
+        "You breathe. You rest.",
+    ],
+    [
+        "The floppy drive light blinks once in the dark. Then stops.",
+        "Outside, the city hums with people who do not write trackers.",
+        "You pity them, gently.",
+    ],
+    [
+        "A new 4k intro drops on the distro nets while you sleep.",
+        "It is technically impossible. Someone did it anyway.",
+        "This is why you are here.",
+    ],
+    [
+        "You tab out of your code editor. The clock says 02:58.",
+        "The compo deadline is in 18 hours.",
+        "You have this. Probably.",
+    ],
+    [
+        "The phone bill will be steep this month.",
+        "Worth it. The scene never gives back what it costs.",
+        "The scene never has to.",
+    ],
+    [
+        "Your swap partner in Finland received your package today.",
+        "A cassette of original tracks. Two hand-labelled disks.",
+        "Tomorrow they will call it art. Tonight, sleep.",
+    ],
+    [
+        "You close your eyes. ANSI art scrolls behind your eyelids.",
+        "Pink and cyan. Always pink and cyan.",
+        "Rest now, scener.",
+    ],
+    [
+        "The demo compiles clean at last. No more link errors.",
+        "You save. You close the lid. The fan spins down.",
+        "Eight hours and the scene begins again.",
+    ],
+    [
+        "A greetings list grows in your text editor, unsent.",
+        "You owe replies to seven handles across three continents.",
+        "The net is patient. The scene is patient.",
+    ],
+    [
+        "You scroll the charts one last time before bed.",
+        "Your crew moved up two places today. No one announced it.",
+        "In the scene, respect arrives quietly.",
+    ],
+]
+
+
+def _draw_sleep_fallback():
+    _h  = chr(196)  # ─
+    _v  = chr(179)  # │
+    _tl = chr(218)  # ┌
+    _tr = chr(191)  # ┐
+    _bl = chr(192)  # └
+    _br = chr(217)  # ┘
+    _sh = chr(176)  # ░
+    _md = chr(177)  # ▒
+    L   = 28
+
+    rows = [
+        ("  .       *          .    *      .           *       .        *      *   .  ", DG),
+        ("       *       .          *         *    .        .       *         .     * ", DG),
+        ("", ""),
+        (" " * L + _tl + _h * 20 + _tr, DG),
+        (" " * L + _v + "  " + _sh * 16 + "  " + _v + "  Zzz", DG),
+        (" " * L + _v + "  " + _md * 16 + "  " + _v, DG),
+        (" " * L + _bl + _h * 20 + _br, DG),
+        (_h * 79, DG),
+    ]
+    for i, (text, col) in enumerate(rows):
+        if i >= (ART_BOT - ART_TOP + 1):
+            break
+        move(ART_TOP + i, 1)
+        _out(ERASE_LINE)
+        if text:
+            _out(col + text + RST)
+
+
+def _type_line(row, col, text, colour=DG, delay=0.03):
+    hide_cursor()
+    move(row, col)
+    _out(ERASE_LINE)
+    _out(colour)
+    for ch in text:
+        _out(ch)
+        time.sleep(delay)
+    _out(RST)
+
+
+def screen_end_day(player, rng):
+    clear_screen()
+
+    if not load_art("sleep"):
+        _draw_sleep_fallback()
+
+    draw_divider(DIV_1)
+    clear_zone(MENU_TOP, MENU_BOT)
+    draw_divider(DIV_3)
+    clear_zone(RES_TOP, RES_BOT)
+    draw_divider(STATUS_DIV)
+    clear_line(STATUS)
+
+    write_at(MENU_TOP,     1, f"  {DG}Day {player.day}  --  the scene goes dark.{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}{player.crew_name}{RST}")
+
+    time.sleep(0.6)
+
+    event = rng.choice(_SLEEP_EVENTS)
+    for i, line in enumerate(event):
+        row = RES_TOP + 2 + i
+        if row > RES_BOT - 2:
+            break
+        _type_line(row, 4, line, DG, delay=0.025)
+        time.sleep(0.15)
+
+    time.sleep(1.0)
+
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}any key{RST}{C}]{RST}"
+        f"  {DG}wake up  --  day {player.day + 1} begins...{RST}")
+    get_key()
+
+
 def screen_map(player, world, page=0, page_size=5, mission_dest=None):
     clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()
