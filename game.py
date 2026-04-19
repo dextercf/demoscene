@@ -763,7 +763,9 @@ def hq_loop(player, world, cfg, rng):
                 playermod.submit_score(player)
                 player.save()
                 world.save(player.handle)
-                ansi.screen_quit(player)
+                ansi.write_at(ansi.RES_BOT, 1,
+                    f"  {ansi.DG}Game saved. Returning to title screen...{ansi.RST}")
+                time.sleep(1.0)
                 return False
             else:
                 ansi.write_at(ansi.RES_BOT, 1, "")
@@ -790,8 +792,7 @@ def title_loop(door_info, cfg):
         ansi.screen_title(VERSION)
         key = ansi.get_key(valid_keys="NCSQncsq").upper()
         if key == "Q":
-            ansi.result(f"{ansi.DG}Goodbye. The scene never sleeps.{ansi.RST}")
-            time.sleep(0.8)
+            ansi.screen_quit(None)
             return None, None
         elif key == "S":
             entries = playermod.load_leaderboard()
