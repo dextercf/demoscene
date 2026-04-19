@@ -18,6 +18,36 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-19  —  End-day sleep screen, status bar day counter, quit screen
+
+### Changes
+
+**End-day sleep screen (ansi.py, game.py)**
+  When turns hit 0, a full-screen interstitial replaces the bare sleep(0.8).
+  Loads `endday.ans`; art zone blank if file absent. MENU zone shows day number
+  and crew name. 18 randomised demoscene vignettes typed character-by-character
+  (25ms/char) in the result zone with short pauses between lines. 1s rest, then
+  `[any key] wake up -- day N+1 begins...` prompt. Uses `screen_base` so it
+  matches all other menus (dividers, status bar).
+
+**Status bar: day number appended after Turns (ansi.py)**
+  All screens that show the status bar now display `Turns: N  Day: N` on
+  the right side. `draw_status` reads `player.day` directly.
+
+**Title-screen Q: farewell screen (ansi.py, game.py)**
+  Quitting from the title menu now clears the screen, loads `end.ans` full,
+  and shows only `[any key] goodbye...` at the status row. No overlaid text.
+  HQ save-and-quit flow unchanged.
+
+### Resume here next session
+Priority 1: Test end-day screen and quit screen on BBS via SyncTerm
+Priority 2: Test raid flow end-to-end on BBS
+Priority 3: Party screen polish and live test (debug: set party_frequency_days=2)
+Priority 4: Starting tools = 0 makes early combat unwinnable — add starting bonus
+Priority 5: Make endday.ans and end.ans art files
+
+---
+
 ## 2026-04-19  —  Raid: turn cost, narrative events, bar pacing, Q-retreat fix
 
 ### Changes
