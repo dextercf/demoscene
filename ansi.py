@@ -194,7 +194,8 @@ def draw_status(player, bbs_name="", node=1, show_credits=False):
         right_label, right_val, right_col = "Turns: ", player.turns_remaining, C
     line = (f" {G}{handle_crew:<27}{RST}"
             f"{DG}Node: {RST}{W}{bbs_name:<22}{RST}"
-            f"{DG}{right_label}{RST}{right_col}{right_val}{RST}")
+            f"{DG}{right_label}{RST}{right_col}{right_val}{RST}"
+            f"  {DG}Day {RST}{C}{player.day}{RST}")
     _out(line)
     move(1, 1)  # park cursor at top-left — never leave it on the last row
 
@@ -455,7 +456,7 @@ def _type_line(row, col, text, colour=DG, delay=0.03):
 def screen_end_day(player, rng):
     clear_screen()
 
-    if not load_art("sleep"):
+    if not load_art("endday"):
         _draw_sleep_fallback()
 
     draw_divider(DIV_1)
@@ -463,7 +464,7 @@ def screen_end_day(player, rng):
     draw_divider(DIV_3)
     clear_zone(RES_TOP, RES_BOT)
     draw_divider(STATUS_DIV)
-    clear_line(STATUS)
+    draw_status(player, player.bbs_name)
 
     write_at(MENU_TOP,     1, f"  {DG}Day {player.day}  --  the scene goes dark.{RST}")
     write_at(MENU_TOP + 1, 1, f"  {DG}{player.crew_name}{RST}")
