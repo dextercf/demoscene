@@ -792,7 +792,7 @@ def title_loop(door_info, cfg):
         ansi.screen_title(VERSION)
         key = ansi.get_key(valid_keys="NCSQncsq").upper()
         if key == "Q":
-            ansi.screen_quit(None)
+            ansi.screen_quit()
             return None, None
         elif key == "S":
             entries = playermod.load_leaderboard()

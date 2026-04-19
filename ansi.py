@@ -447,10 +447,10 @@ def screen_end_day(player, rng):
     get_key()
 
 
-def screen_quit(player=None):
-    screen_base("end", player, player.bbs_name if player else "")
-    write_at(MENU_TOP, 1, f"  {DG}The scene never sleeps.{RST}")
-    write_at(RES_BOT, 1,
+def screen_quit():
+    clear_screen()
+    load_art("end")
+    write_at(STATUS, 1,
         f"  {C}[{RST}{W}any key{RST}{C}]{RST}  {DG}goodbye...{RST}")
     get_key()
 
