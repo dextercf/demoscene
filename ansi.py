@@ -412,36 +412,6 @@ _SLEEP_EVENTS = [
 ]
 
 
-def _draw_sleep_fallback():
-    _h  = chr(196)  # ─
-    _v  = chr(179)  # │
-    _tl = chr(218)  # ┌
-    _tr = chr(191)  # ┐
-    _bl = chr(192)  # └
-    _br = chr(217)  # ┘
-    _sh = chr(176)  # ░
-    _md = chr(177)  # ▒
-    L   = 28
-
-    rows = [
-        ("  .       *          .    *      .           *       .        *      *   .  ", DG),
-        ("       *       .          *         *    .        .       *         .     * ", DG),
-        ("", ""),
-        (" " * L + _tl + _h * 20 + _tr, DG),
-        (" " * L + _v + "  " + _sh * 16 + "  " + _v + "  Zzz", DG),
-        (" " * L + _v + "  " + _md * 16 + "  " + _v, DG),
-        (" " * L + _bl + _h * 20 + _br, DG),
-        (_h * 79, DG),
-    ]
-    for i, (text, col) in enumerate(rows):
-        if i >= (ART_BOT - ART_TOP + 1):
-            break
-        move(ART_TOP + i, 1)
-        _out(ERASE_LINE)
-        if text:
-            _out(col + text + RST)
-
-
 def _type_line(row, col, text, colour=DG, delay=0.03):
     hide_cursor()
     move(row, col)
@@ -454,17 +424,7 @@ def _type_line(row, col, text, colour=DG, delay=0.03):
 
 
 def screen_end_day(player, rng):
-    clear_screen()
-
-    if not load_art("endday"):
-        _draw_sleep_fallback()
-
-    draw_divider(DIV_1)
-    clear_zone(MENU_TOP, MENU_BOT)
-    draw_divider(DIV_3)
-    clear_zone(RES_TOP, RES_BOT)
-    draw_divider(STATUS_DIV)
-    draw_status(player, player.bbs_name)
+    screen_base("endday", player, player.bbs_name)
 
     write_at(MENU_TOP,     1, f"  {DG}Day {player.day}  --  the scene goes dark.{RST}")
     write_at(MENU_TOP + 1, 1, f"  {DG}{player.crew_name}{RST}")
