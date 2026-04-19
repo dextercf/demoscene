@@ -447,6 +447,15 @@ def screen_end_day(player, rng):
     get_key()
 
 
+def screen_quit(player):
+    screen_base("end", player, player.bbs_name)
+    write_at(MENU_TOP,     1, f"  {DG}Game saved.{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}{player.crew_name}  --  until next time.{RST}")
+    write_at(RES_BOT, 1,
+        f"  {C}[{RST}{W}any key{RST}{C}]{RST}  {DG}return to title...{RST}")
+    get_key()
+
+
 def screen_map(player, world, page=0, page_size=5, mission_dest=None):
     clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()

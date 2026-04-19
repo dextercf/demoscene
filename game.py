@@ -763,9 +763,7 @@ def hq_loop(player, world, cfg, rng):
                 playermod.submit_score(player)
                 player.save()
                 world.save(player.handle)
-                ansi.write_at(ansi.RES_BOT, 1,
-                    f"  {ansi.DG}Game saved. Returning to title screen...{ansi.RST}")
-                time.sleep(1.0)
+                ansi.screen_quit(player)
                 return False
             else:
                 ansi.write_at(ansi.RES_BOT, 1, "")
