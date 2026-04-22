@@ -1,0 +1,25 @@
+# Random events - one per line
+# Format: weight,colour,message,resource,amount
+# colour: G=green, R=red, Y=yellow, C=cyan, M=magenta, DG=dark gray
+# resource: floppy_disks, phone_credits, source_code, reputation, beer, hardware, tools, turns
+# amount: positive for gain, negative for loss
+# Empty lines and lines starting with # are ignored
+
+10,G,> A courier dropped off a package. +50 floppy disks.,floppy_disks,50
+10,G,> Someone paid for your last demo. +100 credits.,phone_credits,100
+8,C,> Your reputation spreads through the scene. +15 rep.,reputation,15
+8,Y,> Found an old box of floppies in the corner. +30 disks.,floppy_disks,30
+8,M,> A scener shared source code with you. +40 src.,source_code,40
+5,G,> A grateful sysop sends beer. +4 beer.,beer,4
+3,Y,> You find working hardware in a skip. +20 hardware.,hardware,20
+8,R,> Phone company auditing. You lose 80 credits in hasty cover-up.,phone_credits,-80
+8,R,> A floppy shipment went missing. -40 disks.,floppy_disks,-40
+6,R,> Rival crew spread rumours about your crew. -10 rep.,reputation,-10
+5,R,> Your modem burned out. -1 turn today.,turns,-1
+4,R,> A hard drive crash wiped your work. -60 source code.,source_code,-60
+3,R,> Tools got corrupted in a virus outbreak. -25 tools.,tools,-25
+10,DG,> Nothing unusual happened today.,,0
+8,DG,> You spend the day dialing random numbers. Nothing found.,,0
+6,C,> Word reaches you: someone dropped a 64K at a Norwegian party.,,0
+5,DG,> A new e-zine lands in your mailbox. Interesting reading.,,0
+3,M,> An old friend reconnects. They are back in the scene.,,0

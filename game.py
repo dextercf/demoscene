@@ -49,6 +49,41 @@ def cfg_bool(cfg, sec, key, default=True):
     return val in ("yes", "true", "1")
 
 # ---------------------------------------------------------------------------
+# Random events config
+# ---------------------------------------------------------------------------
+
+def _load_random_events(cfg, rng):
+    path = cfg_str(cfg, "events", "events_file", "").strip()
+    if not path:
+        return None
+    path = os.path.join(os.path.dirname(__file__), path)
+    if not os.path.isfile(path):
+        return None
+
+    events = []
+    try:
+        with open(path, "r", encoding="cp437") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split(",")
+                if len(parts) >= 5:
+                    try:
+                        weight = int(parts[0].strip())
+                        colour = parts[1].strip()
+                        msg = parts[2].strip()
+                        res = parts[3].strip()
+                        amt = int(parts[4].strip())
+                        events.append((weight, colour, msg, res, amt))
+                    except ValueError:
+                        continue
+    except OSError:
+        return None
+
+    return events if events else None
+
+# ---------------------------------------------------------------------------
 # Action: Explore
 # ---------------------------------------------------------------------------
 
@@ -691,7 +726,7 @@ def end_day(player, world, cfg, rng):
 
     event_chance = cfg_int(cfg, "gameplay", "random_event_chance", 25)
     if rng.randint(1, 100) <= event_chance:
-        _random_event(player, world, rng)
+        _random_event(player, world, rng, cfg)
 
     party = world.party_on_day(player.day)
     if party and not party.attended:
@@ -913,63 +948,47 @@ def _ordinal(n):
     return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, f"{n}th")
 
 
-def _random_event(player, world, rng):
-    # Each entry: (weight, colour_code, message, effect_fn)
-    # Weight 10 = common, 5 = uncommon, 2 = rare
-    # Mix: ~6 positive, ~6 negative, ~6 neutral/flavour
-    events = [
-        # --- Positive ---
-        (10, ansi.G,  "> A courier dropped off a package. +50 floppy disks.",
-         lambda: player.adjust_resource("floppy_disks", 50)),
-        (10, ansi.G,  "> Someone paid for your last demo. +100 credits.",
-         lambda: player.adjust_resource("phone_credits", 100)),
-        (8,  ansi.C,  "> Your reputation spreads through the scene. +15 rep.",
-         lambda: player.adjust_resource("reputation", 15)),
-        (8,  ansi.Y,  "> Found an old box of floppies in the corner. +30 disks.",
-         lambda: player.adjust_resource("floppy_disks", 30)),
-        (8,  ansi.M,  "> A scener shared source code with you. +40 src.",
-         lambda: player.adjust_resource("source_code", 40)),
-        (5,  ansi.G,  "> A grateful sysop sends beer. +4 beer.",
-         lambda: player.adjust_resource("beer", 4)),
-        (3,  ansi.Y,  "> You find working hardware in a skip. +20 hardware.",
-         lambda: player.adjust_resource("hardware", 20)),
-        # --- Negative ---
-        (8,  ansi.R,  "> Phone company auditing. You lose 80 credits in hasty cover-up.",
-         lambda: player.adjust_resource("phone_credits", -80)),
-        (8,  ansi.R,  "> A floppy shipment went missing. -40 disks.",
-         lambda: player.adjust_resource("floppy_disks", -40)),
-        (6,  ansi.R,  "> Rival crew spread rumours about your crew. -10 rep.",
-         lambda: player.adjust_resource("reputation", -10)),
-        (5,  ansi.R,  "> Your modem burned out. -1 turn today.",
-         lambda: player.use_turns(1)),
-        (4,  ansi.R,  "> A hard drive crash wiped your work. -60 source code.",
-         lambda: player.adjust_resource("source_code", -60)),
-        (3,  ansi.R,  "> Tools got corrupted in a virus outbreak. -25 tools.",
-         lambda: player.adjust_resource("tools", -25)),
-        # --- Neutral / flavour ---
-        (10, ansi.DG, "> Nothing unusual happened today.",
-         lambda: None),
-        (8,  ansi.DG, "> You spend the day dialing random numbers. Nothing found.",
-         lambda: None),
-        (6,  ansi.C,  "> Word reaches you: someone dropped a 64K at a Norwegian party.",
-         lambda: None),
-        (5,  ansi.DG, "> A new e-zine lands in your mailbox. Interesting reading.",
-         lambda: None),
-        (3,  ansi.M,  "> An old friend reconnects. They're back in the scene.",
-         lambda: None),
-    ]
+def _random_event(player, world, rng, cfg):
+    events = _load_random_events(cfg, rng)
+    if not events:
+        events = [
+            (10, "G", "> A courier dropped off a package. +50 floppy disks.", "floppy_disks", 50),
+            (10, "G", "> Someone paid for your last demo. +100 credits.", "phone_credits", 100),
+            (8,  "C", "> Your reputation spreads through the scene. +15 rep.", "reputation", 15),
+            (8,  "Y", "> Found an old box of floppies in the corner. +30 disks.", "floppy_disks", 30),
+            (8,  "M", "> A scener shared source code with you. +40 src.", "source_code", 40),
+            (5,  "G", "> A grateful sysop sends beer. +4 beer.", "beer", 4),
+            (3,  "Y", "> You find working hardware in a skip. +20 hardware.", "hardware", 20),
+            (8,  "R", "> Phone company auditing. You lose 80 credits in hasty cover-up.", "phone_credits", -80),
+            (8,  "R", "> A floppy shipment went missing. -40 disks.", "floppy_disks", -40),
+            (6,  "R", "> Rival crew spread rumours about your crew. -10 rep.", "reputation", -10),
+            (5,  "R", "> Your modem burned out. -1 turn today.", "turns", -1),
+            (4,  "R", "> A hard drive crash wiped your work. -60 source code.", "source_code", -60),
+            (3,  "R", "> Tools got corrupted in a virus outbreak. -25 tools.", "tools", -25),
+            (10, "DG", "> Nothing unusual happened today.", "", 0),
+            (8,  "DG", "> You spend the day dialing random numbers. Nothing found.", "", 0),
+            (6,  "C", "> Word reaches you: someone dropped a 64K at a Norwegian party.", "", 0),
+            (5,  "DG", "> A new e-zine lands in your mailbox. Interesting reading.", "", 0),
+            (3,  "M", "> An old friend reconnects. They are back in the scene.", "", 0),
+        ]
 
-    # Weight the draw — also slightly bias negative events in late game
+    colour_map = {"G": ansi.G, "R": ansi.R, "Y": ansi.Y, "C": ansi.C, "M": ansi.M, "DG": ansi.DG}
+
     weights = [e[0] for e in events]
     if player.day > 35:
-        # Increase negative event weight in last act
-        weights = [w * (1.3 if events[i][1] == ansi.R else 1.0)
+        weights = [w * (1.3 if events[i][1] == "R" else 1.0)
                    for i, w in enumerate(weights)]
 
     chosen = rng.choices(events, weights=weights, k=1)[0]
-    _, col, msg, effect = chosen
-    ansi.result(f"{col}{msg}{ansi.RST}")
-    effect()
+    weight, col, msg, res, amt = chosen
+    colour = colour_map.get(col, ansi.DG)
+    ansi.result(f"{colour}{msg}{ansi.RST}")
+
+    if res == "turns":
+        player.use_turns(abs(amt) if amt < 0 else -amt)
+    elif res and amt:
+        player.adjust_resource(res, amt)
+
     ansi.draw_status(player, player.bbs_name)
 
 
