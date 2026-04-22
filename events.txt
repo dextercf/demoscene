@@ -1,10 +1,58 @@
-# Random events - one per line
-# Format: weight,colour,message,resource,amount
-# colour: G=green, R=red, Y=yellow, C=cyan, M=magenta, DG=dark gray
-# resource: floppy_disks, phone_credits, source_code, reputation, beer, hardware, tools, turns
-# amount: positive for gain, negative for loss
-# Empty lines and lines starting with # are ignored
+# =============================================================================
+# RANDOM EVENTS CONFIGURATION FILE
+# Demoscene: The Exploration of Art
+# =============================================================================
+#
+# This file controls the random events that occur each day.
+# Each line is an event with this format:
+#
+#   weight,colour,message,resource,amount
+#
+# Fields:
+#   weight   1-20  How likely this event is (higher = more common)
+#   colour   G     Green  (good thing happened)
+#            R     Red    (bad thing happened)
+#            Y     Yellow (mixed/gain)
+#            C     Cyan   (neutral positive)
+#            M     Magenta (neutral/mixed)
+#            DG    Dark Gray (pure flavour, no effect)
+#   message  The text shown to the player (max 78 chars)
+#   resource What resource is changed (see below)
+#   amount   How much (positive = gain, negative = loss)
+#
+# Available resources:
+#   phone_credits   - In-game phone bill money
+#   floppy_disks    - Disk currency
+#   source_code    - Code for demos
+#   artwork        - Graphics assets
+#   mod_music      - Tracked music
+#   reputation    - Your crew's fame
+#   beer           - Party fuel
+#   hardware       - Equipment
+#   tools          - Development tools
+#   turns          - Uses -1 to remove a turn that day
+#   (empty)       - No resource change (flavour text only)
+#
+# Amount special values:
+#   0    - No resource change (use with empty resource for flavour)
+#   -1   - For "turns", removes 1 turn
+#
+# Tips:
+#   - Weight 10 is average. Use 15+ for common events, 3-5 for rare.
+#   - Events with "turns" resource and negative amount reduce turns.
+#   - Flavour-only events use empty resource and amount 0.
+#   - Lines starting with # are comments. Empty lines are ignored.
+#   - Maximum ~30 events recommended for variety without overcrowding.
+#   - The game weights negative events higher after day 35.
+#
+# To disable custom events and use built-in defaults:
+#   Edit config.ini and set: events_file =
+#
+# =============================================================================
 
+# Format: weight,colour,message,resource,amount
+
+# --- Positive events (player gains) ---
 10,G,> A courier dropped off a package. +50 floppy disks.,floppy_disks,50
 10,G,> Someone paid for your last demo. +100 credits.,phone_credits,100
 8,C,> Your reputation spreads through the scene. +15 rep.,reputation,15
@@ -12,12 +60,16 @@
 8,M,> A scener shared source code with you. +40 src.,source_code,40
 5,G,> A grateful sysop sends beer. +4 beer.,beer,4
 3,Y,> You find working hardware in a skip. +20 hardware.,hardware,20
+
+# --- Negative events (player loses) ---
 8,R,> Phone company auditing. You lose 80 credits in hasty cover-up.,phone_credits,-80
 8,R,> A floppy shipment went missing. -40 disks.,floppy_disks,-40
 6,R,> Rival crew spread rumours about your crew. -10 rep.,reputation,-10
 5,R,> Your modem burned out. -1 turn today.,turns,-1
 4,R,> A hard drive crash wiped your work. -60 source code.,source_code,-60
 3,R,> Tools got corrupted in a virus outbreak. -25 tools.,tools,-25
+
+# --- Flavour events (no effect) ---
 10,DG,> Nothing unusual happened today.,,0
 8,DG,> You spend the day dialing random numbers. Nothing found.,,0
 6,C,> Word reaches you: someone dropped a 64K at a Norwegian party.,,0
