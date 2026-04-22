@@ -60,6 +60,11 @@
 8,M,> A scener shared source code with you. +40 src.,source_code,40
 5,G,> A grateful sysop sends beer. +4 beer.,beer,4
 3,Y,> You find working hardware in a skip. +20 hardware.,hardware,20
+12,G,> A trader offers a deal. +25 credits.,phone_credits,25
+7,G,> Found a stash of artwork. +35 artwork.,artwork,35
+7,G,> Got some MODs from a friendly board. +25 mod_music.,mod_music,25
+4,G,> A bankrupt crew gives you their tools. +15 tools.,tools,15
+4,C,> Your crew works overtime. +10 rep.,reputation,10
 
 # --- Negative events (player loses) ---
 8,R,> Phone company auditing. You lose 80 credits in hasty cover-up.,phone_credits,-80
@@ -68,6 +73,11 @@
 5,R,> Your modem burned out. -1 turn today.,turns,-1
 4,R,> A hard drive crash wiped your work. -60 source code.,source_code,-60
 3,R,> Tools got corrupted in a virus outbreak. -25 tools.,tools,-25
+6,R,> Phone bill arrived. -50 credits.,phone_credits,-50
+5,R,> Lost some artwork in a crash. -20 artwork.,artwork,-20
+4,R,> A tracker file got corrupted. -15 mod_music.,mod_music,-15
+3,R,> Rival crew stole your disks. -30 floppy_disks.,floppy_disks,-30
+2,R,> Your best coder left the scene. -1 turn today.,turns,-1
 
 # --- Flavour events (no effect) ---
 10,DG,> Nothing unusual happened today.,,0
@@ -75,3 +85,9 @@
 6,C,> Word reaches you: someone dropped a 64K at a Norwegian party.,,0
 5,DG,> A new e-zine lands in your mailbox. Interesting reading.,,0
 3,M,> An old friend reconnects. They are back in the scene.,,0
+5,DG,> You reflash your EPROMs. Everything OK.,,0
+4,C,> A new version of your favourite demo tool is out.,,0
+4,DG,> The phone line is noisy today. Rain interference.,,0
+3,DG,> Someone asks about joining your crew.,,0
+2,C,> Your latest demo hits the top of the charts!,reputation,5
+2,M,> A tradie offers you exclusive warez.,,0
