@@ -216,6 +216,10 @@ def get_key(prompt="", valid_keys=None):
     hide_cursor()
     return key
 
+def get_key_arrow():
+    io = _sio.get_io()
+    return io.getkey_arrow() if io else "Q"
+
 def get_input(prompt, max_len=30):
     show_cursor()
     write(prompt, C)
@@ -462,37 +466,36 @@ def screen_tutorial():
     ]
 
     text_start = 6
-    page_size = STATUS_DIV - text_start  # rows 6..22 = 17 rows
-    pages = [lines[i:i+page_size] for i in range(0, len(lines), page_size)]
-    total = len(pages)
-    page = 0
+    view_h  = STATUS_DIV - text_start  # rows 6-22 = 17 visible rows
+    n_lines = len(lines)
+    max_off = max(0, n_lines - view_h)
+    offset  = 0
 
-    while True:
-        clear_screen()
-        draw_art("helptop")
-        for i, line in enumerate(pages[page]):
-            write_at(text_start + i, 1, line)
-
-        nav = []
-        if page > 0:
-            nav.append(f"{C}[{RST}{W}P{RST}{C}]{DG} Prev{RST}")
-        if page < total - 1:
-            nav.append(f"{C}[{RST}{W}N{RST}{C}]{DG} Next{RST}")
-        nav.append(f"{C}[{RST}{W}Q{RST}{C}]{DG} Back{RST}")
-        nav_str = "  " + "  ".join(nav) + f"  {DG}Page {page+1}/{total}{RST}"
-        move(STATUS_DIV, 1); _out(ERASE_LINE); _out(nav_str)
+    def redraw(full=False):
+        if full:
+            clear_screen()
+            draw_art("helptop")
+        for i in range(view_h):
+            idx = offset + i
+            write_at(text_start + i, 1, lines[idx] if idx < n_lines else "")
+        nav = (f"  {C}[{RST}{W}UP{RST}{C}/{RST}{W}DN{RST}{C}]{DG} Scroll"
+               f"  {C}[{RST}{W}Q{RST}{C}]{DG} Back"
+               f"  {DG}{offset+1}-{min(offset+view_h, n_lines)}/{n_lines}{RST}")
+        move(STATUS_DIV, 1); _out(ERASE_LINE); _out(nav)
         clear_line(STATUS)
+        hide_cursor()
 
-        valid = "Qq"
-        if page < total - 1: valid += "Nn"
-        if page > 0: valid += "Pp"
-        key = get_key(valid_keys=valid).upper()
+    redraw(full=True)
+    while True:
+        key = get_key_arrow()
         if key == "Q":
             break
-        elif key == "N":
-            page += 1
-        elif key == "P":
-            page -= 1
+        elif key == "DOWN" and offset < max_off:
+            offset += 1
+            redraw()
+        elif key == "UP" and offset > 0:
+            offset -= 1
+            redraw()
 
 _SLEEP_EVENTS = [
     [
