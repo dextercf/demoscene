@@ -18,6 +18,52 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-24  —  Title lightbar menu + help screen scrolling
+
+### Changes
+
+**Title menu: lightbar navigation (ansi.py, game.py, socketio.py)**
+  Replaced flat key-press title menu with an arrow-key lightbar.
+  - `socketio.py` — `getkey_arrow()` added to both `SocketIO` and `DebugIO`.
+    Returns `"UP"`, `"DOWN"`, `"ENTER"`, or an uppercase char.
+    `SocketIO` reads `ESC [ A/B` sequences; `DebugIO` reads Windows `\xe0 H/P`.
+  - `ansi.py` — `_draw_title_item()` renders one menu row: unselected in
+    cyan/white, selected as a cyan-background bar spanning cols 5-24.
+    No arrow indicators. Leading space before bracket. `RST` always emitted
+    after `_truncate_ansi` to prevent cyan bg leaking into next screen.
+    `title_lightbar_menu()` draws all 5 items at rows 15-19 (matching where
+    title.ans has its baked-in menu text), handles UP/DOWN/ENTER, also accepts
+    direct key press (N/C/H/S/Q). Only redraws changed rows on navigation.
+  - `game.py` — `title_loop` calls `screen_title(VERSION)` +
+    `title_lightbar_menu()` instead of `get_key()`.
+  - Tagline (random quotes) retained — animates at rows 10-14, no overlap
+    with the menu at rows 15-19.
+
+**Fixes during tuning:**
+  - Row offset: initial placement at rows 10-14 created double menu (art also
+    has menu text at rows 15-19 via terminal wrap). Fixed: `_TITLE_MENU_ROW=15`.
+  - Art preservation: removed `ERASE_LINE` from `_draw_title_item` — now
+    overwrites only the menu-width chars, art to the right of col 24 untouched.
+  - Cyan leak: `_truncate_ansi` was cutting the f-string before the `RST`,
+    leaving cyan bg active. Fixed by appending `RST` after the truncate call.
+  - Column: shifted two columns right (`_TITLE_BAR_COL=5`).
+  - Removed `►`/`◄` indicators per feedback; simplified to clean highlight bar.
+
+**Help screen: line-by-line scrolling (ansi.py)**
+  Replaced page-flip (N/P keys) with continuous scroll using arrow keys.
+  - `get_key_arrow()` added to `ansi.py` (thin wrapper around `io.getkey_arrow()`).
+  - `screen_tutorial()` rewritten: single `offset` variable tracks first visible
+    line; UP/DOWN move one line at a time; Q exits.
+  - Initial draw does `clear_screen` + art; subsequent scrolls repaint only the
+    17 text rows and nav bar — no full clear, no flicker.
+  - Nav bar: `[UP/DN] Scroll  [Q] Back  N-M/total`.
+
+### Resume here next session
+Priority 1: BBS testing — lightbar, help scroll, full playthrough
+Priority 2: Save file encryption
+
+---
+
 ## 2026-04-23  —  Bugfix: screen_hq accidentally deleted
 
 ### Changes
