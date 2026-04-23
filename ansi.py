@@ -318,7 +318,7 @@ _TITLE_ITEMS = [
     ("S", "Scores"),
     ("Q", "Quit"),
 ]
-_TITLE_MENU_ROW = 10
+_TITLE_MENU_ROW = 15
 _TITLE_BAR_W = 22  # visible width of highlighted bar content
 
 def _draw_title_item(row, key, label, selected):
