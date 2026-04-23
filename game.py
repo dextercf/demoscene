@@ -839,23 +839,15 @@ def title_loop(door_info, cfg, rng):
             ansi.screen_tutorial()
             ansi.get_key(valid_keys="Qq")
         elif key == "C":
-            p = playermod.Player()
-            p.handle = door_info.handle
-            if p.load():
-                w = worldmod.World()
-                if w.load(p.handle):
-                    return p, w
-            ansi.result(f"{ansi.DG}No save found. Starting new game...{ansi.RST}")
-            time.sleep(1.0)
             return _new_game(door_info, cfg, rng)
         elif key == "N":
             p = playermod.Player()
             p.handle = door_info.handle
             if p.load():
-                ansi.screen_title(VERSION)
-                ansi.write_at(ansi.MENU_TOP, 1, f"  {ansi.R}Warning: Existing save found for {p.handle}{ansi.RST}")
-                ansi.write_at(ansi.MENU_TOP + 1, 1, f"  {ansi.DG}Starting new game will overwrite it.{ansi.RST}")
-                ansi.write_at(ansi.MENU_TOP + 3, 1, f"  {ansi.C}[{ansi.W}Y{ansi.C}]{ansi.DG} Start anyway  {ansi.C}[{ansi.W}Q{ansi.C}]{ansi.DG} Cancel{ansi.RST}")
+                ansi.clear_screen()
+                ansi.write_at(12, 1, f"  {ansi.R}WARNING: Existing save found for {p.handle}{ansi.RST}")
+                ansi.write_at(13, 1, f"  {ansi.DG}Starting new game will overwrite it.{ansi.RST}")
+                ansi.write_at(15, 1, f"  {ansi.C}[{ansi.W}Y{ansi.C}]{ansi.DG} Start anyway  {ansi.C}[{ansi.W}Q{ansi.C}]{ansi.DG} Cancel{ansi.RST}")
                 confirm = ansi.get_key(valid_keys="YyQq")
                 if confirm == "Q":
                     continue
