@@ -344,8 +344,8 @@ def _draw_title_item(row, key, label, selected):
         trailing  = max(0, _TITLE_ITEM_W - unsel_vis)
         text = (f"   {BC}[{WH}{key}{DC}]"
                 f"{RST} {BC}{label[0]}{DC}{label[1:]}{RST}{' ' * trailing}")
-    move(row, 1)
-    _out(_truncate_ansi(text, SCREEN_W))
+    move(row, 3)
+    _out(_truncate_ansi(text, SCREEN_W - 2))
 
 def title_lightbar_menu():
     sel = 0
