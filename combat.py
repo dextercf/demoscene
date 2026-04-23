@@ -186,7 +186,7 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
             counter_chance -= 0.10   # traders prefer to cut losses
         result.counter_risk = rng.random() < counter_chance
 
-        result.message = _victory_message(npc_crew.name, result.loot, rng)
+        result.message = _victory_message(npc_crew.name, result.loot, rng, npc_crew.specialty)
         result.flavour = (
             f"AXON's crew hit {npc_crew.name} hard. "
             f"{'They may be planning revenge.' if result.counter_risk else 'Clean getaway.'}"
@@ -209,7 +209,7 @@ def resolve_raid(player, npc_crew, tactic_key, rng=None):
         # Enemy gets stronger from winning, but capped
         npc_crew.strength = min(90, npc_crew.strength + rng.randint(2, 6))
 
-        result.message = _defeat_message(npc_crew.name, result.losses, rng)
+        result.message = _defeat_message(npc_crew.name, result.losses, rng, npc_crew.specialty)
         result.flavour = (
             f"{npc_crew.name} repelled the raid. "
             f"They're feeling bold now."
@@ -420,21 +420,27 @@ def generate_raid_events(tactic_key, rng):
     return [rng.choice(phase) for phase in pools]
 
 
-def _victory_message(crew_name, loot, rng):
+def _victory_message(crew_name, loot, rng, crew_specialty=""):
     line = rng.choice(_VICTORY_LINES).format(crew=crew_name)
     if loot:
         items = [f"{v} {k.replace('_', ' ')}" for k, v in loot.items() if v > 0]
         if items:
             line += f" Looted: {', '.join(items[:3])}."
+    if crew_specialty and loot.get(crew_specialty, 0) > 0:
+        spec_name = crew_specialty.replace("_", " ")
+        line += f" {spec_name.title()} secured."
     return line
 
 
-def _defeat_message(crew_name, losses, rng):
+def _defeat_message(crew_name, losses, rng, crew_specialty=""):
     line = rng.choice(_DEFEAT_LINES).format(crew=crew_name)
     if losses:
         items = [f"{v} {k.replace('_', ' ')}" for k, v in losses.items() if v > 0]
         if items:
             line += f" Lost: {', '.join(items)}."
+    if crew_specialty and losses.get(crew_specialty, 0) > 0:
+        spec_name = crew_specialty.replace("_", " ")
+        line += f" They took your {spec_name}!"
     return line
 
 

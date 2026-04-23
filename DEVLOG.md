@@ -18,7 +18,37 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
-## 2026-04-23  —  Node-specific events
+## 2026-04-23  —  NPC crew specialties and crew-specific combat messages
+
+### Changes
+
+**NPC crew specialties (world.py)**
+  Added `specialty` field to all 12 NPC crews — their signature resource:
+  - Future Crew → source_code
+  - ACiD → artwork
+  - iCE → mod_music
+  - Razor 1911 → tools
+  - Skid Row → floppy_disks
+  - Fairlight → phone_credits
+  - Phenomena → beer
+  - The Silents → mod_music
+  - Byterapers → source_code
+  - THG → hardware
+  - Paranoimia → hardware
+  - Triton → tools
+
+**Crew-specific combat messages (combat.py)**
+  Victory/defeat messages now mention crew specialty:
+  - Win: "Source code secured." when raiding Future Crew
+  - Lose: "They took your tools!" when raided by Razor 1911
+
+**New test added:** `test_npc_crew_specialty()` — 22 tests now passing.
+
+### Resume here next session
+Priority 1: BBS testing — raid flow, courier delivery, parties
+Priority 2: Balance tweaks based on gameplay feedback
+
+---
 
 ### Changes
 

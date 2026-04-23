@@ -94,6 +94,7 @@ NPC_CREWS = [
         "aggression": 1,
         "rep"       : 900,
         "behaviour" : "producer",
+        "specialty" : "source_code",
         "home_bbs"  : "The Future Vision BBS",
         "taunt"     : "They set the bar. Can you clear it?",
         "backstory" : "Legendary Finnish demo crew. Second Reality still gives people chills.",
@@ -104,6 +105,7 @@ NPC_CREWS = [
         "aggression": 2,
         "rep"       : 820,
         "behaviour" : "artist",
+        "specialty" : "artwork",
         "home_bbs"  : "The ACiD Drop BBS",
         "taunt"     : "The art pack kings. Their ANSI is flawless.",
         "backstory" : "Dominant ANSI art group. Their art packs ship monthly like clockwork.",
@@ -114,6 +116,7 @@ NPC_CREWS = [
         "aggression": 2,
         "rep"       : 780,
         "behaviour" : "artist",
+        "specialty" : "mod_music",
         "home_bbs"  : "Frozen Assets BBS",
         "taunt"     : "ACiD's biggest rivals. Perpetual art war.",
         "backstory" : "iCE Advertisements — the only crew that makes ACiD nervous.",
@@ -124,6 +127,7 @@ NPC_CREWS = [
         "aggression": 3,
         "rep"       : 850,
         "behaviour" : "raider",
+        "specialty" : "tools",
         "home_bbs"  : "The Cutting Edge BBS",
         "taunt"     : "0-day or nothing. They will come for your tools.",
         "backstory" : "The most feared warez crew in the scene. They raid first, ask never.",
@@ -134,6 +138,7 @@ NPC_CREWS = [
         "aggression": 3,
         "rep"       : 800,
         "behaviour" : "raider",
+        "specialty" : "floppy_disks",
         "home_bbs"  : "Skid Row BBS",
         "taunt"     : "They smell weakness. Do not look weak.",
         "backstory" : "Ruthless crackers. They have informants on half the boards in the network.",
@@ -144,6 +149,7 @@ NPC_CREWS = [
         "aggression": 2,
         "rep"       : 760,
         "behaviour" : "trader",
+        "specialty" : "phone_credits",
         "home_bbs"  : "Fairlight HQ",
         "taunt"     : "Smooth operators. Watch your credits.",
         "backstory" : "Swedish warez legends. More interested in profit than violence.",
@@ -154,6 +160,7 @@ NPC_CREWS = [
         "aggression": 1,
         "rep"       : 720,
         "behaviour" : "party",
+        "specialty" : "beer",
         "home_bbs"  : "The Phenomena Pad",
         "taunt"     : "Party regulars. They collect trophies.",
         "backstory" : "Never miss a demoparty. Their compo entries are always polished.",
@@ -164,6 +171,7 @@ NPC_CREWS = [
         "aggression": 1,
         "rep"       : 700,
         "behaviour" : "producer",
+        "specialty" : "mod_music",
         "home_bbs"  : "Silent Running BBS",
         "taunt"     : "Quietly releasing. Quietly winning.",
         "backstory" : "Danish demo veterans. Low profile, high output. Underestimate them at your peril.",
@@ -174,6 +182,7 @@ NPC_CREWS = [
         "aggression": 2,
         "rep"       : 650,
         "behaviour" : "raider",
+        "specialty" : "source_code",
         "home_bbs"  : "The Byterapers Bunker",
         "taunt"     : "They code dirty and raid dirty.",
         "backstory" : "Finnish crew with a mean streak. Known to raid competitors right before parties.",
@@ -184,6 +193,7 @@ NPC_CREWS = [
         "aggression": 3,
         "rep"       : 680,
         "behaviour" : "raider",
+        "specialty" : "hardware",
         "home_bbs"  : "The Humble Guys HQ",
         "taunt"     : "Nothing humble about them when they raid.",
         "backstory" : "One of the oldest warez crews still active. Grudges run deep with these guys.",
@@ -194,6 +204,7 @@ NPC_CREWS = [
         "aggression": 1,
         "rep"       : 600,
         "behaviour" : "party",
+        "specialty" : "hardware",
         "home_bbs"  : "Paranoid Android BBS",
         "taunt"     : "Party crew through and through. Check the compo board.",
         "backstory" : "More at home at a demoparty than a keyboard. Great to share a beer with.",
@@ -204,6 +215,7 @@ NPC_CREWS = [
         "aggression": 1,
         "rep"       : 580,
         "behaviour" : "producer",
+        "specialty" : "tools",
         "home_bbs"  : "Triton Labs BBS",
         "taunt"     : "These guys write the tools everyone else uses.",
         "backstory" : "Coders first, competitors second. Their tracker software runs on half the scene.",
@@ -406,7 +418,8 @@ class NpcCrew:
 
         # Personality — loaded from NPC_CREWS table, not saved (static)
         _def = _npc_def(name)
-        self.behaviour   = _def.get("behaviour", "producer")   # raider/trader/party/producer/artist
+        self.behaviour   = _def.get("behaviour", "producer")
+        self.specialty   = _def.get("specialty", "")
         self.home_bbs    = _def.get("home_bbs",  name + " HQ")
         self.taunt       = _def.get("taunt",     "A rival crew.")
         self.backstory   = _def.get("backstory", "")

@@ -125,6 +125,21 @@ def test_combat_defense(tr):
     tr.check_true("Defense decays", p.defense < orig)
 
 
+def test_npc_crew_specialty(tr):
+    print("\n## NPC Crew: Specialties")
+
+    rng = random.Random(777)
+    w = world.World()
+    w.generate("SPECIALTY_TEST", "Test BBS", None)
+
+    specialties = set()
+    for crew in w.npc_crews:
+        if crew.specialty:
+            specialties.add(crew.specialty)
+
+    tr.check_true("NPC crews have specialties", len(specialties) > 0)
+
+
 def test_world_generation(tr):
     print("\n## World: Generation")
 
@@ -245,6 +260,7 @@ def main():
     test_combat_basic(tr)
     test_combat_tactics(tr)
     test_combat_defense(tr)
+    test_npc_crew_specialty(tr)
     test_world_generation(tr)
     test_world_node_types(tr)
     test_courier_mission(tr)
