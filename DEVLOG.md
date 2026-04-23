@@ -18,7 +18,26 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
-## 2026-04-23  —  NPC crew specialties and crew-specific combat messages
+## 2026-04-23  —  Combat balance fix: starting tools
+
+### Changes
+
+**Added starting_tools to config (config.ini, player.py)**
+  Players now start with 20 tools instead of 0.
+  Combat math analysis revealed: tools=0 meant base power of 25,
+  making early raids nearly unwinnable vs NPC raiders (strength 55-90).
+  With 20 tools: base power ~65 (plus luck 0.75-1.25 = 49-81), giving
+  a fighting chance against weaker NPCs.
+
+**Also added:** max_hardware and max_tools to config.ini caps section.
+
+### Resume here next session
+Priority 1: BBS testing — raid flow, courier delivery, parties
+Priority 2: Balance tweaks based on gameplay feedback
+
+---
+
+## 2026-04-23  —  NPC crew specialties and combat messages
 
 ### Changes
 
@@ -45,10 +64,12 @@ Raw file links (paste directly into Claude chat to fetch):
 **New test added:** `test_npc_crew_specialty()` — 22 tests now passing.
 
 ### Resume here next session
-Priority 1: BBS testing — raid flow, courier delivery, parties
-Priority 2: Balance tweaks based on gameplay feedback
+Priority 1: BBS testing — raid flow, courier delivery
+Priority 2: NPC crew interactions — more crew-specific content
 
 ---
+
+## 2026-04-23  —  Node-specific events
 
 ### Changes
 
@@ -88,6 +109,8 @@ Priority 1: Add error handling tests (door.py, socketio.py)
 Priority 2: Add more edge case tests (empty world, max resources)
 
 ---
+
+## 2026-04-23  —  Configurable random events
 
 ### Changes
 

@@ -322,6 +322,8 @@ class Player:
         self.mod_music       = _int("starting_mod_music",      30)
         self.reputation      = _int("starting_reputation",     10)
         self.beer            = _int("starting_beer",           0)
+        self.tools           = _int("starting_tools",         20)
+        self.hardware        = _int("starting_hardware",        0)
         self.turns_remaining = _int("action_points_per_day",   10)
 
         # Load resource caps from config so set_resource enforces them
