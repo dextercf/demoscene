@@ -161,7 +161,7 @@ def action_travel(player, world, cfg, rng, daily_mission=None):
 
             # Full-screen dial-up sequence
             ansi.clear_screen()
-            ansi.draw_art("map")
+            ansi.draw_art("travel")
             ansi.draw_divider(ansi.DIV_1)
             ansi.clear_zone(ansi.MENU_TOP, ansi.RES_BOT)
             ansi.draw_divider(ansi.STATUS_DIV)

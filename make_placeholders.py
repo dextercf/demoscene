@@ -303,13 +303,13 @@ def make_map():
     ))
 
     # Row 7 – placeholder note
-    note = "art/map.ans  |  80x8  |  replace with hand-drawn network map"
+    note = "art/travel.ans  |  80x8  |  replace with hand-drawn network map"
     lines.append(row(col(DV, BB) + col(centre_plain(note, 78), R) + col(DV, BB)))
 
     # Row 8
     lines.append(row(col(DBL + DH*78 + DBR, BB)))
 
-    write_ans("map.ans", lines, "DEMOSCENE Map")
+    write_ans("travel.ans", lines, "DEMOSCENE Travel")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

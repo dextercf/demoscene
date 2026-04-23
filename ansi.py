@@ -528,7 +528,7 @@ def screen_quit():
 
 
 def screen_map(player, world, page=0, page_size=5, mission_dest=None):
-    clear_screen(); draw_art("map"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
+    clear_screen(); draw_art("travel"); draw_divider(DIV_1); clear_zone(MENU_TOP, RES_BOT)
     disc = world.discovered_nodes()
     total = len(disc)
     pg_cnt = max(1, (total + page_size - 1) // page_size)
@@ -587,7 +587,7 @@ def screen_explore(player):
     # Art zone rows 1-14
     move(1, 1)
     if not load_art("explore"):
-        draw_art("map")
+        draw_art("travel")
 
     draw_divider(15)                        # divider above menu
 
