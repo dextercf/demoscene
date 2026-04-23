@@ -837,7 +837,6 @@ def title_loop(door_info, cfg, rng):
             ansi.get_key(valid_keys="Qq")
         elif key == "H":
             ansi.screen_tutorial()
-            ansi.get_key(valid_keys="Qq")
         elif key == "C":
             p = playermod.Player()
             p.handle = door_info.handle
