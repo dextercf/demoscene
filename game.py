@@ -569,7 +569,8 @@ def action_messages(player, world, cfg):
 
         # Write a new oneliner
         ansi.write_at(ansi.RES_BOT - 1, 1, "")
-        text = ansi.get_input("  Write: ", max_len=60)
+        max_oneliner_len = cfg_int(cfg, "scores", "max_oneliner_length", 60)
+        text = ansi.get_input("  Write: ", max_len=max_oneliner_len)
         if text.strip():
             playermod.save_oneliner(
                 player.handle, player.bbs_name, player.day, text.strip())
@@ -822,7 +823,7 @@ def hq_loop(player, world, cfg, rng):
 # Title / new game
 # ---------------------------------------------------------------------------
 
-def title_loop(door_info, cfg):
+def title_loop(door_info, cfg, rng):
     while True:
         ansi.screen_title(VERSION)
         key = ansi.get_key(valid_keys="NCSQncsq").upper()
@@ -842,9 +843,9 @@ def title_loop(door_info, cfg):
                     return p, w
             ansi.result(f"{ansi.DG}No save found. Starting new game...{ansi.RST}")
             time.sleep(1.0)
-            return _new_game(door_info, cfg)
+            return _new_game(door_info, cfg, rng)
         elif key == "N":
-            return _new_game(door_info, cfg)
+            return _new_game(door_info, cfg, rng)
 
 
 def _new_game(door_info, cfg):
@@ -859,19 +860,21 @@ def _new_game(door_info, cfg):
 
     ansi.write_at(ansi.MENU_TOP,     1, f"  {ansi.C}Welcome to {GAME_TITLE}{ansi.RST}")
     ansi.write_at(ansi.MENU_TOP + 1, 1, f"  {ansi.DG}A {DEVELOPER} production{ansi.RST}")
-    ansi.write_at(ansi.MENU_TOP + 2, 1, f"  {ansi.W}Handle: {ansi.G}{door_info.handle}{ansi.RST}")
+    ansi.write_at(ansi.MENU_TOP + 2, 1, f"  {ansi.W}Handle: {ansi.G}{p.handle}{ansi.RST}")
 
     time.sleep(0.3)
 
     p = playermod.Player()
-    p.handle   = door_info.handle
+    max_handle = cfg_int(cfg, "scores", "max_handle_length", 20)
+    p.handle = door_info.handle[:max_handle].strip() or "Player"
     p.bbs_name = cfg_str(cfg, "bbs", "bbs_name", door_info.bbs_name)
     p.apply_config(cfg)
 
-    ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.DG}Choose your crew name (max 20 chars){ansi.RST}")
+    max_crew_len = cfg_int(cfg, "scores", "max_crew_name_length", 20)
+    ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.DG}Choose your crew name (max {max_crew_len} chars){ansi.RST}")
     ansi.move(ansi.RES_TOP + 1, 1)
-    crew = ansi.get_input("  Crew name: ")
-    p.crew_name = crew[:20] if crew else f"{p.handle}'s Crew"
+    crew = ansi.get_input("  Crew name: ", max_len=max_crew_len)
+    p.crew_name = crew[:max_crew_len] if crew else f"{p.handle}'s Crew"
 
     ansi.dots(ansi.RES_TOP + 2, 3, "Generating network map", count=6)
     ansi.dots(ansi.RES_TOP + 3, 3, "Placing rival crews",    count=6)
@@ -917,7 +920,7 @@ def main():
     rng.seed(hash(door_info.handle) ^ id(rng))
 
     while True:
-        player, world = title_loop(door_info, cfg)
+        player, world = title_loop(door_info, cfg, rng)
         if player is None:
             break
 
