@@ -319,33 +319,24 @@ _TITLE_ITEMS = [
     ("Q", "Quit"),
 ]
 _TITLE_MENU_ROW = 15
-_TITLE_BAR_W = 22  # visible width of highlighted bar content
-
-_TITLE_ITEM_W = _TITLE_BAR_W + 3  # 1(sp) + 1(►) + BAR_W + 1(◄) = total visible width
+_TITLE_BAR_COL = 5   # lightbar starts at col 5
+_TITLE_BAR_W   = 20  # cols 5-24 inclusive
 
 def _draw_title_item(row, key, label, selected):
     BG  = f"{ESC}[46m"
-    BG0 = f"{ESC}[40m"
     BC  = f"{ESC}[1;36m"
     DC  = f"{ESC}[0;36m"
     DK  = f"{ESC}[0;30;46m"
     YL  = f"{ESC}[1;33m"
     WH  = f"{ESC}[37m"
-    IND_L = chr(16)
-    IND_R = chr(17)
+    content = f"[{key}] {label}"
+    pad = max(0, _TITLE_BAR_W - len(content))
     if selected:
-        content = f" [{key}] {label}"
-        pad = max(0, _TITLE_BAR_W - len(content))
-        text = (f" {BC}{IND_L}"
-                f"{BG}{DK} [{YL}{key}{DK}] {label}{' ' * pad}"
-                f"{BC}{BG0}{IND_R}{RST}")
+        text = f"{BG}{DK}[{YL}{key}{DK}] {label}{' ' * pad}{RST}"
     else:
-        unsel_vis = 3 + 3 + len(label)  # "   [K] LABEL"
-        trailing  = max(0, _TITLE_ITEM_W - unsel_vis)
-        text = (f"   {BC}[{WH}{key}{DC}]"
-                f"{RST} {BC}{label[0]}{DC}{label[1:]}{RST}{' ' * trailing}")
-    move(row, 3)
-    _out(_truncate_ansi(text, SCREEN_W - 2))
+        text = f"{BC}[{WH}{key}{DC}] {label}{RST}{' ' * pad}"
+    move(row, _TITLE_BAR_COL)
+    _out(_truncate_ansi(text, _TITLE_BAR_W))
 
 def title_lightbar_menu():
     sel = 0
