@@ -91,6 +91,23 @@ class SocketIO:
             except Exception:
                 continue
 
+    def getkey_arrow(self):
+        while True:
+            byte = self.read_byte()
+            if not byte: return "Q"
+            if byte == b"\x1b":
+                b2 = self.read_byte()
+                if b2 == b"[":
+                    b3 = self.read_byte()
+                    if b3 == b"A": return "UP"
+                    if b3 == b"B": return "DOWN"
+                continue
+            if byte in (b"\r", b"\n"): return "ENTER"
+            try:
+                return byte.decode("cp437", errors="replace").upper()
+            except Exception:
+                continue
+
     def getline(self, max_len=30):
         result = []
         while True:
@@ -159,6 +176,38 @@ class DebugIO:
                     key = ch.upper()
                     if valid_keys is None or key in [k.upper() for k in valid_keys]:
                         return key
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+    def getkey_arrow(self):
+        try:
+            import msvcrt
+            while True:
+                ch = msvcrt.getwch()
+                if ch in ("\x00", "\xe0"):
+                    ch2 = msvcrt.getwch()
+                    if ch2 == "H": return "UP"
+                    if ch2 == "P": return "DOWN"
+                    continue
+                if ch in ("\r", "\n"): return "ENTER"
+                return ch.upper()
+        except ImportError:
+            import tty, termios
+            fd = sys.stdin.fileno()
+            old = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                while True:
+                    ch = sys.stdin.read(1)
+                    if ch == "\x1b":
+                        ch2 = sys.stdin.read(1)
+                        if ch2 == "[":
+                            ch3 = sys.stdin.read(1)
+                            if ch3 == "A": return "UP"
+                            if ch3 == "B": return "DOWN"
+                        continue
+                    if ch in ("\r", "\n"): return "ENTER"
+                    return ch.upper()
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, old)
 

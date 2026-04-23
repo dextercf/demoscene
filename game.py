@@ -826,8 +826,8 @@ def hq_loop(player, world, cfg, rng):
 
 def title_loop(door_info, cfg, rng):
     while True:
-        ansi.screen_title(VERSION)
-        key = ansi.get_key(valid_keys="NCSHQhqsq").upper()
+        ansi.screen_title(VERSION, tagline=False)
+        key = ansi.title_lightbar_menu()
         if key == "Q":
             ansi.screen_quit()
             return None, None

@@ -302,13 +302,72 @@ def _animate_tagline():
         time.sleep(0.055)
 
 
-def screen_title(version=""):
+def screen_title(version="", tagline=True):
     clear_screen(); draw_art("title"); hide_cursor()
     if version:
         label = f"copyright cellfish 2026 - demoscene v{version}"
         col = SCREEN_W - len(label) + 1
         write_at_no_clear(1, col, label, DG)
-    _animate_tagline()
+    if tagline:
+        _animate_tagline()
+
+_TITLE_ITEMS = [
+    ("N", "Start New Game"),
+    ("C", "Continue"),
+    ("H", "How to Play"),
+    ("S", "Scores"),
+    ("Q", "Quit"),
+]
+_TITLE_MENU_ROW = 10
+_TITLE_BAR_W = 22  # visible width of highlighted bar content
+
+def _draw_title_item(row, key, label, selected):
+    BG  = f"{ESC}[46m"
+    BG0 = f"{ESC}[40m"
+    BC  = f"{ESC}[1;36m"
+    DC  = f"{ESC}[0;36m"
+    DK  = f"{ESC}[0;30;46m"
+    YL  = f"{ESC}[1;33m"
+    WH  = f"{ESC}[37m"
+    IND_L = chr(16)
+    IND_R = chr(17)
+    if selected:
+        content = f" [{key}] {label}"
+        pad = max(0, _TITLE_BAR_W - len(content))
+        text = (f" {BC}{IND_L}"
+                f"{BG}{DK} [{YL}{key}{DK}] {label}{' ' * pad}"
+                f"{BC}{BG0}{IND_R}{RST}")
+    else:
+        text = (f"   {BC}[{WH}{key}{DC}]"
+                f"{RST} {BC}{label[0]}{DC}{label[1:]}{RST}")
+    move(row, 1)
+    _out(ERASE_LINE)
+    _out(_truncate_ansi(text, SCREEN_W))
+
+def title_lightbar_menu():
+    sel = 0
+    for i, (key, label) in enumerate(_TITLE_ITEMS):
+        _draw_title_item(_TITLE_MENU_ROW + i, key, label, i == sel)
+    hide_cursor()
+    io = _sio.get_io()
+    while True:
+        raw = io.getkey_arrow() if io else "ENTER"
+        if raw == "UP":
+            prev = sel
+            sel = (sel - 1) % len(_TITLE_ITEMS)
+            _draw_title_item(_TITLE_MENU_ROW + prev, *_TITLE_ITEMS[prev], False)
+            _draw_title_item(_TITLE_MENU_ROW + sel,  *_TITLE_ITEMS[sel],  True)
+        elif raw == "DOWN":
+            prev = sel
+            sel = (sel + 1) % len(_TITLE_ITEMS)
+            _draw_title_item(_TITLE_MENU_ROW + prev, *_TITLE_ITEMS[prev], False)
+            _draw_title_item(_TITLE_MENU_ROW + sel,  *_TITLE_ITEMS[sel],  True)
+        elif raw == "ENTER":
+            return _TITLE_ITEMS[sel][0]
+        else:
+            for k, _ in _TITLE_ITEMS:
+                if raw == k:
+                    return k
 
 def screen_hq(player):
     global _result_buf
