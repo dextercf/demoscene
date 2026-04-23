@@ -18,7 +18,26 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
-## 2026-04-23  —  Combat balance fix: starting tools
+## 2026-04-23  —  Tutorial/help screen
+
+### Changes
+
+**Tutorial screen added (ansi.py, game.py)**
+  New [H] Help option on title screen shows gameplay overview:
+  - Mission objective
+  - Resource descriptions (7 resources)
+  - Action menu (7 actions)
+  - Tips for new players
+
+**game.py updates:**
+  - title_loop accepts [H] key → screen_tutorial()
+  - Valid keys expanded: NCSQncsq → NCSHQhqsq
+
+### Resume here next session
+Priority 1: BBS testing — full playthrough test
+Priority 2: Save file encryption
+
+---
 
 ### Changes
 

@@ -310,7 +310,55 @@ def screen_title(version=""):
         write_at_no_clear(1, col, label, DG)
     _animate_tagline()
 
-def screen_hq(player):
+def screen_tutorial():
+    clear_screen()
+    screen_base("hq", None, "", cmd_hint="[Q] Back")
+
+    lines = [
+        f"  {W}DEMOSCENE: THE EXPLORATION OF ART{RST}",
+        f"  {DG}{'='*50}{RST}",
+        "",
+        f"  {C}YOUR MISSION{RST}",
+        f"  {DG}Manage your demoscene crew for 50 in-game days.{RST}",
+        f"  {DG}Produce demos, raid rivals, trade resources, attend parties.{RST}",
+        "",
+        f"  {C}RESOURCES{RST}",
+        f"  {Y}Phone Credits{DG} — Pay for travel between boards{RST}",
+        f"  {Y}Floppy Disks{DG}  — Trade currency{RST}",
+        f"  {Y}Source Code{DG}   — Write demos{RST}",
+        f"  {Y}Artwork{DG}       — Graphics for your productions{RST}",
+        f"  {Y}MOD Music{DG}     — Audio assets{RST}",
+        f"  {Y}Tools{DG}        — Fight in raids{RST}",
+        f"  {Y}Hardware{DG}      — Combat bonus{RST}",
+        f"  {Y}Beer{DG}          — Drink at parties{RST}",
+        "",
+        f"  {C}ACTIONS (at HQ){RST}",
+        f"  {G}E{DG} Explore  — Discover new BBS nodes{RST}",
+        f"  {G}T{DG} Travel   — Move between boards{RST}",
+        f"  {G}P{DG} Produce  — Make demos for points{RST}",
+        f"  {G}R{DG} Raid     — Attack rival crews{RST}",
+        f"  {G}D{DG} Defend   — Fortify your home board{RST}",
+        f"  {G}B{DG} Trade    — Buy and sell resources{RST}",
+        f"  {G}S{DG} Courier  — Delivery missions for rewards{RST}",
+        "",
+        f"  {C}TIPS{RST}",
+        f"  {DG}- Start exploring to find trading partners{RST}",
+        f"  {DG}- Raids cost 5 turns — plan ahead{RST}",
+        f"  {DG}- Use Sneak tactic to avoid counter-raids{RST}",
+        f"  {DG}- Attend parties to earn big points and beer{RST}",
+        f"  {DG}- Protect your tools — they power your raids{RST}",
+        "",
+        f"  {DG}Score is based on: reputation, demos, raids, parties{RST}",
+    ]
+
+    for i, line in enumerate(lines):
+        if i < (RES_BOT - RES_TOP):
+            write_at(RES_TOP + i, 1, line)
+
+    write_at(RES_BOT, 1, f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back to menu{RST}")
+
+    draw_divider(STATUS_DIV)
+    clear_line(STATUS)
     global _result_buf
     clear_screen()
     draw_art("hq")

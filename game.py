@@ -827,13 +827,16 @@ def hq_loop(player, world, cfg, rng):
 def title_loop(door_info, cfg, rng):
     while True:
         ansi.screen_title(VERSION)
-        key = ansi.get_key(valid_keys="NCSQncsq").upper()
+        key = ansi.get_key(valid_keys="NCSHQhqsq").upper()
         if key == "Q":
             ansi.screen_quit()
             return None, None
         elif key == "S":
             entries = playermod.load_leaderboard()
             ansi.screen_hof(entries, door_info.handle)
+            ansi.get_key(valid_keys="Qq")
+        elif key == "H":
+            ansi.screen_tutorial()
             ansi.get_key(valid_keys="Qq")
         elif key == "C":
             p = playermod.Player()
