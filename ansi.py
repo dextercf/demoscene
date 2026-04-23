@@ -359,12 +359,6 @@ def screen_tutorial():
 
     draw_divider(STATUS_DIV)
     clear_line(STATUS)
-    global _result_buf
-    clear_screen()
-    draw_art("hq")
-    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
-    draw_divider(STATUS_DIV)
-    draw_status(player, player.bbs_name)
 
 _SLEEP_EVENTS = [
     [
