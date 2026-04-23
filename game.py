@@ -852,7 +852,7 @@ def title_loop(door_info, cfg, rng):
             return _new_game(door_info, cfg, rng)
 
 
-def _new_game(door_info, cfg):
+def _new_game(door_info, cfg, rng):
     ansi.clear_screen()
     ansi.draw_art("title")
     ansi.draw_divider(ansi.DIV_1)
@@ -861,6 +861,12 @@ def _new_game(door_info, cfg):
     ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
     ansi.draw_divider(ansi.STATUS_DIV)
     ansi.clear_line(ansi.STATUS)
+
+    p = playermod.Player()
+    max_handle = cfg_int(cfg, "scores", "max_handle_length", 20)
+    p.handle = door_info.handle[:max_handle].strip() or "Player"
+    p.bbs_name = cfg_str(cfg, "bbs", "bbs_name", door_info.bbs_name)
+    p.apply_config(cfg)
 
     ansi.write_at(ansi.MENU_TOP,     1, f"  {ansi.C}Welcome to {GAME_TITLE}{ansi.RST}")
     ansi.write_at(ansi.MENU_TOP + 1, 1, f"  {ansi.DG}A {DEVELOPER} production{ansi.RST}")
