@@ -310,6 +310,14 @@ def screen_title(version=""):
         write_at_no_clear(1, col, label, DG)
     _animate_tagline()
 
+def screen_hq(player):
+    global _result_buf
+    clear_screen()
+    draw_art("hq")
+    _result_buf = [""] * (RES_BOT - RES_TOP + 1)
+    draw_divider(STATUS_DIV)
+    draw_status(player, player.bbs_name)
+
 def screen_tutorial():
     clear_screen()
     screen_base("hq", None, "", cmd_hint="[Q] Back")
