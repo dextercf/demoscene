@@ -329,14 +329,14 @@ def _draw_title_item(row, key, label, selected):
     DK  = f"{ESC}[0;30;46m"
     YL  = f"{ESC}[1;33m"
     WH  = f"{ESC}[37m"
-    content = f"[{key}] {label}"
+    content = f" [{key}] {label}"  # leading space
     pad = max(0, _TITLE_BAR_W - len(content))
     if selected:
-        text = f"{BG}{DK}[{YL}{key}{DK}] {label}{' ' * pad}{RST}"
+        text = f"{BG}{DK} [{YL}{key}{DK}] {label}{' ' * pad}"
     else:
-        text = f"{BC}[{WH}{key}{DC}] {label}{RST}{' ' * pad}"
+        text = f"{BC} [{WH}{key}{DC}] {label}{' ' * pad}"
     move(row, _TITLE_BAR_COL)
-    _out(_truncate_ansi(text, _TITLE_BAR_W))
+    _out(_truncate_ansi(text, _TITLE_BAR_W) + RST)
 
 def title_lightbar_menu():
     sel = 0
