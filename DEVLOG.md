@@ -18,6 +18,23 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-23  —  Bugfix: screen_hq accidentally deleted
+
+### Changes
+
+**Restored screen_hq (ansi.py)**
+  The `screen_hq(player)` function was accidentally replaced by `screen_tutorial()`
+  in the tutorial commit — the diff overwrote the function instead of inserting a new one.
+  Result: pressing [C] (or [N]) from the title menu crashed with AttributeError and
+  dropped the player back to BBS immediately.
+  Restored to original: clear_screen, draw_art("hq"), reset _result_buf, draw STATUS_DIV, draw_status.
+
+### Resume here next session
+Priority 1: BBS testing — full playthrough test
+Priority 2: Save file encryption
+
+---
+
 ## 2026-04-23  —  Tutorial/help screen
 
 ### Changes
