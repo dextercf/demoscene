@@ -852,10 +852,10 @@ def title_loop(door_info, cfg, rng):
             p = playermod.Player()
             p.handle = door_info.handle
             if p.load():
-                ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
-                ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.R}Warning: Existing save found for {p.handle}{ansi.RST}")
-                ansi.write_at(ansi.RES_TOP + 1, 1, f"  {ansi.DG}Starting new game will overwrite it.{ansi.RST}")
-                ansi.write_at(ansi.RES_TOP + 3, 1, f"  {ansi.C}[{RST}{W}Y{RST}{C}]{ansi.DG} Start anyway{RST}  {ansi.C}[{RST}{W}Q{RST}{C}]{ansi.DG} Cancel{RST}")
+                ansi.screen_title(VERSION)
+                ansi.write_at(ansi.MENU_TOP, 1, f"  {ansi.R}Warning: Existing save found for {p.handle}{ansi.RST}")
+                ansi.write_at(ansi.MENU_TOP + 1, 1, f"  {ansi.DG}Starting new game will overwrite it.{ansi.RST}")
+                ansi.write_at(ansi.MENU_TOP + 3, 1, f"  {ansi.C}[{ansi.W}Y{ansi.C}]{ansi.DG} Start anyway  {ansi.C}[{ansi.W}Q{ansi.C}]{ansi.DG} Cancel{ansi.RST}")
                 confirm = ansi.get_key(valid_keys="YyQq")
                 if confirm == "Q":
                     continue
