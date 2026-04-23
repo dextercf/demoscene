@@ -358,16 +358,17 @@ def screen_tutorial():
         f"  {DG}Score: reputation, demos produced, raids won, parties attended{RST}",
     ]
 
-    page_size = STATUS_DIV - 9  # rows 9..22 = 14 rows
+    text_start = 6
+    page_size = STATUS_DIV - text_start  # rows 6..22 = 17 rows
     pages = [lines[i:i+page_size] for i in range(0, len(lines), page_size)]
     total = len(pages)
     page = 0
 
     while True:
         clear_screen()
-        draw_art("hq")
+        draw_art("helptop")
         for i, line in enumerate(pages[page]):
-            write_at(9 + i, 1, line)
+            write_at(text_start + i, 1, line)
 
         nav = []
         if page > 0:
