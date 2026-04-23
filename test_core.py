@@ -1,6 +1,26 @@
 """
 test_core.py — Unit tests for Demoscene core modules
+Demoscene: The Exploration of Art
+A Cellfish Production
+
 Run with: python test_core.py
+
+This test suite validates the core game systems:
+  - combat.py    — Raid resolution, tactics, defense decay
+  - world.py     — Procedural generation, node types, NPC crews
+  - courier.py   — Mission generation, delivery
+  - player.py    — Resource management, scoring
+
+Tests are deterministic (seeded RNG) for reproducible results.
+Run regularly during development to catch regressions.
+
+Usage:
+  python test_core.py          Run all tests
+  python -m pytest test_core.py  Run with pytest (optional)
+
+Exit codes:
+  0 = all tests passed
+  1 = one or more tests failed
 """
 
 import sys

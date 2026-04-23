@@ -18,7 +18,25 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
-## 2026-04-23  —  Configurable random events
+## 2026-04-23  —  Unit tests for core modules
+
+### Changes
+
+**test_core.py — NEW test suite**
+  21 tests covering core game systems:
+  - Combat: resolve_raid, tactic selection, defense decay
+  - World: generation, node types, NPC placement
+  - Courier: mission generation, delivery
+  - Player: resource caps, score calculation
+
+  Run with: `python test_core.py`
+  Exit code 0 = pass, 1 = fail
+
+### Resume here next session
+Priority 1: Add error handling tests (door.py, socketio.py)
+Priority 2: Add more edge case tests (empty world, max resources)
+
+---
 
 ### Changes
 
