@@ -54,6 +54,29 @@ def _read_lines(path):
         return []
 
 
+def _sanitise_handle(handle):
+    """Strip dangerous characters from handle. Returns cleaned string."""
+    if not handle:
+        return ""
+    clean = ""
+    for ch in handle:
+        if ch.isalnum() or ch in "-_ ":
+            clean += ch
+    return clean.strip()[:20]
+
+
+def _is_valid_handle(handle):
+    """Check handle is safe: non-empty, printable, reasonable length."""
+    if not handle:
+        return False
+    if len(handle) < 1 or len(handle) > 20:
+        return False
+    for ch in handle:
+        if ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ":
+            return False
+    return True
+
+
 def _parse_door_sys(path):
     """
     Parse a DOOR.SYS file.
@@ -129,12 +152,18 @@ def _parse_door_sys(path):
         handle = get(34, "").strip()  # alias fallback
     if not handle:
         handle = info.real_name.split()[0] if info.real_name else "UNKNOWN"
-    info.handle = handle
+    info.handle = _sanitise_handle(handle)
+    if len(info.handle) < 1:
+        info.handle = "UNKNOWN"
 
     # BBS name (line 22, optional)
     bbs = get(22, "").strip()
     if bbs:
-        info.bbs_name = bbs
+        info.bbs_name = bbs[:40]  # truncate to reasonable length
+
+    # Validate critical fields
+    if not _is_valid_handle(info.handle):
+        raise DropFileError(f"Handle validation failed: {info.handle!r}")
 
     return info
 

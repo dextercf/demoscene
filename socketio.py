@@ -11,6 +11,14 @@ from socket import timeout as _socket_timeout
 
 _io = None
 
+def _warn(msg):
+    """Print warning to stderr when socket adoption fails."""
+    try:
+        sys.stderr.write(f"\r\n  [WARN] {msg}\r\n")
+        sys.stderr.flush()
+    except Exception:
+        pass
+
 def get_io():
     return _io
 
@@ -168,12 +176,11 @@ def init(socket_handle=None):
     if socket_handle is not None:
         try:
             sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM, 0, socket_handle)
-            # Adopt handle directly — fromfd() dups it, leaving the original open at exit
             io = SocketIO(sock)
             set_io(io)
             return io
-        except Exception:
-            pass
+        except Exception as e:
+            _warn(f"Socket adoption failed ({e}), falling back to console I/O")
     io = DebugIO()
     set_io(io)
     return io
