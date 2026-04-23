@@ -908,12 +908,7 @@ def _new_game(door_info, cfg, rng):
     ansi.write_at(ansi.MENU_TOP + 4, 1, f"  {ansi.Y}Home board : {ansi.W}{p.bbs_name}{ansi.RST}")
     ansi.write_at(ansi.MENU_TOP + 5, 1, f"  {ansi.Y}Crew name  : {ansi.W}{p.crew_name}{ansi.RST}")
     ansi.write_at(ansi.RES_BOT, 1,      f"  {ansi.DG}Press any key to enter the scene...{ansi.RST}")
-
-    ansi.show_cursor()
-    io = socketio.get_io()
-    if io:
-        io.getkey()
-    ansi.hide_cursor()
+    ansi.get_key()
 
     p.save()
     w.save(p.handle)
