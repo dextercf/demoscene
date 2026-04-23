@@ -18,7 +18,28 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
-## 2026-04-23  —  Unit tests for core modules
+## 2026-04-23  —  Node-specific events
+
+### Changes
+
+**Node-specific random events (game.py, events.txt)**
+  Events can now specify a required node type (6th field in events.txt).
+  Events only fire when the player is at a matching node type.
+  Added 24 node-specific events across 9 node types:
+  - music, art, coding, warez, hardware, trading, social, elite, legendary
+
+**Events file format updated:**
+  `weight,colour,message,resource,amount[,node_type]`
+
+**game.py updates:**
+  - `_load_random_events()` now parses 6-field format
+  - `_random_event()` checks current node type vs event requirement
+
+### Resume here next session
+Priority 1: BBS testing — raid flow, courier delivery
+Priority 2: NPC crew interactions — more crew-specific content
+
+---
 
 ### Changes
 

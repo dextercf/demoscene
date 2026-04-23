@@ -75,7 +75,8 @@ def _load_random_events(cfg, rng):
                         msg = parts[2].strip()
                         res = parts[3].strip()
                         amt = int(parts[4].strip())
-                        events.append((weight, colour, msg, res, amt))
+                        node_type = parts[5].strip() if len(parts) > 5 else ""
+                        events.append((weight, colour, msg, res, amt, node_type))
                     except ValueError:
                         continue
     except OSError:
@@ -955,24 +956,24 @@ def _random_event(player, world, rng, cfg):
     events = _load_random_events(cfg, rng)
     if not events:
         events = [
-            (10, "G", "> A courier dropped off a package. +50 floppy disks.", "floppy_disks", 50),
-            (10, "G", "> Someone paid for your last demo. +100 credits.", "phone_credits", 100),
-            (8,  "C", "> Your reputation spreads through the scene. +15 rep.", "reputation", 15),
-            (8,  "Y", "> Found an old box of floppies in the corner. +30 disks.", "floppy_disks", 30),
-            (8,  "M", "> A scener shared source code with you. +40 src.", "source_code", 40),
-            (5,  "G", "> A grateful sysop sends beer. +4 beer.", "beer", 4),
-            (3,  "Y", "> You find working hardware in a skip. +20 hardware.", "hardware", 20),
-            (8,  "R", "> Phone company auditing. You lose 80 credits in hasty cover-up.", "phone_credits", -80),
-            (8,  "R", "> A floppy shipment went missing. -40 disks.", "floppy_disks", -40),
-            (6,  "R", "> Rival crew spread rumours about your crew. -10 rep.", "reputation", -10),
-            (5,  "R", "> Your modem burned out. -1 turn today.", "turns", -1),
-            (4,  "R", "> A hard drive crash wiped your work. -60 source code.", "source_code", -60),
-            (3,  "R", "> Tools got corrupted in a virus outbreak. -25 tools.", "tools", -25),
-            (10, "DG", "> Nothing unusual happened today.", "", 0),
-            (8,  "DG", "> You spend the day dialing random numbers. Nothing found.", "", 0),
-            (6,  "C", "> Word reaches you: someone dropped a 64K at a Norwegian party.", "", 0),
-            (5,  "DG", "> A new e-zine lands in your mailbox. Interesting reading.", "", 0),
-            (3,  "M", "> An old friend reconnects. They are back in the scene.", "", 0),
+            (10, "G", "> A courier dropped off a package. +50 floppy disks.", "floppy_disks", 50, ""),
+            (10, "G", "> Someone paid for your last demo. +100 credits.", "phone_credits", 100, ""),
+            (8,  "C", "> Your reputation spreads through the scene. +15 rep.", "reputation", 15, ""),
+            (8,  "Y", "> Found an old box of floppies in the corner. +30 disks.", "floppy_disks", 30, ""),
+            (8,  "M", "> A scener shared source code with you. +40 src.", "source_code", 40, ""),
+            (5,  "G", "> A grateful sysop sends beer. +4 beer.", "beer", 4, ""),
+            (3,  "Y", "> You find working hardware in a skip. +20 hardware.", "hardware", 20, ""),
+            (8,  "R", "> Phone company auditing. You lose 80 credits in hasty cover-up.", "phone_credits", -80, ""),
+            (8,  "R", "> A floppy shipment went missing. -40 disks.", "floppy_disks", -40, ""),
+            (6,  "R", "> Rival crew spread rumours about your crew. -10 rep.", "reputation", -10, ""),
+            (5,  "R", "> Your modem burned out. -1 turn today.", "turns", -1, ""),
+            (4,  "R", "> A hard drive crash wiped your work. -60 source code.", "source_code", -60, ""),
+            (3,  "R", "> Tools got corrupted in a virus outbreak. -25 tools.", "tools", -25, ""),
+            (10, "DG", "> Nothing unusual happened today.", "", 0, ""),
+            (8,  "DG", "> You spend the day dialing random numbers. Nothing found.", "", 0, ""),
+            (6,  "C", "> Word reaches you: someone dropped a 64K at a Norwegian party.", "", 0, ""),
+            (5,  "DG", "> A new e-zine lands in your mailbox. Interesting reading.", "", 0, ""),
+            (3,  "M", "> An old friend reconnects. They are back in the scene.", "", 0, ""),
         ]
 
     colour_map = {"G": ansi.G, "R": ansi.R, "Y": ansi.Y, "C": ansi.C, "M": ansi.M, "DG": ansi.DG}
@@ -983,7 +984,14 @@ def _random_event(player, world, rng, cfg):
                    for i, w in enumerate(weights)]
 
     chosen = rng.choices(events, weights=weights, k=1)[0]
-    weight, col, msg, res, amt = chosen
+    weight, col, msg, res, amt = chosen[:6]
+
+    curr_node = world.get_node_by_name(player.current_node)
+    node_type = curr_node.node_type if curr_node else ""
+
+    if chosen[5] and chosen[5] != node_type:
+        return
+
     colour = colour_map.get(col, ansi.DG)
     ansi.result(f"{colour}{msg}{ansi.RST}")
 

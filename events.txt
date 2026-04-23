@@ -6,7 +6,7 @@
 # This file controls the random events that occur each day.
 # Each line is an event with this format:
 #
-#   weight,colour,message,resource,amount
+#   weight,colour,message,resource,amount[,node_type]
 #
 # Fields:
 #   weight   1-20  How likely this event is (higher = more common)
@@ -19,6 +19,7 @@
 #   message  The text shown to the player (max 78 chars)
 #   resource What resource is changed (see below)
 #   amount   How much (positive = gain, negative = loss)
+#   node_type Optional: event only fires at this node type (blank = any node)
 #
 # Available resources:
 #   phone_credits   - In-game phone bill money
@@ -37,20 +38,34 @@
 #   0    - No resource change (use with empty resource for flavour)
 #   -1   - For "turns", removes 1 turn
 #
+# Node types (for node-specific events):
+#   music    - Music/tracker board
+#   art      - Art/pixel board
+#   coding   - Coding/programming board
+#   warez    - Warez/distribution board
+#   hardware - Hardware Bazaar
+#   trading  - Trade post
+#   social   - Social board
+#   elite    - Elite board
+#   legendary - Legendary board
+#
 # Tips:
 #   - Weight 10 is average. Use 15+ for common events, 3-5 for rare.
 #   - Events with "turns" resource and negative amount reduce turns.
 #   - Flavour-only events use empty resource and amount 0.
 #   - Lines starting with # are comments. Empty lines are ignored.
-#   - Maximum ~30 events recommended for variety without overcrowding.
+#   - Maximum ~40 events recommended for variety without overcrowding.
 #   - The game weights negative events higher after day 35.
+#   - Node-specific events only fire when player is at that node type.
 #
 # To disable custom events and use built-in defaults:
 #   Edit config.ini and set: events_file =
 #
 # =============================================================================
 
-# Format: weight,colour,message,resource,amount
+# Format: weight,colour,message,resource,amount[,node_type]
+
+# --- General events (any node) ---
 
 # --- Positive events (player gains) ---
 10,G,> A courier dropped off a package. +50 floppy disks.,floppy_disks,50
@@ -91,3 +106,55 @@
 3,DG,> Someone asks about joining your crew.,,0
 2,C,> Your latest demo hits the top of the charts!,reputation,5
 2,M,> A tradie offers you exclusive warez.,,0
+
+# =============================================================================
+# NODE-SPECIFIC EVENTS
+# Only fire when player is at that node type.
+# Add new node types to the 6th field.
+# =============================================================================
+
+# --- Music board events ---
+6,G,> A tracker freak shares Protracker sources. +30 mod_music.,mod_music,30,music
+4,G,> Got rare MODs from a collector. +20 mod_music.,mod_music,20,music
+2,R,> A corrupted sample pack fried your samples. -15 mod_music.,mod_music,-15,music
+
+# --- Art board events ---
+6,G,> An artist traded sprites with you. +25 artwork.,artwork,25,art
+4,G,> Found high-res pixel art. +20 artwork.,artwork,20,art
+2,R,> Your sprites got corrupted. -15 artwork.,artwork,-15,art
+
+# --- Coding board events ---
+6,G,> Coders shared optimized routines. +35 source_code.,source_code,35,coding
+4,G,> Found algorithmic breakthroughs in old posts. +25 source_code.,source_code,25,coding
+2,R,> Your codebase got wiped by a bad merge. -40 source_code.,source_code,-40,coding
+
+# --- Warez board events ---
+5,G,> A trader offloaded cracked tools. +20 tools.,tools,20,warez
+4,G,> Exclusive software bundle landed. +15 hardware.,hardware,15,warez
+3,R,> Board got raided. Evidence wiped. -30 floppy_disks.,floppy_disks,-30,warez
+2,R,> Sysop traced your access. -1 turn hiding.,turns,-1,warez
+
+# --- Hardware board events ---
+5,G,> Found a working Sound Blaster. +20 hardware.,hardware,20,hardware
+4,G,> Overclocked CPU bundle for cheap. +15 hardware.,hardware,15,hardware
+2,R,> Bargain hardware was DOA. Money lost. -40 phone_credits,phone_credits,-40,hardware
+
+# --- Trading board events ---
+8,G,> Big disk shipment arrived. +60 floppy_disks.,floppy_disks,60,trading
+5,G,> Floppy swap deal went well. +30 floppy_disks.,floppy_disks,30,trading
+3,R,> Trade deal went sour. Lost 50 credits.,phone_credits,-50,trading
+
+# --- Social board events ---
+6,G,> Your rep spreads across the scene. +20 reputation.,reputation,20,social
+5,G,> Scene elders notice your work. +15 reputation.,reputation,15,social
+2,R,> Rumours spread about your crew. -10 reputation.,reputation,-10,social
+
+# --- Elite board events ---
+4,G,> Elite crew acknowledges you. +25 reputation.,reputation,25,elite
+3,G,> Elite insider shares secrets. +20 source_code.,source_code,20,elite
+2,R,> Elite board access challenged. -1 turn defending.,turns,-1,elite
+
+# --- Legendary board events ---
+3,G,> Found legendary source archives. +50 source_code.,source_code,50,legendary
+3,G,> Legendary artwork unlocked. +40 artwork.,artwork,40,legendary
+2,G,> Ancient MOD packs discovered. +40 mod_music.,mod_music,40,legendary
