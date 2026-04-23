@@ -18,6 +18,38 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-23  —  Configurable random events
+
+### Changes
+
+**Random events moved to external file (game.py, config.ini, events.txt)**
+  Random events are now configurable via `events.txt` instead of
+  being hardcoded in game.py. SysOps can add/modify/remove events
+  without touching code.
+
+  - `game.py` — added `_load_random_events()` that reads events_file
+    from config.ini
+  - `config.ini` — added `[events]` section with `events_file = events.txt`
+  - `events.txt` — NEW: 32 events with full documentation
+
+**Events file format:**
+  ```
+  weight,colour,message,resource,amount
+  ```
+  - weight: 1-20 (higher = more common)
+  - colour: G=green, R=red, Y=yellow, C=cyan, M=magenta, DG=dark gray
+  - resource: phone_credits, floppy_disks, source_code, artwork,
+    mod_music, reputation, beer, hardware, tools, turns
+  - amount: positive=gain, negative=loss
+
+**To disable custom events:** set `events_file =` (empty) in config.ini.
+
+### Resume here next session
+Priority 1: Test configurable events on BBS
+Priority 2: Add more node-specific flavour events
+
+---
+
 ## 2026-04-19  —  End-day sleep screen, status bar day counter, quit screen
 
 ### Changes
