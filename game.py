@@ -849,6 +849,16 @@ def title_loop(door_info, cfg, rng):
             time.sleep(1.0)
             return _new_game(door_info, cfg, rng)
         elif key == "N":
+            p = playermod.Player()
+            p.handle = door_info.handle
+            if p.load():
+                ansi.clear_zone(ansi.RES_TOP, ansi.RES_BOT)
+                ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.R}Warning: Existing save found for {p.handle}{ansi.RST}")
+                ansi.write_at(ansi.RES_TOP + 1, 1, f"  {ansi.DG}Starting new game will overwrite it.{ansi.RST}")
+                ansi.write_at(ansi.RES_TOP + 3, 1, f"  {ansi.C}[{RST}{W}Y{RST}{C}]{ansi.DG} Start anyway{RST}  {ansi.C}[{RST}{W}Q{RST}{C}]{ansi.DG} Cancel{RST}")
+                confirm = ansi.get_key(valid_keys="YyQq")
+                if confirm == "Q":
+                    continue
             return _new_game(door_info, cfg, rng)
 
 
@@ -873,12 +883,6 @@ def _new_game(door_info, cfg, rng):
     ansi.write_at(ansi.MENU_TOP + 2, 1, f"  {ansi.W}Handle: {ansi.G}{p.handle}{ansi.RST}")
 
     time.sleep(0.3)
-
-    p = playermod.Player()
-    max_handle = cfg_int(cfg, "scores", "max_handle_length", 20)
-    p.handle = door_info.handle[:max_handle].strip() or "Player"
-    p.bbs_name = cfg_str(cfg, "bbs", "bbs_name", door_info.bbs_name)
-    p.apply_config(cfg)
 
     max_crew_len = cfg_int(cfg, "scores", "max_crew_name_length", 20)
     ansi.write_at(ansi.RES_TOP, 1, f"  {ansi.DG}Choose your crew name (max {max_crew_len} chars){ansi.RST}")
