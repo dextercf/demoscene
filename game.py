@@ -839,7 +839,17 @@ def title_loop(door_info, cfg, rng):
             ansi.screen_tutorial()
             ansi.get_key(valid_keys="Qq")
         elif key == "C":
-            return _new_game(door_info, cfg, rng)
+            p = playermod.Player()
+            p.handle = door_info.handle
+            if p.load():
+                w = worldmod.World()
+                if w.load(p.handle):
+                    return p, w
+            ansi.clear_screen()
+            ansi.write_at(12, 1, f"  {ansi.Y}No save found for {p.handle}{ansi.RST}")
+            ansi.write_at(13, 1, f"  {ansi.DG}Press [N] to start a new game.{ansi.RST}")
+            ansi.get_key()
+            continue
         elif key == "N":
             p = playermod.Player()
             p.handle = door_info.handle
