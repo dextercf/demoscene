@@ -321,6 +321,8 @@ _TITLE_ITEMS = [
 _TITLE_MENU_ROW = 15
 _TITLE_BAR_W = 22  # visible width of highlighted bar content
 
+_TITLE_ITEM_W = _TITLE_BAR_W + 3  # 1(sp) + 1(►) + BAR_W + 1(◄) = total visible width
+
 def _draw_title_item(row, key, label, selected):
     BG  = f"{ESC}[46m"
     BG0 = f"{ESC}[40m"
@@ -338,10 +340,11 @@ def _draw_title_item(row, key, label, selected):
                 f"{BG}{DK} [{YL}{key}{DK}] {label}{' ' * pad}"
                 f"{BC}{BG0}{IND_R}{RST}")
     else:
+        unsel_vis = 3 + 3 + len(label)  # "   [K] LABEL"
+        trailing  = max(0, _TITLE_ITEM_W - unsel_vis)
         text = (f"   {BC}[{WH}{key}{DC}]"
-                f"{RST} {BC}{label[0]}{DC}{label[1:]}{RST}")
+                f"{RST} {BC}{label[0]}{DC}{label[1:]}{RST}{' ' * trailing}")
     move(row, 1)
-    _out(ERASE_LINE)
     _out(_truncate_ansi(text, SCREEN_W))
 
 def title_lightbar_menu():
