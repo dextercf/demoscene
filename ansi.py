@@ -1378,6 +1378,7 @@ def _produce_upload_sequence(label, dkey, rng):
         "ansipack" : rng.randint(20,  80),
         "modmusic" : rng.randint(100, 300),
         "chiptune" : rng.randint(10,  50),
+        "wild"     : rng.randint(800, 2000),
     }
     kb       = sizes.get(dkey, rng.randint(10, 100))
     ext      = rng.choice([".zip", ".lha", ".arj"])
@@ -1536,6 +1537,8 @@ def screen_produce(player, detail_lines=None, prompt=None):
         ("6", "ANSI Art Pack", {"artwork": 150},                            60,  8),
         ("7", "MOD Music",     {"mod_music": 200},                          80, 10),
         ("8", "Chiptune",      {"mod_music": 80},                           40,  8),
+        ("9", "Wild Demo",     {"source_code": 300, "artwork": 250,
+                                "mod_music": 200},                          900, 25),
     ]
 
     # MENU zone — resources (row 10), column headers (row 11)
@@ -1576,7 +1579,7 @@ def screen_produce(player, detail_lines=None, prompt=None):
     if prompt:
         _out(prompt)
     else:
-        _out(f"  {C}[{RST}{W}1-8{RST}{C}]{RST} {DG}Select{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+        _out(f"  {C}[{RST}{W}1-9{RST}{C}]{RST} {DG}Select{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_raid_targets(player, targets):

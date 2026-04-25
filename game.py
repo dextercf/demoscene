@@ -323,11 +323,13 @@ def action_produce(player, world, cfg, rng):
          {"mod_music": 200}, 80),
         ("chiptune",  "Chiptune",
          {"mod_music": 80},  40),
+        ("wild",      "Wild Demo",
+         {"source_code": 300, "artwork": 250, "mod_music": 200}, 900),
     ]
 
     while True:
         ansi.screen_produce(player)
-        key = ansi.get_key(valid_keys="12345678Qq").upper()
+        key = ansi.get_key(valid_keys="123456789Qq").upper()
         if key == "Q":
             return
 
@@ -340,7 +342,7 @@ def action_produce(player, world, cfg, rng):
         from player import RESOURCE_NAMES
         cost_parts = [f"{v} {RESOURCE_NAMES.get(k, k)}" for k, v in costs.items()]
         cost_str   = "  +  ".join(cost_parts)
-        fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20,"ansipack":8,"modmusic":10,"chiptune":8}.get(dkey,10)
+        fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20,"ansipack":8,"modmusic":10,"chiptune":8,"wild":25}.get(dkey,10)
 
         detail = (f"  {ansi.C}{label}{ansi.RST}  "
                   f"{ansi.DG}costs:{ansi.RST} {ansi.Y}{cost_str}{ansi.RST}  "
@@ -374,7 +376,7 @@ def action_produce(player, world, cfg, rng):
         player.spend(costs)
 
         luck        = rng.uniform(0.8, 1.2)
-        fail_chance = {"cracktro":0.05,"4k":0.10,"64k":0.15,"musicdisk":0.10,"demo":0.20,"ansipack":0.08,"modmusic":0.10,"chiptune":0.08}
+        fail_chance = {"cracktro":0.05,"4k":0.10,"64k":0.15,"musicdisk":0.10,"demo":0.20,"ansipack":0.08,"modmusic":0.10,"chiptune":0.08,"wild":0.25}
         failed      = rng.random() < fail_chance.get(dkey, 0.10)
         gained      = 0 if failed else int(base_rep * luck)
         rival_name  = None
