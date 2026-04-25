@@ -364,21 +364,21 @@ def action_produce(player, world, cfg, rng):
         if not player.can_afford(costs):
             ansi.screen_produce(player,
                 detail_lines=[f"  {ansi.R}Not enough resources — {cost_str}{ansi.RST}"],
-                prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+                prompt=f"  {ansi.C}[{ansi.RST}{ansi.W}any key{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Back{ansi.RST}")
             ansi.get_key()
             continue
 
         if player.turns_remaining < 3:
             ansi.screen_produce(player,
                 detail_lines=[f"  {ansi.R}Not enough turns — costs 3.{ansi.RST}"],
-                prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
+                prompt=f"  {ansi.C}[{ansi.RST}{ansi.W}any key{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Back{ansi.RST}")
             ansi.get_key()
             continue
 
         ansi.screen_produce(player,
             detail_lines=[detail],
-            prompt=(f"  {ansi.C}[Y]{ansi.RST} Produce  "
-                    f"{ansi.C}[Q]{ansi.RST} Cancel: "))
+            prompt=(f"  {ansi.C}[{ansi.RST}{ansi.W}Y{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Produce  "
+                    f"{ansi.C}[{ansi.RST}{ansi.W}Q{ansi.RST}{ansi.C}]{ansi.RST} {ansi.DG}Cancel{ansi.RST}"))
         confirm = ansi.get_key(valid_keys="YQyq").upper()
         if confirm == "Q":
             continue
