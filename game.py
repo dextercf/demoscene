@@ -545,8 +545,8 @@ def action_courier(player, world, cfg, rng, daily_mission):
 
     if key == "H":
         ansi.screen_courier_help(player)
-        ansi.get_key(valid_keys="Qq")
-        return
+        ansi.screen_courier_board(player, daily_mission, warn_turns=warn)
+        key = ansi.get_key(valid_keys="AQaq").upper()
 
     if key == "Q":
         return
