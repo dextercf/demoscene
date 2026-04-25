@@ -540,13 +540,13 @@ def action_courier(player, world, cfg, rng, daily_mission):
 
     # Mission board — warn if turns are tight
     warn = player.turns_remaining <= daily_mission.turn_cost
-    ansi.screen_courier_board(player, daily_mission, warn_turns=warn)
-    key = ansi.get_key(valid_keys="AHQahq").upper()
-
-    if key == "H":
-        ansi.screen_courier_help(player)
+    while True:
         ansi.screen_courier_board(player, daily_mission, warn_turns=warn)
-        key = ansi.get_key(valid_keys="AQaq").upper()
+        key = ansi.get_key(valid_keys="AHQahq").upper()
+        if key == "H":
+            ansi.screen_courier_help(player)
+            continue
+        break
 
     if key == "Q":
         return
