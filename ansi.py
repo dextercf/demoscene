@@ -399,21 +399,29 @@ def screen_hq(player):
     draw_status(player, player.bbs_name)
 
 def screen_tutorial():
+    TEXT_COL   = 4
+    TEXT_W     = 60   # cols 4-63, well inside art border at col 65
+    text_start = 6    # first text row (inside art frame)
+    view_h     = 17   # rows 6-22
+    NAV_ROW    = 23
+
     lines = [
         # --- PAGE 1: What is this game ---
         f"  {W}WHAT IS THIS GAME?{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {DG}It is the early 1990s. You are a member of the demoscene -- a{RST}",
-        f"  {DG}subculture of coders, artists and musicians who compete to make{RST}",
-        f"  {DG}the most impressive real-time computer art, called demos.{RST}",
+        f"  {DG}It is the early 1990s. You are a member of the{RST}",
+        f"  {DG}demoscene -- a subculture of coders, artists and{RST}",
+        f"  {DG}musicians competing to make real-time computer art{RST}",
+        f"  {DG}called demos.{RST}",
         "",
-        f"  {DG}The scene runs on BBSes -- dial-up bulletin board systems linked{RST}",
-        f"  {DG}by phone lines. You travel between boards, trade resources,{RST}",
-        f"  {DG}build your crew's reputation, and outcompete rival groups.{RST}",
+        f"  {DG}The scene runs on BBSes -- dial-up bulletin board{RST}",
+        f"  {DG}systems. You travel between boards, trade resources,{RST}",
+        f"  {DG}build your crew's rep, and outcompete rival groups.{RST}",
         "",
         f"  {W}YOUR GOAL{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {DG}Earn the highest score over 50 in-game days. Score comes from:{RST}",
+        f"  {DG}Earn the highest score over 50 in-game days.{RST}",
+        f"  {DG}Score comes from:{RST}",
         f"  {Y}Reputation  {DG}-- the core currency of scene standing{RST}",
         f"  {Y}Demos       {DG}-- productions your crew releases{RST}",
         f"  {Y}Raids won   {DG}-- rival crews you have beaten{RST}",
@@ -422,90 +430,96 @@ def screen_tutorial():
         "",
         f"  {W}HOW A DAY WORKS{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {DG}Each day you start with 10 action points (turns). Every action{RST}",
-        f"  {DG}costs turns. When you run out the day ends automatically and{RST}",
-        f"  {DG}you sleep. Random events may fire at day end -- good and bad.{RST}",
+        f"  {DG}Each day you start with 10 action points (turns).{RST}",
+        f"  {DG}Every action costs turns. When you run out the day{RST}",
+        f"  {DG}ends. Random events may fire at day end.{RST}",
         "",
-        f"  {DG}Use {W}[S]{DG} to save and quit mid-day. Your turns carry over.{RST}",
-        f"  {DG}Use {W}[Q]{DG} to quit without saving and return to title.{RST}",
+        f"  {DG}Use {W}[S]{DG} to save and quit. Your turns carry over.{RST}",
+        f"  {DG}Use {W}[Q]{DG} to quit without saving, return to title.{RST}",
         "",
         f"  {W}COURIER MISSIONS{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {DG}Each day a courier job is available: pick up cargo at one node{RST}",
-        f"  {DG}and deliver it to another for credits and reputation. Use {W}[C]{DG}{RST}",
-        f"  {DG}at your home board to accept, then {W}[T]{DG} to travel there and{RST}",
-        f"  {DG}deliver automatically on arrival. Miss the day and it expires.{RST}",
+        f"  {DG}Each day a courier job is available: pick up cargo{RST}",
+        f"  {DG}at one node and deliver it to another for credits{RST}",
+        f"  {DG}and reputation. Use {W}[C]{DG} at home board to accept,{RST}",
+        f"  {DG}then {W}[T]{DG} to travel there. Arrive to auto-deliver.{RST}",
+        f"  {DG}Miss the day and the mission expires.{RST}",
         # --- PAGE 3: Resources ---
         "",
         f"  {W}RESOURCES{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {Y}Phone Credits {DG}-- Spent when you travel between nodes. Stock up{RST}",
-        f"  {DG}               before long trips. Earn from trading and couriers.{RST}",
+        f"  {Y}Phone Credits {DG}-- Spent traveling between nodes.{RST}",
+        f"  {DG}               Earn from trading and couriers.{RST}",
         f"  {Y}Floppy Disks  {DG}-- Main trade commodity. Buy low, sell high.{RST}",
-        f"  {Y}Source Code   {DG}-- Required to produce demos. Gather via explore.{RST}",
+        f"  {Y}Source Code   {DG}-- Required to produce demos.{RST}",
         f"  {Y}Artwork       {DG}-- Graphics assets consumed when producing.{RST}",
         f"  {Y}MOD Music     {DG}-- Audio assets consumed when producing.{RST}",
         f"  {Y}Tools         {DG}-- Your raid attack power. Protect these.{RST}",
         f"  {Y}Hardware      {DG}-- Boosts combat. Expensive but worth it.{RST}",
-        f"  {Y}Beer          {DG}-- Consumed at parties. Brings score bonuses.{RST}",
+        f"  {Y}Beer          {DG}-- Consumed at parties. Earns score bonuses.{RST}",
         # --- PAGE 4: Actions ---
         "",
         f"  {W}ACTIONS{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {G}[E]{DG} Explore  -- Scan the phone lines for new BBS nodes.{RST}",
-        f"  {DG}           Costs 2 turns. More nodes = more trade options.{RST}",
-        f"  {G}[T]{DG} Travel   -- Move your crew to another discovered node.{RST}",
+        f"  {G}[E]{DG} Explore  -- Scan phone lines for new BBS nodes.{RST}",
+        f"  {DG}           Costs 2 turns. More nodes = more deals.{RST}",
+        f"  {G}[T]{DG} Travel   -- Move crew to another discovered node.{RST}",
         f"  {DG}           Costs phone credits + 1 turn per hop.{RST}",
         f"  {G}[P]{DG} Produce  -- Use src/art/music to release a demo.{RST}",
-        f"  {DG}           Earns big reputation. Requires all 3 asset types.{RST}",
+        f"  {DG}           Earns reputation. Needs all 3 asset types.{RST}",
         f"  {G}[R]{DG} Raid     -- Attack a rival crew. Costs 5 turns.{RST}",
-        f"  {DG}           Win = steal resources + reputation. Lose = lose tools.{RST}",
-        f"  {G}[D]{DG} Defend   -- Fortify your home board against raids.{RST}",
-        f"  {DG}           Defense decays daily -- top it up regularly.{RST}",
-        f"  {G}[B]{DG} Trade    -- Buy and sell resources at the current node.{RST}",
-        f"  {DG}           Prices vary by node specialty. Travel to find deals.{RST}",
-        f"  {G}[C]{DG} Courier  -- Accept or deliver the daily courier mission.{RST}",
-        f"  {G}[W]{DG} Crew     -- View your full crew stats and resource levels.{RST}",
-        f"  {G}[O]{DG} Messages -- Read and post on the BBS oneliner wall.{RST}",
+        f"  {DG}           Win: steal resources + rep. Lose: lose tools.{RST}",
+        f"  {G}[D]{DG} Defend   -- Fortify your home board vs raids.{RST}",
+        f"  {DG}           Defense decays daily -- top it up often.{RST}",
+        f"  {G}[B]{DG} Trade    -- Buy/sell resources at current node.{RST}",
+        f"  {DG}           Prices vary by node specialty.{RST}",
+        f"  {G}[C]{DG} Courier  -- Accept or deliver the daily mission.{RST}",
+        f"  {G}[W]{DG} Crew     -- View crew stats and resource levels.{RST}",
+        f"  {G}[O]{DG} Messages -- Read and post on the oneliner wall.{RST}",
         # --- PAGE 5: Strategy tips ---
         "",
         f"  {W}STRATEGY TIPS{RST}",
         f"  {DG}{'='*50}{RST}",
-        f"  {DG}- Explore early. You cannot trade or raid what you cannot find.{RST}",
-        f"  {DG}- Each node has a specialty (art, code, music, hardware...).{RST}",
-        f"  {DG}  Buy cheap at the source node and sell elsewhere for profit.{RST}",
-        f"  {DG}- Always accept the courier mission. Easy reputation and credits.{RST}",
-        f"  {DG}- Raid only when your tools > your target's defense. Scout first{RST}",
-        f"  {DG}  on the crew screen. Use Blitz tactic for big hauls.{RST}",
-        f"  {DG}- Use Sneak tactic to reduce counter-raid risk after attacking.{RST}",
-        f"  {DG}- Defend your home board if your tools are high -- you will be{RST}",
-        f"  {DG}  targeted. Defense decays 10% per day so check it often.{RST}",
-        f"  {DG}- Attend parties when they appear -- they fire every ~12 days.{RST}",
-        f"  {DG}  Bring beer. The more you have the bigger the score bonus.{RST}",
-        f"  {DG}- Save turns for produce runs. A demo needs src+art+music so{RST}",
-        f"  {DG}  plan your supply chain across multiple boards.{RST}",
-        f"  {DG}- Reputation decays slowly. Keep releasing and raiding to stay{RST}",
-        f"  {DG}  at the top of the leaderboard on final scoring day 50.{RST}",
+        f"  {DG}- Explore early. Can't trade or raid what you haven't{RST}",
+        f"  {DG}  found. More nodes = more price arbitrage options.{RST}",
+        f"  {DG}- Each node has a specialty (art, code, music, hw).{RST}",
+        f"  {DG}  Buy cheap at source and sell elsewhere for profit.{RST}",
+        f"  {DG}- Always take the courier mission. Easy rep + credits.{RST}",
+        f"  {DG}- Raid only when your tools > the target's defense.{RST}",
+        f"  {DG}  Scout on the crew screen. Blitz tactic = big hauls.{RST}",
+        f"  {DG}- Use Sneak tactic to cut counter-raid risk.{RST}",
+        f"  {DG}- Defend your home board when your tools are high.{RST}",
+        f"  {DG}  Defense decays 10% per day -- check it often.{RST}",
+        f"  {DG}- Attend parties every ~12 days. Bring beer.{RST}",
+        f"  {DG}  More beer = bigger score bonus at the party.{RST}",
+        f"  {DG}- Save turns for produce runs. Demo = src+art+music.{RST}",
+        f"  {DG}  Plan your supply chain across multiple boards.{RST}",
+        f"  {DG}- Reputation decays slowly. Keep releasing and raiding{RST}",
+        f"  {DG}  to stay top of the leaderboard through day 50.{RST}",
     ]
 
-    text_start = MENU_TOP   # row 10
-    view_h  = STATUS_DIV - text_start  # rows 10-22 = 13 visible rows
     n_lines = len(lines)
     max_off = max(0, n_lines - view_h)
     offset  = 0
 
+    def wt(row, text):
+        """Write text at col TEXT_COL, padded to TEXT_W, no ERASE_LINE."""
+        move(row, TEXT_COL)
+        truncated = _truncate_ansi(text, TEXT_W)
+        vis = len(re.sub(r'\x1b\[[0-9;]*m', '', truncated))
+        _out(truncated + RST + " " * max(0, TEXT_W - vis))
+
     def redraw(full=False):
         if full:
             clear_screen()
-            draw_art_abs("helpbak")
+            draw_art("helpbak")
         for i in range(view_h):
             idx = offset + i
-            write_at(text_start + i, 1, lines[idx] if idx < n_lines else "")
-        nav = (f"  {C}[{RST}{W}UP{RST}{C}/{RST}{W}DN{RST}{C}]{DG} Scroll"
+            wt(text_start + i, lines[idx] if idx < n_lines else "")
+        nav = (f"{C}[{RST}{W}UP{RST}{C}/{RST}{W}DN{RST}{C}]{DG} Scroll"
                f"  {C}[{RST}{W}Q{RST}{C}]{DG} Back"
                f"  {DG}{offset+1}-{min(offset+view_h, n_lines)}/{n_lines}{RST}")
-        move(STATUS_DIV, 1); _out(ERASE_LINE); _out(nav)
-        clear_line(STATUS)
+        wt(NAV_ROW, nav)
         hide_cursor()
 
     redraw(full=True)
