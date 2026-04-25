@@ -1248,6 +1248,41 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
             ("Crunching         ", C,  2.0),
             ("Final size check  ", Y,  1.0),
         ],
+        "ansipack" : [
+            ("Loading TheDraw   ", G,  1.0),
+            ("Drawing title blk ", G,  2.0),
+            ("Adding iCE colors ", C,  1.5),
+            ("Laying pipe codes ", G,  1.5),
+            ("Writing FILE_ID   ", Y,  1.0),
+            ("Adding SAUCE rec  ", C,  1.0),
+            ("Packing to ZIP    ", C,  1.2),
+        ],
+        "modmusic"  : [
+            ("Loading FT2       ", G,  1.0),
+            ("Composing pattern ", G,  2.5),
+            ("Sampling drums    ", G,  2.0),
+            ("Programming FX    ", C,  1.5),
+            ("Mixing channels   ", G,  2.0),
+            ("Saving .MOD       ", C,  1.0),
+        ],
+        "chiptune"  : [
+            ("Init OPL2 regs    ", G,  1.0),
+            ("Composing lead    ", G,  1.5),
+            ("Writing bassline  ", G,  1.5),
+            ("AdLib FM patches  ", C,  1.5),
+            ("Testing on OPL3   ", Y,  1.2),
+            ("Saving .IMF       ", C,  1.0),
+        ],
+        "wild"      : [
+            ("Booting capture   ", G,  1.0),
+            ("Recording footage ", G,  3.0),
+            ("Digitizing video  ", G,  2.5),
+            ("Compositing       ", C,  2.5),
+            ("Encoding AVI      ", G,  2.0),
+            ("VGA sync check    ", Y,  1.5),
+            ("Burning to VHS    ", C,  1.5),
+            ("Final render      ", Y,  2.0),
+        ],
     }
 
     # Humorous interruptions — shown randomly between steps
@@ -1294,8 +1329,19 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
     clear_zone(MENU_TOP, RES_BOT)
     draw_divider(STATUS_DIV)
 
+    _subtitles = {
+        "cracktro" : "Crack that loader. Make it pretty.",
+        "4k"       : "4096 bytes. Not one more.",
+        "64k"      : "64 kilobytes of pure machine poetry.",
+        "musicdisk": "Tracker patterns. Samples. Glory.",
+        "demo"     : "Firing up the toolchain. Do not disturb.",
+        "ansipack" : "TheDraw open. Pipe codes ready. iCE colors loaded.",
+        "modmusic" : "FastTracker II. 4 channels. No excuses.",
+        "chiptune" : "OPL2 registers. FM synthesis. BeepBoop.",
+        "wild"     : "Camera rolling. Capture card warm. Scene watching.",
+    }
     write_at(MENU_TOP,     1, f"  {C}PRODUCING:{RST} {W}{label}{RST}")
-    write_at(MENU_TOP + 1, 1, f"  {DG}Firing up the toolchain. Do not disturb.{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}{_subtitles.get(dkey, 'Firing up the toolchain.')}{RST}")
     draw_divider(DIV_3)
 
     # Column header for the progress area
