@@ -1197,6 +1197,256 @@ PROD_DETAIL    = RES_BOT - 1    # row 21: confirmation detail (1 line)
 PROD_PROMPT    = RES_BOT        # row 22: [1-8]/[Y/Q] prompt
 
 
+_PROD_STEP_POOLS = {
+    "cracktro": [
+        ("Firing up TASM    ", G, 1.2),
+        ("Loading A86       ", G, 1.0),
+        ("Loading MASM      ", G, 1.0),
+        ("Opening SoftICE   ", R, 1.5),
+        ("Loading TurboDgbr ", R, 1.3),
+        ("Patching bytes    ", R, 1.5),
+        ("Bypassing serial  ", R, 1.8),
+        ("Stripping nag scr ", R, 1.5),
+        ("Writing intro code", G, 1.5),
+        ("Timing raster bar ", Y, 1.2),
+        ("Tweaking scroll   ", Y, 1.0),
+        ("Testing on 8088   ", Y, 1.0),
+        ("Testing on 286    ", Y, 1.0),
+        ("Compiling         ", G, 1.5),
+        ("Linking           ", G, 1.0),
+        ("Crunching         ", C, 1.2),
+    ],
+    "4k": [
+        ("Loading NASM      ", G, 1.0),
+        ("Loading FASM      ", G, 1.0),
+        ("Loading TASM      ", G, 1.0),
+        ("Hand-tuning ops   ", G, 2.0),
+        ("Removing dead code", Y, 1.5),
+        ("Inlining routines ", G, 1.5),
+        ("Repacking strings ", C, 1.2),
+        ("Reusing registers ", G, 1.3),
+        ("Compiling         ", G, 2.0),
+        ("Linking           ", G, 1.5),
+        ("Running Crinkler  ", C, 2.5),
+        ("Running kkrunchy  ", C, 2.5),
+        ("Running UPX       ", C, 1.8),
+        ("Size check        ", Y, 1.0),
+        ("Over by 12 bytes  ", R, 1.5),
+        ("Removing newlines ", Y, 1.0),
+        ("Crunching to 4096b", C, 2.5),
+    ],
+    "64k": [
+        ("Booting MSDOS     ", G, 1.0),
+        ("Loading DJGPP     ", G, 1.2),
+        ("Loading Watcom C  ", G, 1.2),
+        ("Loading TASM      ", G, 1.0),
+        ("Coding plasma     ", G, 2.0),
+        ("Coding starfield  ", G, 1.5),
+        ("Coding tunnel     ", G, 2.0),
+        ("Coding metaballs  ", G, 2.0),
+        ("Adding copper bars", C, 1.5),
+        ("Raster interrupt  ", C, 1.3),
+        ("Scrolltext timing ", Y, 1.2),
+        ("GUS sound init    ", G, 1.0),
+        ("HMI sound init    ", G, 1.0),
+        ("Compiling         ", G, 2.5),
+        ("Linking           ", G, 2.0),
+        ("Running effects   ", G, 1.5),
+        ("Crunching to 64kb ", C, 2.5),
+        ("Size check        ", Y, 1.0),
+    ],
+    "musicdisk": [
+        ("Loading FT2       ", G, 1.0),
+        ("Loading ProTracker", G, 1.0),
+        ("Loading ScrmTrk 3 ", G, 1.0),
+        ("Loading ImpulseTrk", G, 1.0),
+        ("Loading OctaMED   ", G, 1.0),
+        ("Loading MadTracker", G, 1.0),
+        ("Composing pattern ", G, 2.5),
+        ("Sampling drums    ", G, 2.0),
+        ("Writing lead      ", G, 1.8),
+        ("Writing bassline  ", G, 1.5),
+        ("Programming FX    ", C, 1.5),
+        ("Looping samples   ", G, 1.5),
+        ("Mixing channels   ", G, 2.0),
+        ("Building player   ", C, 1.5),
+        ("Packing           ", C, 1.5),
+    ],
+    "demo": [
+        ("Booting machine   ", G, 1.0),
+        ("Loading DJGPP     ", G, 1.2),
+        ("Loading Watcom C  ", G, 1.2),
+        ("Loading TASM      ", G, 1.0),
+        ("Coding plasma     ", G, 2.5),
+        ("Coding metaballs  ", G, 2.5),
+        ("Coding bump map   ", G, 2.5),
+        ("Coding voxels     ", G, 2.5),
+        ("Coding phong shade", G, 2.5),
+        ("Coding starfield  ", G, 1.5),
+        ("GUS sound init    ", G, 1.0),
+        ("DirectSound init  ", G, 1.0),
+        ("Compiling effects ", G, 3.5),
+        ("Compiling music   ", G, 2.5),
+        ("Linking           ", G, 2.0),
+        ("Running test      ", Y, 2.0),
+        ("Fixing last bug   ", R, 2.5),
+        ("Crunching         ", C, 2.0),
+        ("Final size check  ", Y, 1.0),
+    ],
+    "ansipack": [
+        ("Loading TheDraw   ", G, 1.0),
+        ("Loading ACiDDraw  ", G, 1.0),
+        ("Loading PabloDraw ", G, 1.0),
+        ("Loading ANSIEdit  ", G, 1.0),
+        ("Drawing crew logo ", G, 2.0),
+        ("Drawing title blk ", G, 2.0),
+        ("Drawing BBS art   ", G, 1.8),
+        ("Laying pipe codes ", G, 1.5),
+        ("Enabling iCE color", C, 1.5),
+        ("80-col grid check ", Y, 1.0),
+        ("Writing member bio", Y, 1.2),
+        ("EOF art           ", G, 1.0),
+        ("Writing FILE_ID   ", Y, 1.0),
+        ("Adding SAUCE rec  ", C, 1.0),
+        ("CP437 verify      ", Y, 0.8),
+        ("Packing to ZIP    ", C, 1.2),
+        ("Packing to LHA    ", C, 1.2),
+    ],
+    "modmusic": [
+        ("Loading FT2       ", G, 1.0),
+        ("Loading ProTracker", G, 1.0),
+        ("Loading ScrmTrk 3 ", G, 1.0),
+        ("Loading ImpulseTrk", G, 1.0),
+        ("Loading ModPlug   ", G, 1.0),
+        ("Loading OctaMED   ", G, 1.0),
+        ("Composing lead    ", G, 2.0),
+        ("Writing bassline  ", G, 1.8),
+        ("Programming drums ", G, 2.0),
+        ("Writing arpeggios ", C, 1.5),
+        ("Adding channel FX ", C, 1.5),
+        ("Looping samples   ", G, 1.5),
+        ("Mixing 4 channels ", G, 2.0),
+        ("Mixing 8 channels ", G, 2.0),
+        ("Saving .MOD       ", C, 1.0),
+        ("Saving .IT        ", C, 1.0),
+        ("Saving .S3M       ", C, 1.0),
+    ],
+    "chiptune": [
+        ("Loading AdLib Trk ", G, 1.0),
+        ("Loading GoatTrackr", G, 1.0),
+        ("Loading OPL2LPT   ", G, 1.0),
+        ("Loading AdLibEdit ", G, 1.0),
+        ("Init OPL2 regs    ", G, 1.2),
+        ("Init OPL3 regs    ", G, 1.2),
+        ("FM patch design   ", C, 1.5),
+        ("Operator tuning   ", C, 1.3),
+        ("Composing lead    ", G, 1.5),
+        ("Writing bassline  ", G, 1.5),
+        ("Arpeggio sequence ", C, 1.5),
+        ("Percussion patches", G, 1.3),
+        ("Noise channel     ", G, 1.2),
+        ("Testing on AdLib  ", Y, 1.0),
+        ("Testing on SB16   ", Y, 1.2),
+        ("Testing on OPL3   ", Y, 1.2),
+        ("Saving .IMF       ", C, 1.0),
+        ("Saving .OPL       ", C, 1.0),
+    ],
+    "wild": [
+        ("Warming cap card  ", G, 1.0),
+        ("Loading Premiere  ", G, 1.2),
+        ("Loading VirtualDub", G, 1.2),
+        ("Genlock init      ", G, 1.0),
+        ("Rolling camera    ", G, 2.0),
+        ("Recording footage ", G, 3.0),
+        ("Digitizing video  ", G, 2.5),
+        ("Capturing frames  ", G, 2.0),
+        ("Overlaying gfx    ", C, 2.0),
+        ("Compositing       ", C, 2.5),
+        ("Color grading     ", Y, 1.5),
+        ("Encoding AVI      ", G, 2.0),
+        ("MPEG compression  ", G, 2.0),
+        ("VGA sync check    ", Y, 1.5),
+        ("Burning to VHS    ", C, 1.5),
+        ("Final render      ", Y, 2.0),
+    ],
+}
+
+_PROD_SUBTITLE_POOLS = {
+    "cracktro": [
+        "Crack that loader. Make it pretty.",
+        "Protection stripped. Intro time.",
+        "SoftICE loaded. Let the cracking begin.",
+        "Bypassing the nag screen with style.",
+        "Serial check? Not anymore.",
+        "Patch two bytes. Ship the intro.",
+    ],
+    "4k": [
+        "4096 bytes. Not one more.",
+        "Every byte counts. Every. Single. Byte.",
+        "Crinkler running. Pray to the compression gods.",
+        "Fitting a universe into 4 kilobytes.",
+        "Hand-tuned opcodes. Size paranoia.",
+        "Over by 12 bytes. Again.",
+    ],
+    "64k": [
+        "64 kilobytes of pure machine poetry.",
+        "DJGPP loaded. Effects incoming.",
+        "Watcom C. Mode-X. No mercy.",
+        "Plasma. Tunnels. Copper bars. The full menu.",
+        "64k and not a byte wasted.",
+        "Raster interrupts. The way it was meant to be.",
+    ],
+    "musicdisk": [
+        "Tracker patterns. Samples. Glory.",
+        "FastTracker II open. Patterns composing.",
+        "ProTracker loaded. Four channels of soul.",
+        "Impulse Tracker. More channels. More pain.",
+        "16 patterns. 32 instruments. One night.",
+        "Samples loaded. Let the tracking begin.",
+    ],
+    "demo": [
+        "Firing up the toolchain. Do not disturb.",
+        "Effects coded. Music written. History incoming.",
+        "Plasma, metaballs, bump map. The classics.",
+        "DJGPP loaded. This will take a while.",
+        "One last debug pass. Then glory.",
+        "The machine obeys. Barely.",
+    ],
+    "ansipack": [
+        "TheDraw open. Pipe codes ready. iCE colors loaded.",
+        "ACiDDraw ready. 80 columns. No limits.",
+        "PabloDraw loaded. CP437 charset. Let's draw.",
+        "iCE colors enabled. SAUCE record waiting.",
+        "Block characters. Pipe codes. ANSI artistry.",
+        "The scene runs on ASCII. You run the scene.",
+    ],
+    "modmusic": [
+        "FastTracker II. 4 channels. No excuses.",
+        "ProTracker loaded. Samples cued up.",
+        "Impulse Tracker open. 32 channels ready.",
+        "ScreamTracker 3. Pure scene sound.",
+        "Patterns written in the dark. As it should be.",
+        "The bassline writes itself at 3am.",
+    ],
+    "chiptune": [
+        "OPL2 registers. FM synthesis. BeepBoop.",
+        "AdLib card detected. OPL2 init sequence running.",
+        "GoatTracker loaded. SID emulation standing by.",
+        "OPL3 found. Extra operators engaged.",
+        "FM patches dialed in. Square waves incoming.",
+        "Three operators. One voice. Pure geometry.",
+    ],
+    "wild": [
+        "Camera rolling. Capture card warm. Scene watching.",
+        "VHS in the deck. Genlock active. Go.",
+        "Premiere 1.0 loaded. Timeline empty. Not for long.",
+        "VirtualDub open. Codec wars begin now.",
+        "Whatever this is, it goes in the wild compo.",
+        "No rules. No categories. Pure scene energy.",
+    ],
+}
+
+
 def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=None):
     """
     Full-screen production animation.
@@ -1206,84 +1456,6 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
     import random as _rnd
     if rng is None:
         rng = _rnd.Random()
-
-    # Steps per demo type — each is (label, bar_colour, duration)
-    # More complex demos have more steps and longer durations
-    STEPS = {
-        "cracktro" : [
-            ("Firing up TASM    ", G,  1.2),
-            ("Compiling         ", G,  1.5),
-            ("Linking           ", G,  1.0),
-            ("Crunching         ", C,  1.2),
-        ],
-        "4k"       : [
-            ("Loading editor    ", G,  1.0),
-            ("Compiling         ", G,  2.0),
-            ("Linking           ", G,  1.5),
-            ("Crunching to 4096b", C,  2.5),
-            ("Size check        ", Y,  1.0),
-        ],
-        "64k"      : [
-            ("Booting MSDOS     ", G,  1.0),
-            ("Compiling         ", G,  2.5),
-            ("Linking           ", G,  2.0),
-            ("Running effects   ", G,  1.5),
-            ("Crunching to 64kb ", C,  2.5),
-            ("Size check        ", Y,  1.0),
-        ],
-        "musicdisk" : [
-            ("Loading tracker   ", G,  1.0),
-            ("Rendering MODs    ", G,  3.0),
-            ("Encoding          ", G,  2.0),
-            ("Building player   ", C,  1.5),
-            ("Packing           ", C,  1.5),
-        ],
-        "demo"     : [
-            ("Booting machine   ", G,  1.0),
-            ("Compiling effects ", G,  3.5),
-            ("Compiling music   ", G,  2.5),
-            ("Linking           ", G,  2.0),
-            ("Running test      ", Y,  2.0),
-            ("Fixing last bug   ", R,  2.5),
-            ("Crunching         ", C,  2.0),
-            ("Final size check  ", Y,  1.0),
-        ],
-        "ansipack" : [
-            ("Loading TheDraw   ", G,  1.0),
-            ("Drawing title blk ", G,  2.0),
-            ("Adding iCE colors ", C,  1.5),
-            ("Laying pipe codes ", G,  1.5),
-            ("Writing FILE_ID   ", Y,  1.0),
-            ("Adding SAUCE rec  ", C,  1.0),
-            ("Packing to ZIP    ", C,  1.2),
-        ],
-        "modmusic"  : [
-            ("Loading FT2       ", G,  1.0),
-            ("Composing pattern ", G,  2.5),
-            ("Sampling drums    ", G,  2.0),
-            ("Programming FX    ", C,  1.5),
-            ("Mixing channels   ", G,  2.0),
-            ("Saving .MOD       ", C,  1.0),
-        ],
-        "chiptune"  : [
-            ("Init OPL2 regs    ", G,  1.0),
-            ("Composing lead    ", G,  1.5),
-            ("Writing bassline  ", G,  1.5),
-            ("AdLib FM patches  ", C,  1.5),
-            ("Testing on OPL3   ", Y,  1.2),
-            ("Saving .IMF       ", C,  1.0),
-        ],
-        "wild"      : [
-            ("Booting capture   ", G,  1.0),
-            ("Recording footage ", G,  3.0),
-            ("Digitizing video  ", G,  2.5),
-            ("Compositing       ", C,  2.5),
-            ("Encoding AVI      ", G,  2.0),
-            ("VGA sync check    ", Y,  1.5),
-            ("Burning to VHS    ", C,  1.5),
-            ("Final render      ", Y,  2.0),
-        ],
-    }
 
     # Humorous interruptions — shown randomly between steps
     INTERRUPTIONS = [
@@ -1304,7 +1476,14 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
         (f"{C}IRQ conflict. Rearranging jumpers.{RST}",   2.5),
     ]
 
-    steps = STEPS.get(dkey, STEPS["4k"])
+    # Random subset from pool — always keep first item, randomly include rest
+    pool = _PROD_STEP_POOLS.get(dkey, _PROD_STEP_POOLS["4k"])
+    steps = [pool[0]]
+    for step in pool[1:]:
+        if rng.random() < 0.65:
+            steps.append(step)
+    if len(steps) < 3:
+        steps = pool[:4]
     BAR_ROW   = RES_TOP + 2   # single row for all progress bars
     LOG_START = RES_TOP + 4   # scrolling log below the bar
     LOG_LINES = 4             # how many log lines to show
@@ -1329,19 +1508,9 @@ def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=N
     clear_zone(MENU_TOP, RES_BOT)
     draw_divider(STATUS_DIV)
 
-    _subtitles = {
-        "cracktro" : "Crack that loader. Make it pretty.",
-        "4k"       : "4096 bytes. Not one more.",
-        "64k"      : "64 kilobytes of pure machine poetry.",
-        "musicdisk": "Tracker patterns. Samples. Glory.",
-        "demo"     : "Firing up the toolchain. Do not disturb.",
-        "ansipack" : "TheDraw open. Pipe codes ready. iCE colors loaded.",
-        "modmusic" : "FastTracker II. 4 channels. No excuses.",
-        "chiptune" : "OPL2 registers. FM synthesis. BeepBoop.",
-        "wild"     : "Camera rolling. Capture card warm. Scene watching.",
-    }
+    subtitle = rng.choice(_PROD_SUBTITLE_POOLS.get(dkey, ["Firing up the toolchain."]))
     write_at(MENU_TOP,     1, f"  {C}PRODUCING:{RST} {W}{label}{RST}")
-    write_at(MENU_TOP + 1, 1, f"  {DG}{_subtitles.get(dkey, 'Firing up the toolchain.')}{RST}")
+    write_at(MENU_TOP + 1, 1, f"  {DG}{subtitle}{RST}")
     draw_divider(DIV_3)
 
     # Column header for the progress area
