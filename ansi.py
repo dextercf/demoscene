@@ -474,7 +474,7 @@ def screen_tutorial():
     def redraw(full=False):
         if full:
             clear_screen()
-            draw_art("helptop")
+            draw_art("helpbak")
         for i in range(view_h):
             idx = offset + i
             write_at(text_start + i, 1, lines[idx] if idx < n_lines else "")
