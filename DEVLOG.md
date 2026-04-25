@@ -18,6 +18,40 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-25  —  helpbak.ans full-screen background for tutorial
+
+### Changes
+
+**Tutorial help screen: full-screen art background (ansi.py, art/helpbak.ans)**
+  helpbak.ans is now used as a full-screen background (25 rows) behind the
+  scrollable help text. Significant investigation into the art file format:
+
+  - Art file structure: 5 CRLF-split rows. Row 1-2 = logo (53/79 vis chars,
+    no wrap). Row 3 = 1679-char background row that wraps across terminal rows
+    3-23. Row 4 = bottom border at row 24. Row 5 = row 25. Designed for raw
+    sequential dump from row 1 on a 25-row terminal — no scroll.
+  - `draw_art_abs()` added but NOT used for helpbak — it uses absolute
+    row positioning which destroys row 3's intentional multi-row wrap.
+  - `draw_art("helpbak")` raw dump is correct. Called once on full=True
+    only; scroll repaints only text rows, art persists untouched.
+  - Column markers (`\x1b[31m123456789\x1b[37m`) found in rows 2-20 of the
+    old helpbak.ans — stripped programmatically, then user replaced file.
+
+  Text layout constrained to art frame interior:
+  - `TEXT_COL=4`, `TEXT_W=60` (cols 4-63, inside art border at col 65)
+  - `text_start=6` (row 6, inside top frame), `view_h=17` (rows 6-22)
+  - Nav bar at row 23, same bounded write
+  - `wt()` helper: writes padded text with no ERASE_LINE — preserves art
+    borders at cols 1-3 and 66-80 on every scroll redraw
+  - All text lines rewrapped to ≤60 visible chars to fit new column width
+
+### Resume here next session
+Priority 1: BBS test — helpbak.ans background renders correctly, text scrolls
+  within frame, no art corruption on scroll
+Priority 2: Party screen debug + polish pass
+
+---
+
 ## 2026-04-25  —  Production expansion, trade polish
 
 ### Changes
