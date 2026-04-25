@@ -1133,10 +1133,9 @@ def screen_trade(player, node):
 
 
 # Row constants for produce screen — used by both ansi.py and game.py
-PROD_LIST_TOP  = RES_TOP        # rows 14-18: the 5 demo options
-PROD_DIVIDER   = RES_TOP + 5    # row 19: divider between list and detail
-PROD_DETAIL    = RES_TOP + 6    # rows 20-21: confirmation detail
-PROD_PROMPT    = RES_BOT        # row 22: [1-5]/[Y/Q] prompt
+PROD_LIST_TOP  = DIV_3          # rows 13-20: the 8 demo options (DIV_3 cleared)
+PROD_DETAIL    = RES_BOT - 1    # row 21: confirmation detail (1 line)
+PROD_PROMPT    = RES_BOT        # row 22: [1-8]/[Y/Q] prompt
 
 
 def screen_produce_animation(label, dkey, gained, failed, rival_name=None, rng=None):
@@ -1376,6 +1375,9 @@ def _produce_upload_sequence(label, dkey, rng):
         "64k"      : 64,
         "musicdisk": rng.randint(120, 400),
         "demo"     : rng.randint(400, 1200),
+        "ansipack" : rng.randint(20,  80),
+        "modmusic" : rng.randint(100, 300),
+        "chiptune" : rng.randint(10,  50),
     }
     kb       = sizes.get(dkey, rng.randint(10, 100))
     ext      = rng.choice([".zip", ".lha", ".arj"])
@@ -1525,12 +1527,15 @@ def screen_produce(player, detail_lines=None, prompt=None):
     screen_base("produce", player, player.bbs_name)
 
     demos = [
-        ("1", "Cracktro",  {"source_code": 50,  "artwork": 20},         40,  5),
-        ("2", "4K Intro",  {"source_code": 120, "artwork": 40},        120, 10),
-        ("3", "64K Intro", {"source_code": 200, "artwork": 80},        280, 15),
-        ("4", "Musicdisk", {"source_code": 80,  "mod_music": 300},     200, 10),
-        ("5", "Full Demo", {"source_code": 400, "artwork": 200,
-                            "mod_music": 150},                          600, 20),
+        ("1", "Cracktro",      {"source_code": 50,  "artwork": 20},         40,  5),
+        ("2", "4K Intro",      {"source_code": 120, "artwork": 40},        120, 10),
+        ("3", "64K Intro",     {"source_code": 200, "artwork": 80},        280, 15),
+        ("4", "Musicdisk",     {"source_code": 80,  "mod_music": 300},     200, 10),
+        ("5", "Full Demo",     {"source_code": 400, "artwork": 200,
+                                "mod_music": 150},                          600, 20),
+        ("6", "ANSI Art Pack", {"artwork": 150},                            60,  8),
+        ("7", "MOD Music",     {"mod_music": 200},                          80, 10),
+        ("8", "Chiptune",      {"mod_music": 80},                           40,  8),
     ]
 
     # MENU zone — resources (row 10), column headers (row 11)
@@ -1547,7 +1552,7 @@ def screen_produce(player, detail_lines=None, prompt=None):
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
     move(DIV_3, 1); _out(ERASE_LINE)
 
-    # RES zone — demo list (rows 14-18)
+    # List zone — rows 13-20 (8 entries, DIV_3 cleared above)
     for i, (key, label, costs, rep, fail_pct) in enumerate(demos):
         row = PROD_LIST_TOP + i
         can      = player.can_afford(costs)
@@ -1556,28 +1561,22 @@ def screen_produce(player, detail_lines=None, prompt=None):
         cost_str = "  ".join(f"{v}{k[:3]}" for k, v in costs.items())
         move(row, 1); _out(ERASE_LINE)
         _out(f"  {key_col}[{key}]{RST}"
-             f" {col}{label:<13}{RST}"
+             f" {col}{label:<14}{RST}"
              f"  {DG}{cost_str:<26}{RST}"
              f"  {Y if can else DG}+{rep:<4}{RST}"
              f"  {R if fail_pct >= 15 else DG}{fail_pct:>4}%{RST}")
 
-    # Divider below list (row 19)
-    move(PROD_DIVIDER, 1)
-    _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
-
-    # Detail area (rows 20-21) — filled by game.py after selection, blank by default
-    for row in range(PROD_DETAIL, PROD_PROMPT):
-        move(row, 1); _out(ERASE_LINE)
+    # Detail row (row 21) — filled by game.py after selection, blank by default
+    move(PROD_DETAIL, 1); _out(ERASE_LINE)
     if detail_lines:
-        for i, line in enumerate(detail_lines[:2]):
-            move(PROD_DETAIL + i, 1); _out(ERASE_LINE); _out(line)
+        _out(detail_lines[0])
 
     # Prompt row (row 22)
     move(PROD_PROMPT, 1); _out(ERASE_LINE)
     if prompt:
         _out(prompt)
     else:
-        _out(f"  {C}[{RST}{W}1-5{RST}{C}]{RST} {DG}Select{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+        _out(f"  {C}[{RST}{W}1-8{RST}{C}]{RST} {DG}Select{RST}  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
 
 def screen_raid_targets(player, targets):

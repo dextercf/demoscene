@@ -317,11 +317,17 @@ def action_produce(player, world, cfg, rng):
          {"source_code": 80,  "mod_music": 300}, 200),
         ("demo",      "Full Demo",
          {"source_code": 400, "artwork": 200, "mod_music": 150}, 600),
+        ("ansipack",  "ANSI Art Pack",
+         {"artwork": 150},  60),
+        ("modmusic",  "MOD Music",
+         {"mod_music": 200}, 80),
+        ("chiptune",  "Chiptune",
+         {"mod_music": 80},  40),
     ]
 
     while True:
         ansi.screen_produce(player)
-        key = ansi.get_key(valid_keys="12345Qq").upper()
+        key = ansi.get_key(valid_keys="12345678Qq").upper()
         if key == "Q":
             return
 
@@ -334,32 +340,30 @@ def action_produce(player, world, cfg, rng):
         from player import RESOURCE_NAMES
         cost_parts = [f"{v} {RESOURCE_NAMES.get(k, k)}" for k, v in costs.items()]
         cost_str   = "  +  ".join(cost_parts)
-        fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20}.get(dkey,10)
+        fail_pct   = {"cracktro":5,"4k":10,"64k":15,"musicdisk":10,"demo":20,"ansipack":8,"modmusic":10,"chiptune":8}.get(dkey,10)
 
-        detail1 = (f"  {ansi.C}{label}{ansi.RST}  —  "
-                   f"costs: {ansi.Y}{cost_str}{ansi.RST}")
-        detail2 = (f"  Gain: {ansi.G}~{base_rep} rep{ansi.RST}  "
-                   f"Fail: {ansi.R}{fail_pct}%{ansi.RST}  "
-                   f"Turns: {ansi.Y}3{ansi.RST}")
+        detail = (f"  {ansi.C}{label}{ansi.RST}  "
+                  f"{ansi.DG}costs:{ansi.RST} {ansi.Y}{cost_str}{ansi.RST}  "
+                  f"{ansi.DG}gain:{ansi.RST} {ansi.G}~{base_rep}rep{ansi.RST}  "
+                  f"{ansi.DG}fail:{ansi.RST} {ansi.R}{fail_pct}%{ansi.RST}  "
+                  f"{ansi.DG}turns:{ansi.RST} {ansi.Y}3{ansi.RST}")
 
         if not player.can_afford(costs):
             ansi.screen_produce(player,
-                detail_lines=[detail1,
-                    f"  {ansi.R}Not enough resources.{ansi.RST}"],
+                detail_lines=[f"  {ansi.R}Not enough resources — {cost_str}{ansi.RST}"],
                 prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
             ansi.get_key()
             continue
 
         if player.turns_remaining < 3:
             ansi.screen_produce(player,
-                detail_lines=[detail1,
-                    f"  {ansi.R}Not enough turns — costs 3.{ansi.RST}"],
+                detail_lines=[f"  {ansi.R}Not enough turns — costs 3.{ansi.RST}"],
                 prompt=f"  {ansi.DG}Press any key to go back...{ansi.RST}")
             ansi.get_key()
             continue
 
         ansi.screen_produce(player,
-            detail_lines=[detail1, detail2],
+            detail_lines=[detail],
             prompt=(f"  {ansi.C}[Y]{ansi.RST} Produce  "
                     f"{ansi.C}[Q]{ansi.RST} Cancel: "))
         confirm = ansi.get_key(valid_keys="YQyq").upper()
@@ -370,7 +374,7 @@ def action_produce(player, world, cfg, rng):
         player.spend(costs)
 
         luck        = rng.uniform(0.8, 1.2)
-        fail_chance = {"cracktro":0.05,"4k":0.10,"64k":0.15,"musicdisk":0.10,"demo":0.20}
+        fail_chance = {"cracktro":0.05,"4k":0.10,"64k":0.15,"musicdisk":0.10,"demo":0.20,"ansipack":0.08,"modmusic":0.10,"chiptune":0.08}
         failed      = rng.random() < fail_chance.get(dkey, 0.10)
         gained      = 0 if failed else int(base_rep * luck)
         rival_name  = None
