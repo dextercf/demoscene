@@ -1364,7 +1364,7 @@ def _produce_upload_sequence(label, dkey, rng):
     Includes virus scan and file_id.diz verification steps.
     """
     # Home board is always first, then a random affiliate
-    boards_to_dial = [_HOME_BOARD, rng.choice(_RELEASE_BOARDS)]
+    boards_to_dial = [_HOME_BOARD]
     sysop_reply  = rng.choice(_SYSOP_REACTIONS)
     av_name, av_result = rng.choice(_VIRUS_SCANNERS)
     connect      = rng.choice(_CONNECT_STRINGS)
@@ -1509,7 +1509,6 @@ def _produce_upload_sequence(label, dkey, rng):
     write_at(RES_TOP,     1, f"  {W}{label}{RST}")
     write_at(RES_TOP + 1, 1, f"  {DG}File:     {RST}{C}{filename}{RST}  {DG}({kb}kb){RST}")
     write_at(RES_TOP + 2, 1, f"  {DG}Listed on:{RST} {G}{boards_to_dial[0][0]}{RST}")
-    write_at(RES_TOP + 3, 1, f"  {DG}Spread to:{RST} {G}{boards_to_dial[1][0]}{RST}")
     write_at(RES_TOP + 5, 1, f"  {Y}{sysop_reply}{RST}")
     move(RES_BOT - 1, 1); _out(DG + b"\xc4".decode("cp437") * (SCREEN_W - 1) + RST)
     write_at(RES_BOT, 1, f"  {DG}Press any key to continue...{RST}")
