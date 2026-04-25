@@ -18,6 +18,45 @@ Raw file links (paste directly into Claude chat to fetch):
 
 ---
 
+## 2026-04-25  —  Production expansion, trade polish
+
+### Changes
+
+**Production screen: 9 production types (ansi.py, game.py)**
+  Added ANSI Art Pack, MOD Music, Chiptune, Wild Demo to the produce menu.
+  - Costs: ansipack=150art, modmusic=200mod, chiptune=80mod,
+    wild=300src+250art+200mod
+  - Rep gains: 60 / 80 / 40 / 900. Fail rates: 8% / 10% / 8% / 25%.
+  - Upload sizes added to `_produce_upload_sequence` sizes dict.
+  - List layout extended: `PROD_LIST_TOP` moved to `DIV_3` (row 13),
+    giving rows 13-21 for 9 items. Detail row overlays Wild Demo row
+    only on confirmation/error (not on default list view).
+  - Default prompt updated to `[1-9]`.
+  - Distro now dials home board only (removed random affiliate dial).
+
+**Trade menu: quantity UX (game.py)**
+  - Buy with 0 credits: immediate error on RES_BOT with `[any key]` prompt,
+    no quantity input shown.
+  - Buy prompt: `How many (max: N)?` where N = credits // price; input clamped.
+  - Sell prompt: same pattern, max = current stock; immediate error if stock=0.
+  - Fixed error messages vanishing: replaced `result() + continue` with
+    `write_at(RES_BOT) + get_key()` so messages survive the screen redraw.
+
+**Courier help screen (ansi.py)**
+  Text now starts at MENU_TOP (row 10, just after DIV_1) instead of RES_TOP.
+  Removed divider that would collide with last line.
+
+### Resume here next session
+Priority 1: BBS test — new productions, trade quantity prompts, courier help placement
+
+---
+
+## Future improvements
+
+- Increase node_count from 20 to 30 for better mid/late-game exploration variety
+
+---
+
 ## 2026-04-24  —  Title lightbar menu + help screen scrolling
 
 ### Changes
