@@ -1052,30 +1052,90 @@ def screen_courier_complete(player, mission):
 
 
 def screen_courier_help(player):
-    """Courier help screen — explains the mechanic."""
-    screen_base("courier", player, player.bbs_name)
-    clear_line(DIV_3)
-
+    """Courier help screen — scrollable, detailed."""
     lines = [
-        f"  {C}How courier jobs work:{RST}",
+        f"  {W}COURIER MISSIONS{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Each day a new courier job appears on the board. Your crew{RST}",
+        f"  {DG}supplies the cargo from your own inventory, hauls it to a{RST}",
+        f"  {DG}destination BBS, and collects payment on arrival.{RST}",
         "",
-        f"  {DG}Each day a new job is posted. You supply the cargo from your own{RST}",
-        f"  {DG}inventory and deliver it to the destination node for payment.{RST}",
+        f"  {W}ACCEPTING A JOB{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Press {W}[C]{DG} at your home board to see the current job.{RST}",
+        f"  {DG}You must have the listed cargo in your inventory to accept.{RST}",
+        f"  {DG}Accepting deducts the cargo immediately and costs 1 turn.{RST}",
+        f"  {DG}You cannot accept a second job while one is active.{RST}",
         "",
-        f"  {W}To accept:{RST} {DG}you need the listed cargo in your inventory.{RST}",
-        f"  {DG}Accepting deducts the cargo and costs 1 turn.{RST}",
+        f"  {W}DELIVERING{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Travel to the destination node using {W}[T]{DG}. Delivery happens{RST}",
+        f"  {DG}automatically on arrival -- no extra action needed.{RST}",
+        f"  {DG}Credits and reputation are paid instantly on delivery.{RST}",
         "",
-        f"  {W}To deliver:{RST} {DG}travel to the destination node. Delivery is{RST}",
-        f"  {DG}automatic on arrival — no extra action needed.{RST}",
+        f"  {W}EXPIRY{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Every job has an expiry day shown on the mission board.{RST}",
+        f"  {DG}If the day ends before you deliver, the mission fails:{RST}",
+        f"  {R}  - Cargo is returned to your inventory{RST}",
+        f"  {R}  - You lose 10 reputation{RST}",
+        f"  {DG}Harder jobs expire sooner. Check before accepting.{RST}",
         "",
-        f"  {R}Fail:{RST} {DG}if the day ends before delivery, cargo is returned{RST}",
-        f"  {DG}but you lose 10 reputation.{RST}",
+        f"  {W}DIFFICULTY{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Jobs are rated {W}*{DG} to {W}***{DG} for difficulty.{RST}",
+        f"  {Y}*   {DG}-- Short hop, common cargo, easy deadline.{RST}",
+        f"  {Y}**  {DG}-- Medium range, rarer cargo, tighter deadline.{RST}",
+        f"  {Y}*** {DG}-- Long haul, expensive cargo, expires same day.{RST}",
+        f"  {DG}Higher difficulty pays more credits and reputation.{RST}",
+        "",
+        f"  {W}REWARDS{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}Payment is a mix of phone credits and reputation.{RST}",
+        f"  {DG}Credits fund travel. Reputation counts toward final score.{RST}",
+        f"  {DG}Harder jobs pay disproportionately more -- worth the risk.{RST}",
+        "",
+        f"  {W}TIPS{RST}",
+        f"  {DG}{'='*50}{RST}",
+        f"  {DG}- Always accept the daily job if you have the cargo. Free rep.{RST}",
+        f"  {DG}- Stock up on floppy disks and source code -- common cargo.{RST}",
+        f"  {DG}- Route your travel through the destination on the way to your{RST}",
+        f"  {DG}  next node -- delivery costs no extra turns.{RST}",
+        f"  {DG}- A {W}***{DG} job paying 200+ credits can fund a full day of travel.{RST}",
+        f"  {DG}- If short on turns, skip rather than risk the -10 rep penalty.{RST}",
     ]
-    for i, line in enumerate(lines):
-        write_at(MENU_TOP + i, 1, line)
 
-    write_at(RES_BOT, 1,
-        f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
+    text_start = MENU_TOP
+    view_h  = STATUS_DIV - text_start
+    n_lines = len(lines)
+    max_off = max(0, n_lines - view_h)
+    offset  = 0
+
+    def redraw(full=False):
+        if full:
+            screen_base("courier", player, player.bbs_name)
+        for i in range(view_h):
+            idx = offset + i
+            move(text_start + i, 1); _out(ERASE_LINE)
+            if idx < n_lines:
+                _out(lines[idx])
+        nav = (f"  {C}[{RST}{W}UP{RST}{C}/{RST}{W}DN{RST}{C}]{DG} Scroll"
+               f"  {C}[{RST}{W}Q{RST}{C}]{DG} Back"
+               f"  {DG}{offset+1}-{min(offset+view_h, n_lines)}/{n_lines}{RST}")
+        move(STATUS_DIV, 1); _out(ERASE_LINE); _out(nav)
+        hide_cursor()
+
+    redraw(full=True)
+    while True:
+        key = get_key_arrow()
+        if key == "Q":
+            break
+        elif key == "DOWN" and offset < max_off:
+            offset += 1
+            redraw()
+        elif key == "UP" and offset > 0:
+            offset -= 1
+            redraw()
 
 
 def screen_courier_active(player, mission):
