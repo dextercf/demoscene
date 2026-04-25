@@ -1133,7 +1133,7 @@ def screen_trade(player, node):
 
 
 # Row constants for produce screen — used by both ansi.py and game.py
-PROD_LIST_TOP  = DIV_3          # rows 13-20: the 8 demo options (DIV_3 cleared)
+PROD_LIST_TOP  = DIV_3          # rows 13-21: the 9 demo options (DIV_3 cleared)
 PROD_DETAIL    = RES_BOT - 1    # row 21: confirmation detail (1 line)
 PROD_PROMPT    = RES_BOT        # row 22: [1-8]/[Y/Q] prompt
 
@@ -1555,7 +1555,7 @@ def screen_produce(player, detail_lines=None, prompt=None):
     _out(DG); _out(b"\xc4" * (SCREEN_W - 1)); _out(RST)
     move(DIV_3, 1); _out(ERASE_LINE)
 
-    # List zone — rows 13-20 (8 entries, DIV_3 cleared above)
+    # List zone — rows 13-21 (9 entries, DIV_3 cleared above)
     for i, (key, label, costs, rep, fail_pct) in enumerate(demos):
         row = PROD_LIST_TOP + i
         can      = player.can_afford(costs)
@@ -1569,10 +1569,9 @@ def screen_produce(player, detail_lines=None, prompt=None):
              f"  {Y if can else DG}+{rep:<4}{RST}"
              f"  {R if fail_pct >= 15 else DG}{fail_pct:>4}%{RST}")
 
-    # Detail row (row 21) — filled by game.py after selection, blank by default
-    move(PROD_DETAIL, 1); _out(ERASE_LINE)
+    # Detail row (row 21) — overlays Wild Demo row on confirmation/error
     if detail_lines:
-        _out(detail_lines[0])
+        move(PROD_DETAIL, 1); _out(ERASE_LINE); _out(detail_lines[0])
 
     # Prompt row (row 22)
     move(PROD_PROMPT, 1); _out(ERASE_LINE)
