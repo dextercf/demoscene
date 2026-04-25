@@ -273,10 +273,15 @@ def action_trade(player, world, cfg, rng):
         if action == "Q":
             continue
 
+        def trade_err(msg):
+            ansi.write_at(ansi.RES_BOT, 1,
+                f"  {ansi.R}{msg}{ansi.RST}  {ansi.DG}[any key]{ansi.RST}")
+            ansi.get_key()
+
         if action == "B":
             max_qty = player.phone_credits // buy if buy > 0 else 0
             if max_qty == 0:
-                ansi.result(f"{ansi.R}> Not enough phone credits.{ansi.RST}")
+                trade_err(f"Not enough credits ({player.phone_credits}c, need {buy}c each).")
                 continue
             ansi.write_at(ansi.RES_BOT, 1, "")
             qty_str = ansi.get_input(f"  How many (max: {max_qty})? ")
@@ -293,7 +298,7 @@ def action_trade(player, world, cfg, rng):
         elif action == "S":
             have = player.get_resource(res)
             if have == 0:
-                ansi.result(f"{ansi.R}> You don't have any {name}.{ansi.RST}")
+                trade_err(f"You don't have any {name}.")
                 continue
             ansi.write_at(ansi.RES_BOT, 1, "")
             qty_str = ansi.get_input(f"  How many (max: {have})? ")
