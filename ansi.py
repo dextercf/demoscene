@@ -159,6 +159,29 @@ FALLBACK_ART = {
     ]
 }
 
+def draw_art_abs(name):
+    """Draw art file with absolute row positioning to prevent terminal scroll on wide lines."""
+    path = os.path.join(ART_PATH, f"{name}.ans")
+    if not os.path.isfile(path):
+        return False
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+        sauce = data.rfind(b"SAUCE00")
+        if sauce != -1:
+            data = data[:sauce]
+        raw_lines = data.split(b"\r\n")
+        for i, lb in enumerate(raw_lines):
+            row = 1 + i
+            if row > SCREEN_H:
+                break
+            move(row, 1)
+            _out(ERASE_LINE)
+            _out(lb)
+        return True
+    except OSError:
+        return False
+
 def draw_art(name, speed=0):
     move(ART_TOP, 1)
     if load_art(name, speed): return
@@ -474,8 +497,7 @@ def screen_tutorial():
     def redraw(full=False):
         if full:
             clear_screen()
-        # Always redraw background — it spans full screen, ERASE_LINE wipes it on scroll
-        draw_art("helpbak")
+        draw_art_abs("helpbak")
         for i in range(view_h):
             idx = offset + i
             write_at(text_start + i, 1, lines[idx] if idx < n_lines else "")
