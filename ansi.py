@@ -465,8 +465,8 @@ def screen_tutorial():
         f"  {DG}  at the top of the leaderboard on final scoring day 50.{RST}",
     ]
 
-    text_start = 6
-    view_h  = STATUS_DIV - text_start  # rows 6-22 = 17 visible rows
+    text_start = MENU_TOP   # row 10 — below art (1-8) + DIV_1 (9)
+    view_h  = STATUS_DIV - text_start  # rows 10-22 = 13 visible rows
     n_lines = len(lines)
     max_off = max(0, n_lines - view_h)
     offset  = 0
@@ -475,6 +475,7 @@ def screen_tutorial():
         if full:
             clear_screen()
             draw_art("helpbak")
+            draw_divider(DIV_1)
         for i in range(view_h):
             idx = offset + i
             write_at(text_start + i, 1, lines[idx] if idx < n_lines else "")
