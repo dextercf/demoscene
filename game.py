@@ -273,33 +273,39 @@ def action_trade(player, world, cfg, rng):
         if action == "Q":
             continue
 
-        ansi.write_at(ansi.RES_BOT, 1, "")  # clear prompt row for quantity input
-        qty_str = ansi.get_input("  Quantity: ")
-        try:
-            qty = max(1, int(qty_str))
-        except ValueError:
-            continue
-
         if action == "B":
-            total = buy * qty
-            if player.phone_credits < total:
+            max_qty = player.phone_credits // buy if buy > 0 else 0
+            if max_qty == 0:
                 ansi.result(f"{ansi.R}> Not enough phone credits.{ansi.RST}")
-            else:
-                player.adjust_resource("phone_credits", -total)
-                player.adjust_resource(res, qty)
-                ansi.result(f"{ansi.G}> Bought {qty} {name} for {total}c.{ansi.RST}")
-                ansi.draw_status(player, player.bbs_name, show_credits=True)
+                continue
+            ansi.write_at(ansi.RES_BOT, 1, "")
+            qty_str = ansi.get_input(f"  How many (max: {max_qty})? ")
+            try:
+                qty = max(1, min(int(qty_str), max_qty))
+            except ValueError:
+                continue
+            total = buy * qty
+            player.adjust_resource("phone_credits", -total)
+            player.adjust_resource(res, qty)
+            ansi.result(f"{ansi.G}> Bought {qty} {name} for {total}c.{ansi.RST}")
+            ansi.draw_status(player, player.bbs_name, show_credits=True)
+
         elif action == "S":
             have = player.get_resource(res)
-            qty  = min(qty, have)
-            if qty <= 0:
+            if have == 0:
                 ansi.result(f"{ansi.R}> You don't have any {name}.{ansi.RST}")
-            else:
-                total = sell * qty
-                player.adjust_resource(res, -qty)
-                player.adjust_resource("phone_credits", total)
-                ansi.result(f"{ansi.G}> Sold {qty} {name} for {total}c.{ansi.RST}")
-                ansi.draw_status(player, player.bbs_name, show_credits=True)
+                continue
+            ansi.write_at(ansi.RES_BOT, 1, "")
+            qty_str = ansi.get_input(f"  How many (max: {have})? ")
+            try:
+                qty = max(1, min(int(qty_str), have))
+            except ValueError:
+                continue
+            total = sell * qty
+            player.adjust_resource(res, -qty)
+            player.adjust_resource("phone_credits", total)
+            ansi.result(f"{ansi.G}> Sold {qty} {name} for {total}c.{ansi.RST}")
+            ansi.draw_status(player, player.bbs_name, show_credits=True)
 
 # ---------------------------------------------------------------------------
 # Action: Produce
