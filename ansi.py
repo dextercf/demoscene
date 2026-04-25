@@ -1072,9 +1072,8 @@ def screen_courier_help(player):
         f"  {DG}but you lose 10 reputation.{RST}",
     ]
     for i, line in enumerate(lines):
-        write_at(RES_TOP + i, 1, line)
+        write_at(MENU_TOP + i, 1, line)
 
-    draw_divider(RES_BOT - 1)
     write_at(RES_BOT, 1,
         f"  {C}[{RST}{W}Q{RST}{C}]{RST} {DG}Back{RST}")
 
